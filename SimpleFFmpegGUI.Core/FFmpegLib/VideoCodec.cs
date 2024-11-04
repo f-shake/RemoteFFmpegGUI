@@ -17,6 +17,9 @@ namespace SimpleFFmpegGUI.FFmpegLib
         public static readonly XVP9 XVP9 = new XVP9();
         public static readonly AomAV1 AomAV1 = new AomAV1();
         public static readonly SVTAV1 SVTAV1 = new SVTAV1();
+        public static readonly N_AV1 N_AV1 = new N_AV1();
+        public static readonly N_H264 N_H264 = new N_H264();
+        public static readonly N_H265 N_H265 = new N_H265();
         public static readonly GeneralVideoCodec General = new GeneralVideoCodec();
         public static readonly VideoCodec[] VideoCodecs = new VideoCodec[]
         {
@@ -24,7 +27,10 @@ namespace SimpleFFmpegGUI.FFmpegLib
            X265,
            XVP9,
            AomAV1,
-           SVTAV1
+           SVTAV1,
+           N_H264,
+           N_H265,
+           N_AV1
         };
         private static Dictionary<string, VideoCodec> name2codec;
 
@@ -39,6 +45,11 @@ namespace SimpleFFmpegGUI.FFmpegLib
         /// 默认CRF
         /// </summary>
         public abstract int DefaultCRF { get; }
+
+        /// <summary>
+        /// CRF的名字，在硬件编码中没有CRF，只有CQ
+        /// </summary>
+        public abstract string CRFLabel { get; }
 
         /// <summary>
         /// 默认速度预设等级

@@ -3,7 +3,7 @@ using System;
 
 namespace SimpleFFmpegGUI.FFmpegLib
 {
-    public class GeneralVideoCodec : VideoCodec
+    public class GeneralVideoCodec : SoftwareVideoCodec
     {
         public override int DefaultCRF => 5;
         public override int DefaultSpeedLevel => 3;

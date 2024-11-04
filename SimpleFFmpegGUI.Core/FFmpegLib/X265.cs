@@ -2,7 +2,7 @@
 
 namespace SimpleFFmpegGUI.FFmpegLib
 {
-    public class X265 : VideoCodec
+    public class X265 : SoftwareVideoCodec
     {
         public readonly static string[] Profiles = new string[]
         {

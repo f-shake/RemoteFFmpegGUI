@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SimpleFFmpegGUI.FFmpegLib
 {
-    public class XVP9 : VideoCodec
+    public class XVP9 : SoftwareVideoCodec
     {
         public override string Name => "VP9";
         public override string Lib => "libvpx-vp9";

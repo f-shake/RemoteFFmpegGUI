@@ -95,7 +95,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
     [DebuggerDisplay("{Header}")]
     public class PerformanceTestLine
     {
-        public const int CodecsCount = 5;
+        public const int CodecsCount = 8;
         public PerformanceTestLine()
         {
             if (VideoCodec.VideoCodecs.Length != CodecsCount)

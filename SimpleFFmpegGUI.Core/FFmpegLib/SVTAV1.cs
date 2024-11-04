@@ -3,7 +3,7 @@ using System;
 
 namespace SimpleFFmpegGUI.FFmpegLib
 {
-    public class SVTAV1 : VideoCodec
+    public class SVTAV1 : SoftwareVideoCodec
     {
         public override string Name => "AV1 (SVT)";
         public override string Lib => "libsvtav1";
