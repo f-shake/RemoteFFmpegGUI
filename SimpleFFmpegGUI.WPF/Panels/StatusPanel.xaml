@@ -221,8 +221,7 @@
                                 Grid.Column="2"
                                 Background="Transparent"
                                 DockPanel.Dock="Bottom">
-                                <ui:AppBarButton
-                                    Label="输出">
+                                <ui:AppBarButton Label="输出">
                                     <ui:FlyoutService.Flyout>
                                         <ui:Flyout>
                                             <TextBlock

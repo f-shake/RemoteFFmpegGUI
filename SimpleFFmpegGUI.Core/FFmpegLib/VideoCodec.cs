@@ -47,9 +47,9 @@ namespace SimpleFFmpegGUI.FFmpegLib
         public abstract int DefaultCRF { get; }
 
         /// <summary>
-        /// CRF的名字，在硬件编码中没有CRF，只有CQ
+        /// CRF的名字，软件编码中为CRF，硬件编码中为CQ
         /// </summary>
-        public abstract string CRFLabel { get; }
+        public abstract string CrfLabel { get; }
 
         /// <summary>
         /// 默认速度预设等级
@@ -103,15 +103,8 @@ namespace SimpleFFmpegGUI.FFmpegLib
             return new FFmpegArgumentItem("bufsize", $"{mb}M");
         }
 
-        public virtual FFmpegArgumentItem CRF(int level)
-        {
-            if (level < 0 || level > MaxCRF)
-            {
-                throw new FFmpegArgumentException("CRF的值超出范围");
-            }
-            return new FFmpegArgumentItem("crf", level.ToString());
-        }
-
+        public abstract FFmpegArgumentItem CRF(int level);
+   
         public virtual FFmpegArgumentItem FrameRate(double fps)
         {
             if (fps < 0)

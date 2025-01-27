@@ -152,7 +152,9 @@
             Background="Transparent"
             SelectionChanged="Tab_SelectionChanged"
             Visibility="{Binding TabControlVisibility}">
-            <TabItem Header="任务状态" />
+            <TabItem
+                Header="任务状态"
+                Tag="status" />
         </TabControl>
         <ContentControl
             x:Name="topTab"

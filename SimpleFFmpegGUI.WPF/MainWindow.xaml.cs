@@ -32,6 +32,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CommonDialog = iNKORE.Extension.CommonDialog.CommonDialog;
 using Task = System.Threading.Tasks.Task;
+using iNKORE.UI.WPF.Modern.Controls.Helpers;
 
 namespace SimpleFFmpegGUI.WPF
 {
@@ -364,7 +365,9 @@ namespace SimpleFFmpegGUI.WPF
 
         private void ResetUI(bool force = false)
         {
-            if (tab.SelectedIndex == 0 && !topTab.HasContent
+            if (tab.SelectedIndex == 0 //选中了第一个标签页
+                && "status".Equals((tab.Items[0] as FrameworkElement).Tag)//第一个标签页没被移除
+                && !topTab.HasContent//没有在显示顶部页面
                 && (IsUiCompressMode || force)) //左侧和右侧
             {
                 RemoveFromGrid();

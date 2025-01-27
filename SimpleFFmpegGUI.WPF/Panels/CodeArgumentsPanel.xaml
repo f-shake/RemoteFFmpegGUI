@@ -328,7 +328,11 @@
                             Grid.Row="4"
                             IsChecked="{Binding Video.EnableCrf}"
                             ToolTip="{Binding Source={x:Static vm:ArgumentDescriptions.CRF}}">
-                            <TextBlock Text="{Binding Video.Crf, Mode=OneWay, StringFormat=CRF： {0}}" />
+                            <TextBlock>
+                                <Run Text="{Binding Video.CrfLabel, Mode=OneWay}" />
+                                <Run Text="：" />
+                                <Run Text="{Binding Video.Crf, Mode=OneWay}" />
+                            </TextBlock>
                         </CheckBox>
                         <Slider
                             Grid.Row="4"
