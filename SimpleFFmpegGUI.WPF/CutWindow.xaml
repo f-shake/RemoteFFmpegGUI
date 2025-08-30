@@ -71,6 +71,7 @@
             <Slider
                 Grid.Column="2"
                 VerticalAlignment="Bottom"
+                AutoToolTipPlacement="None"
                 IsMoveToPointEnabled="True"
                 IsSelectionRangeEnabled="True"
                 Maximum="1"

@@ -113,7 +113,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         [RelayCommand]
-        private async Task AddToQueueAsync(bool addToQueue)
+        private async Task AddToQueueAsync(TaskEnqueueStrategy strategy)
         {
             var args = CodeArgumentsViewModel.GetArguments();
             try
@@ -134,6 +134,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 List<InputArguments> inputs = FileIOViewModel.GetInputs();
 
+                List<TaskInfo> createdTasks = new List<TaskInfo>();
                 switch (Type)
                 {
                     case TaskType.Code://需要将输入文件单独加入任务
@@ -141,6 +142,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                         {
                             TaskInfo task = await taskManager.AddTaskAsync(TaskType.Code, new List<InputArguments>() { input }, FileIOViewModel.GetOutput(input), args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
+                            createdTasks.Add(task);
                         }
                         QueueSuccessMessage($"已加入{inputs.Count}个任务队列");
                         break;
@@ -148,6 +150,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                         {
                             TaskInfo task = await taskManager.AddTaskAsync(Type, inputs, null, args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
+                            createdTasks.Add(task);
                             QueueSuccessMessage("已加入队列");
                         }
                         break;
@@ -155,6 +158,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                         {
                             TaskInfo task = await taskManager.AddTaskAsync(Type, inputs, FileIOViewModel.GetOutput(inputs[0]), args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
+                            createdTasks.Add(task);
                             QueueSuccessMessage("已加入队列");
                         }
                         break;
@@ -163,10 +167,34 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 {
                     FileIOViewModel.Reset(false);
                 }
-                if (addToQueue)
+                switch (strategy)
                 {
-                    await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartQueue());
-                    QueueSuccessMessage("已开始队列");
+                    case TaskEnqueueStrategy.EnqueueOnly:
+                        break;
+                    case TaskEnqueueStrategy.EnqueueAndRun:
+                        await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartQueue());
+                        QueueSuccessMessage("已开始队列");
+                        break;
+                    case TaskEnqueueStrategy.RunIndependently:
+                        if (createdTasks.Count == 1)
+                        {
+                            await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartStandalone(createdTasks[0].Id));
+                            QueueSuccessMessage("已开始独立执行");
+                        }
+                        else if (createdTasks.Count < 5)
+                        {
+                            foreach (var t in createdTasks)
+                            {
+                                await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartStandalone(t.Id));
+
+                            }
+                            QueueSuccessMessage($"已开始{createdTasks.Count}个任务的独立执行");
+                        }
+                        else
+                        {
+                            QueueSuccessMessage($"同时加入的任务过多，请手动启动任务");
+                        }
+                        break;
                 }
                 SaveAsLastOutputArguments(args);
             }
