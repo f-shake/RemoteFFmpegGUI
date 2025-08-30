@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace SimpleFFmpegGUI.FFmpegLib
 {
-    public class AomAV1 : VideoCodec
+    public class AomAV1 : SoftwareVideoCodec
     {
         public override string Name => "AV1 (aom)";
         public override string Lib => "libaom-av1";

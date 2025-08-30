@@ -15,6 +15,16 @@
             "veryfast",
             "superfast",
             "ultrafast",
+        };  
+        
+        public readonly static string[] N_Presets = new[] {
+            "p7",
+            "p6",
+            "p5",
+            "p4",
+            "p3",
+            "p2",
+            "p1",
         };
 
         /// <summary>

@@ -70,6 +70,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         [ObservableProperty]
         private bool twoPass;
+
+        [ObservableProperty]
+        private string crfLabel;
+
         public VideoArgumentsViewModel()
         {
             Code = "H265";
@@ -177,6 +181,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     Preset = codec.DefaultSpeedLevel;
                     MaxCRF = codec.MaxCRF;
                     Crf = codec.DefaultCRF;
+                    CrfLabel = codec.CrfLabel;
                     break;
             }
         }
