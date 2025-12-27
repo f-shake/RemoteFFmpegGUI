@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageVersion Include="iNKORE.UI.WPF.Modern" Version="0.10.2.1" />
+    <PackageVersion Include="FFMpegCore" Version="5.4.0" />
+    <PackageVersion Include="Mapster" Version="7.4.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="10.0.1" />
+    <PackageVersion Include="FubarDev.FtpServer" Version="3.1.2" />
+    <PackageVersion Include="FubarDev.FtpServer.FileSystem.DotNet" Version="3.1.2" />
+    <PackageVersion Include="JKang.IpcServiceFramework.Hosting.NamedPipe" Version="3.2.0" />
+    <PackageVersion Include="log4net" Version="3.2.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.1" />
+    <PackageVersion Include="Furion" Version="4.9.7.236" />
+    <PackageVersion Include="JKang.IpcServiceFramework.Client.NamedPipe" Version="3.2.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="zgabi.FFME.Windows" Version="6.0.2" />
+  </ItemGroup>
+</Project>
