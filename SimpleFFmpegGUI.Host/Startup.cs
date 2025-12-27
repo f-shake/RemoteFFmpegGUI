@@ -1,4 +1,5 @@
-﻿using FzLib.Program.Runtime;
+﻿using FFMpegCore;
+using FzLib.Program.Runtime;
 using JKang.IpcServiceFramework.Hosting;
 using log4net;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
+using System.IO;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
 
@@ -38,6 +40,7 @@ namespace SimpleFFmpegGUI
                 Console.ReadKey();
                 return null;
             }
+            GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Program.App.ProgramDirectoryPath, "ffmpeg") });
 
             builder ??= Host.CreateDefaultBuilder();
             return builder

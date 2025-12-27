@@ -186,7 +186,7 @@ namespace SimpleFFmpegGUI.Manager
         public async Task<string> GetErrorMessageAsync()
         {
             LogManager manager = new LogManager(new FFmpegDbContext());
-            var logs =await manager.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
+            var logs = await manager.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
             var log = logs.List
                 .Where(p => ErrorMessageRegexs.Any(q => q.IsMatch(p.Message)))
                 .OrderByDescending(p => p.Time).FirstOrDefault();
@@ -254,7 +254,7 @@ namespace SimpleFFmpegGUI.Manager
                     _ => throw new NotSupportedException("不支持的任务类型：" + task.Type),
                 });
 
-                if(task.Status==TaskStatus.Error)
+                if (task.Status == TaskStatus.Error)
                 {
                     Debug.Assert(false);
                 }
@@ -351,9 +351,12 @@ namespace SimpleFFmpegGUI.Manager
             try
             {
                 realLength = MediaInfoManager.GetVideoDurationByFFprobe(path);
+
+                Logger.Info($"视频的长度为：{realLength}");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Info($"获取视频长度失败：{ex}");
                 return null;
             }
             if (arg == null || arg.From == null && arg.To == null && arg.Duration == null)
