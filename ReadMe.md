@@ -66,7 +66,7 @@
 
 ### 准备工作
 
-1. 确保安装了 .NET 8 SDK （v8.0.403及以上）：
+1. 确保安装了 .NET 10 SDK
 2. 确保安装了npm（Node.js）：
 3. 确保在根目录下（与ReadMe同级目录）的 `bin`目录中放置了ffmpeg二进制文件（shared版）：[下载](https://www.ffmpeg.org/download.html) ，具体层级见`bin`目录内的`files.txt`。
 4. 若要使用媒体信息查询功能，应在根目录（与ReadMe同级目录）下的 `bin`目录中放置了MediaInfo CLI可执行文件（如`MediaInfo.exe`）：[下载](https://mediaarea.net/en/MediaInfo/Download)
