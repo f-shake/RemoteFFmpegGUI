@@ -259,7 +259,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             string path = null;
             try
             {
-                path = await MediaInfoManager.GetSnapshotAsync(Inputs[0].FilePath, time, "-1:480");
+                path = await MediaInfoManager.GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
             }
             catch (Exception ex)
             {

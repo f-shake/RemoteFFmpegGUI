@@ -11,6 +11,7 @@ namespace SimpleFFmpegGUI.Manager
     public class ConfigManager
     {
         public const string DefaultProcessPriorityKey = "DefaultProcessPriority";
+        public const string SnapshotSizeKey = "SnapshotSize";
         private static readonly Dictionary<string, object> cache = new Dictionary<string, object>();
 
         private readonly FFmpegDbContext db;
@@ -24,6 +25,12 @@ namespace SimpleFFmpegGUI.Manager
         {
             get => GetConfig(DefaultProcessPriorityKey, 2);
             set => SetConfig(DefaultProcessPriorityKey, value);
+        }
+
+        public string SnapshotSize
+        {
+            get => GetConfig(SnapshotSizeKey, "-1:1080");
+            set => SetConfig(SnapshotSizeKey, value);
         }
 
         public T GetConfig<T>(string key, T defaultValue)

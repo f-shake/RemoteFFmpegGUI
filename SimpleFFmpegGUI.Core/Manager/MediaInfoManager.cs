@@ -36,11 +36,24 @@ namespace SimpleFFmpegGUI.Manager
             return mediaInfo;
         }
 
-        public static async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale,string format="bmp")
+        public static async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale, string format = "jpg")
         {
+            Debug.WriteLine("正在采集截图");
             string tempPath = $"{FileSystemUtility.GetTempFileName("snapshot")}.{format}";
-            FFmpegProcess process = new FFmpegProcess($"-ss {time.TotalSeconds:0.000}  -i \"{path}\" -vframes 1 -vf scale={scale} {tempPath}");
+
+            string args =
+                $"-ss {time.TotalSeconds:0.000} " +        // 快速 seek（在 -i 前）
+                $"-skip_frame nokey " +            //只截取关键帧，提升速度，降低内存
+                $"-i \"{path}\" " +
+                "-vframes 1 " +
+                $"-vf scale={scale}:flags=fast_bilinear " + // 低内存 scale
+                "-threads 1 " +                              // 限制线程
+                "-max_muxing_queue_size 2 " +                // 限制缓存
+                $"\"{tempPath}\"";
+
+            FFmpegProcess process = new FFmpegProcess(args);
             await process.StartAsync(null, null);
+
             return tempPath;
         }
 

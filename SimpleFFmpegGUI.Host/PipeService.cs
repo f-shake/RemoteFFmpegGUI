@@ -282,7 +282,7 @@ namespace SimpleFFmpegGUI
 
         public string GetSnapshot(string path, double seconds)
         {
-            return MediaInfoManager.GetSnapshotAsync(path, TimeSpan.FromSeconds(seconds), "-1:480", "jpg").Result;
+            return MediaInfoManager.GetSnapshotAsync(path, TimeSpan.FromSeconds(seconds), configManager.SnapshotSize).Result;
         }
 
         public byte[] ReadFiles(string path)
@@ -290,9 +290,9 @@ namespace SimpleFFmpegGUI
             return File.ReadAllBytes(path);
         }
 
-        public async System.Threading.Tasks.Task TestAsync()
+        public async Task TestAsync()
         {
-            await System.Threading.Tasks.Task.Yield();
+            await Task.Yield();
         }
     }
 }

@@ -52,6 +52,9 @@ namespace SimpleFFmpegGUI.WPF
         private bool smoothScroll = true;
 
         [ObservableProperty]
+        private string snapshotSize = "-1:1080";
+
+        [ObservableProperty]
         private bool startQueueAfterAddTask = true;
 
         public static Config Instance
@@ -87,6 +90,12 @@ namespace SimpleFFmpegGUI.WPF
         public int TestQCMode { get; set; } = 0;
         public string TestVideo { get; set; }
         public bool WindowMaximum { get; set; } = false;
+        public Config DeepCopy()
+        {
+            var serialized = JsonConvert.SerializeObject(this);
+            return JsonConvert.DeserializeObject<Config>(serialized);
+        }
+
         public void Save()
         {
             var json = JsonConvert.SerializeObject(this, new JsonSerializerSettings()
@@ -94,11 +103,6 @@ namespace SimpleFFmpegGUI.WPF
                 Formatting = Formatting.Indented
             });
             File.WriteAllText(path, json);
-        }
-        public Config DeepCopy()
-        {
-            var serialized = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<Config>(serialized);
         }
     }
 
