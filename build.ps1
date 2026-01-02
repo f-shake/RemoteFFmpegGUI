@@ -83,12 +83,12 @@ try {
     
     if ($d) {
         Write-Output "正在发布WPF（单文件）"
-        dotnet publish SimpleFFmpegGUI.WPF -c Release -o Generation/Publish/WPF_SingleFile -r win-x64 --self-contained false /p:PublishSingleFile=true
+        dotnet publish SimpleFFmpegGUI.WPF -c Release -o Generation/Publish/WPF_SingleFile -r win-x64 --no-self-contained /p:PublishSingleFile=true
         Write-Output "正在复制二进制库"
         Copy-Item bin/* Generation/Publish/WPF_SingleFile -Force -Recurse  
 
         Write-Output "正在发布WPF（自包含）"
-        dotnet publish SimpleFFmpegGUI.WPF -c Release -o Generation/Publish/WPF_SelfContained -r win-x64 --self-contained true /p:PublishSingleFile=true
+        dotnet publish SimpleFFmpegGUI.WPF -c Release -o Generation/Publish/WPF_SelfContained -r win-x64 --self-contained /p:PublishSingleFile=true
         Write-Output "正在复制二进制库"
         Copy-Item bin/* Generation/Publish/WPF_SelfContained -Force -Recurse
     }
