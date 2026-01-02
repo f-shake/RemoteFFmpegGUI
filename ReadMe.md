@@ -38,14 +38,14 @@
 
 ### 获取程序包
 
-在[Github的Release](https://github.com/autodotua/RemoteFFmpegGUI/releases)下载最新的包（Web包的地址不能含有子路径），或根据下节进行构建。
+在[Github的Release](https://github.com/f-shake/RemoteFFmpegGUI/releases)下载最新的包（Web包的地址不能含有子路径），或根据下节进行构建。
 
 ### 部署基于Windows +IIS的Web版本
 
 1. 进入 `Generation/Publish/WebPackage`
 2. 编辑 `api`的 `appsettings.json`，主要修改 `InputDir`和 `OutputDir`项，指定输入和输出目录。其它修改项详见文件内的注释。
 3. 在合适的位置新建一个网站文件夹，将 `Generation/Publish/WebPackage`内的所有内容复制到新建的文件夹之中。
-4. 确保安装了.NET 8 Hosting Bundle，并在Windows中启用了IIS。
+4. 确保安装了.NET 10 Hosting Bundle，并在Windows中启用了IIS。
 5. 在IIS中新建网站，指定物理目录为之前新建的目录。右键其中的api目录，设置为虚拟应用程序。
 6. 启动Host。共有两种方式：
    - 运行`SimpleFFmpegGUI.Host.Console.exe`，将打开一个控制台程序。

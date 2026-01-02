@@ -150,7 +150,15 @@
                     <ui:MenuFlyout>
                         <MenuItem
                             Command="{Binding AddToQueueCommand}"
-                            Header="仅创建任务">
+                            Header="创建并独立执行">
+                            <MenuItem.CommandParameter>
+                                <c:TaskEnqueueStrategy>RunIndependently</c:TaskEnqueueStrategy>
+                            </MenuItem.CommandParameter>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding AddToQueueCommand}"
+                            Header="创建任务">
                             <MenuItem.CommandParameter>
                                 <c:TaskEnqueueStrategy>EnqueueOnly</c:TaskEnqueueStrategy>
                             </MenuItem.CommandParameter>
@@ -160,13 +168,6 @@
                             Header="创建并启动队列">
                             <MenuItem.CommandParameter>
                                 <c:TaskEnqueueStrategy>EnqueueAndRun</c:TaskEnqueueStrategy>
-                            </MenuItem.CommandParameter>
-                        </MenuItem>
-                        <MenuItem
-                            Command="{Binding AddToQueueCommand}"
-                            Header="创建并独立执行">
-                            <MenuItem.CommandParameter>
-                                <c:TaskEnqueueStrategy>RunIndependently</c:TaskEnqueueStrategy>
                             </MenuItem.CommandParameter>
                         </MenuItem>
                     </ui:MenuFlyout>

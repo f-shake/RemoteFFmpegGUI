@@ -19,6 +19,11 @@
             TargetType="{x:Type ComboBox}">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
+        <Style
+            BasedOn="{StaticResource {x:Type ui:NumberBox}}"
+            TargetType="{x:Type ui:NumberBox}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
     </UserControl.Resources>
     <Grid>
         <ScrollViewer
