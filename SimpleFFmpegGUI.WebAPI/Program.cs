@@ -1,47 +1,98 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.OpenApi;
+using SimpleFFmpegGUI.WebAPI;
+using SimpleFFmpegGUI.WebAPI.Converter;
 
-namespace SimpleFFmpegGUI.WebAPI
+// 公共属性
+bool webApp = false;
+string pipeName = null;
+WebApplication app = null;
+
+
+CreateWebApplication(args);
+
+
+void CreateWebApplication(string[] args)
 {
-    public class Program
+    var builder = WebApplication.CreateBuilder(args);
+    ConfigureServices(builder);
+
+    app = builder.Build();
+    ConfigureMiddleware(app);
+
+    app.Run();
+}
+
+void ConfigureServices(WebApplicationBuilder builder)
+{
+    // 注册单例服务
+    builder.Services.AddSingleton<PipeClient>();
+    builder.Services.AddHealthChecks();
+    // 添加控制器
+    builder.Services.AddControllers(options =>
     {
-        internal static bool WebApp { get; private set; }
-        internal static string PipeName { get; private set; }
+        // options.Filters.Add(new TokenFilter(builder.Configuration));
+    })
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new DoubleConverter());
+        options.JsonSerializerOptions.Converters.Add(new TimeSpanConverter());
+    });
 
-        public static void Main(string[] args)
+    // 添加API探索器和Swagger
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new OpenApiInfo
         {
-            CreateHostBuilder().Build().Run();
-        }
+            Title = "SimpleFFmpegGUI API",
+            Version = "v1"
+        });
+    });
 
-        public static void Main(int port, string pipeName)
+    // 配置表单选项
+    builder.Services.Configure<FormOptions>(options =>
+    {
+        options.MultipartBodyLengthLimit = int.MaxValue;
+    });
+
+    // 配置CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", policy =>
         {
-            PipeName = pipeName;
-            WebApp = true;
-            CreateHostBuilder($"http://localhost:{port}/").Build().Run();
-        }
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
+}
 
-        public static IHostBuilder CreateHostBuilder(string url = null) =>
-            Host.CreateDefaultBuilder()
-            .ConfigureServices(c =>
-            {
-                c.AddSingleton<PipeClient>();
-            })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    var builder = webBuilder
-                        .Inject()
-                        .UseStartup<Startup>();
-                    if (url != null)
-                    {
-                        builder.UseUrls(url);
-                    }
-                });
+void ConfigureMiddleware(WebApplication app)
+{
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI();
     }
+
+    app.UseHttpsRedirection();
+
+    if (webApp)
+    {
+        app.UseStaticFiles();
+    }
+
+    app.UseRouting();
+    app.UseCors("AllowAll");
+    app.UseAuthorization();
+
+    app.MapControllers();
+    app.MapHealthChecks("/health");
+
+    app.MapGet("/", () => "SimpleFFmpegGUI API is running!");
 }

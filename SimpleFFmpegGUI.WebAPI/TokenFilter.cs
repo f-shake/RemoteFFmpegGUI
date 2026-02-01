@@ -7,15 +7,10 @@ using System.Linq;
 
 namespace SimpleFFmpegGUI.WebAPI
 {
-    public class TokenFilter : ActionFilterAttribute
+    public class TokenFilter(IConfiguration config) : ActionFilterAttribute
     {
-        private readonly IConfiguration config;
+        private readonly IConfiguration config = config;
         private string token;
-
-        public TokenFilter(IConfiguration config)
-        {
-            this.config = config;
-        }
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
@@ -25,20 +20,17 @@ namespace SimpleFFmpegGUI.WebAPI
             }
             var http = context.HttpContext;
 
-            if (token == null)
-            {
-                token = config.GetValue<string>("token") ?? "";
-            }
+            token ??= config.GetValue<string>("token") ?? "";
             if (token != "")
             {
-                if (!http.Request.Headers.ContainsKey("Authorization")
-                    || StringValues.IsNullOrEmpty(http.Request.Headers["Authorization"])
-                    || http.Request.Headers["Authorization"].FirstOrDefault() == "undefined")
+                if (!http.Request.Headers.TryGetValue("Authorization", out StringValues value)
+                    || StringValues.IsNullOrEmpty(value)
+                    || value.FirstOrDefault() == "undefined")
                 {
                     context.Result = new UnauthorizedObjectResult("需要Token");
                     return;
                 }
-                if (http.Request.Headers["Authorization"] != token)
+                if (value != token)
                 {
                     context.Result = new UnauthorizedObjectResult("Token不正确");
                     return;

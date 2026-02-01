@@ -15,20 +15,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Furion" />
+    <PackageReference Include="FzLib" />
     <PackageReference Include="JKang.IpcServiceFramework.Client.NamedPipe" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="FzStandardLib">
-      <HintPath>..\libs\FzStandardLib.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ProjectExtensions>

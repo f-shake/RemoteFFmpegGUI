@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
 using System;
 using System.Threading.Tasks;
 
@@ -15,28 +14,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         PipeClient pipeClient) : base(Logger, config, pipeClient) { }
 
         [HttpPost]
-        [Route("Shutdown")]
-        public async Task Shutdown()
-        {
-            await pipeClient.InvokeAsync(p => p.Shutdown());
-        }
-        [HttpPost]
         [Route("AbortShutdown")]
         public async Task AbortShutdown()
         {
             await pipeClient.InvokeAsync(p => p.AbortShutdown());
-        }
-        [HttpPost]
-        [Route("ShutdownQueue")]
-        public async Task SetShutdownAfterQueueFinished([FromForm] bool on)
-        {
-            await pipeClient.InvokeAsync(p => p.SetShutdownAfterQueueFinished(on));
-        }
-        [HttpGet]
-        [Route("ShutdownQueue")]
-        public async Task<bool> IsShutdownAfterQueueFinished()
-        {
-            return await pipeClient.InvokeAsync(p => p.IsShutdownAfterQueueFinished());
         }
 
         [HttpGet]
@@ -53,11 +34,32 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return await pipeClient.InvokeAsync(p => p.GetDefaultProcessPriority());
         }
 
+        [HttpGet]
+        [Route("ShutdownQueue")]
+        public async Task<bool> IsShutdownAfterQueueFinished()
+        {
+            return await pipeClient.InvokeAsync(p => p.IsShutdownAfterQueueFinished());
+        }
+
         [HttpPost]
         [Route("DefaultProcessPriority")]
         public async Task SetDefaultProcessPriority(int priority)
         {
-            await pipeClient.InvokeAsync(p=>p.SetDefaultProcessPriority(priority));
+            await pipeClient.InvokeAsync(p => p.SetDefaultProcessPriority(priority));
+        }
+
+        [HttpPost]
+        [Route("ShutdownQueue")]
+        public async Task SetShutdownAfterQueueFinished([FromForm] bool on)
+        {
+            await pipeClient.InvokeAsync(p => p.SetShutdownAfterQueueFinished(on));
+        }
+
+        [HttpPost]
+        [Route("Shutdown")]
+        public async Task Shutdown()
+        {
+            await pipeClient.InvokeAsync(p => p.Shutdown());
         }
     }
 }

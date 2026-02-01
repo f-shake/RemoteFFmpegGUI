@@ -1,15 +1,13 @@
-﻿using Furion.FriendlyException;
-using FzLib;
+﻿using FzLib;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WebAPI.Dto;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
@@ -52,7 +50,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public async Task<FileResult> ExportAsync()
         {
             string json = await pipeClient.InvokeAsync(p => p.ExportPresetsAsync());
-            return File(json.ToUTF8Bytes(), "application/json");
+            return File(Encoding.UTF8.GetBytes(json), "application/octet-stream", "presets.json");
         }
 
         [HttpPost, HttpOptions]
@@ -61,8 +59,8 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         {
             using var s = file.OpenReadStream();
             byte[] buffer = new byte[s.Length];
-            await s.ReadAsync(buffer, 0, buffer.Length);
-            string json = buffer.ToUTF8String();
+            await s.ReadExactlyAsync(buffer);
+            string json = Encoding.UTF8.GetString(buffer);
             await pipeClient.InvokeAsync(p => p.ImportPresetsAsync(json));
             return Ok();
         }

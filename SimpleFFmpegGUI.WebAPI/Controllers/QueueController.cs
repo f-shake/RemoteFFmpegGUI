@@ -13,6 +13,27 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             IConfiguration config,
         PipeClient pipeClient) : base(Logger, config, pipeClient) { }
 
+        [HttpPost]
+        [Route("Cancel")]
+        public async Task CancelAsync()
+        {
+            await pipeClient.InvokeAsync(p => p.CancelQueue());
+        }
+
+        [HttpPost]
+        [Route("CancelSchedule")]
+        public async Task CancelScheduleAsync()
+        {
+            await pipeClient.InvokeAsync(p => p.CancelQueueSchedule());
+        }
+
+        [HttpGet]
+        [Route("QueueScheduleTime")]
+        public async Task<DateTime?> GetQueueScheduleTime()
+        {
+            return await pipeClient.InvokeAsync(p => p.GetQueueScheduleTime());
+        }
+
         [HttpGet]
         [Route("Status")]
         public async Task<StatusDto> GetStatus()
@@ -20,13 +41,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             var status = await pipeClient.InvokeAsync(p => p.GetStatus());
             HideAbsolutePath(status.Task);
             return status;
-        }
-
-        [HttpPost]
-        [Route("Start")]
-        public async Task StartAsync()
-        {
-            await pipeClient.InvokeAsync(p => p.StartQueue());
         }
 
         [HttpPost]
@@ -44,12 +58,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpPost]
-        [Route("Cancel")]
-        public async Task CancelAsync()
-        {
-            await pipeClient.InvokeAsync(p => p.CancelQueue());
-        }
-        [HttpPost]
         [Route("Schedule")]
         public async Task ScheduleAsync(DateTime time)
         {
@@ -59,17 +67,12 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             }
             await pipeClient.InvokeAsync(p => p.ScheduleQueue(time));
         }
+
         [HttpPost]
-        [Route("CancelSchedule")]
-        public async Task CancelScheduleAsync()
+        [Route("Start")]
+        public async Task StartAsync()
         {
-            await pipeClient.InvokeAsync(p => p.CancelQueueSchedule());
-        }
-        [HttpGet]
-        [Route("QueueScheduleTime")]
-        public async Task<DateTime?> GetQueueScheduleTime()
-        {
-            return await pipeClient.InvokeAsync(p => p.GetQueueScheduleTime());
+            await pipeClient.InvokeAsync(p => p.StartQueue());
         }
     }
 }

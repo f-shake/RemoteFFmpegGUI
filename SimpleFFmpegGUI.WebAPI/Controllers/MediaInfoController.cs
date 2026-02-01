@@ -1,14 +1,10 @@
-﻿using Furion.FriendlyException;
+﻿using FzLib.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model.MediaInfo;
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
@@ -48,7 +44,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                throw Oops.Oh("获取截图失败：" + ex.Message);
+                throw new HttpStatusCodeException($"获取截图失败：{ex.Message}", System.Net.HttpStatusCode.InternalServerError);
             }
         }
     }
