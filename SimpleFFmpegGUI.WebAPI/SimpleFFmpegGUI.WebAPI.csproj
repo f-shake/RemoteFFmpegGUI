@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="FzLib" />
-    <PackageReference Include="JKang.IpcServiceFramework.Client.NamedPipe" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Newtonsoft.Json" />
@@ -26,11 +25,5 @@
   <ItemGroup>
     <ProjectReference Include="..\SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj" />
   </ItemGroup>
-
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties appsettings_1json__JsonSchema="" properties_4launchsettings_1json__JsonSchema="" />
-    </VisualStudio>
-  </ProjectExtensions>
 
 </Project>

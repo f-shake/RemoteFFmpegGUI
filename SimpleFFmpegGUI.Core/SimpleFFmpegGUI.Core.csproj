@@ -17,6 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
+    <PackageReference Include="FubarDev.FtpServer" />
+    <PackageReference Include="FubarDev.FtpServer.FileSystem.DotNet" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FzStandardLib">

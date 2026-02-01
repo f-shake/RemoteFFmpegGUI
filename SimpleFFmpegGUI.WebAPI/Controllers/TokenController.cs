@@ -7,7 +7,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     public class TokenController : FFmpegControllerBase
     {
         public TokenController(
-            ILogger<MediaInfoController> Logger, IConfiguration config, PipeClient pipeClient) : base(Logger, config, pipeClient) { }
+            ILogger<MediaInfoController> Logger, IConfiguration config, PipeClient pipeClient) : base(config) { }
 
         [HttpGet]
         [Route("Check")]

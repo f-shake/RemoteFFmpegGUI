@@ -20,7 +20,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     {
         public TaskController(ILogger<MediaInfoController> Logger,
             IConfiguration config,
-        PipeClient pipeClient) : base(Logger, config, pipeClient) { }
+        PipeClient pipeClient) : base(config) { }
 
         [HttpPost]
         [Route("Add/Code")]

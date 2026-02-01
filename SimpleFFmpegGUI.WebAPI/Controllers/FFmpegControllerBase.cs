@@ -17,27 +17,12 @@ public class FFmpegControllerBase : ControllerBase
     public readonly string InputDir = null;
     public readonly string OutputDir = null;
     protected readonly IConfiguration config;
-    protected readonly ILogger<MediaInfoController> Logger;
-    protected readonly PipeClient pipeClient;
 
-    public FFmpegControllerBase(ILogger<MediaInfoController> Logger,
-    IConfiguration config,
-    PipeClient pipeClient)
+    public FFmpegControllerBase(IConfiguration config)
     {
-        this.Logger = Logger;
         this.config = config;
-        this.pipeClient = pipeClient;
         InputDir = config.GetValue<string>("InputDir") ?? throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
         OutputDir = config.GetValue<string>("OutputDir") ?? throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
-    }
-    protected bool CanAccessInputDir()
-    {
-        return config.GetValue("InputDirAccessable", true);
-    }
-
-    protected bool CanAccessOutputDir()
-    {
-        return config.GetValue("OutputDirAccessable", true);
     }
 
     protected async Task<string> CheckAndGetInputFilePathAsync(string name)
@@ -45,44 +30,25 @@ public class FFmpegControllerBase : ControllerBase
         if (name.StartsWith(':'))
         {
             name = name[1..];
-            if (CanAccessInputDir())
+            var files = Directory.EnumerateFiles(InputDir, name, SearchOption.AllDirectories);
+            if (!files.Any())
             {
-                var files = Directory.EnumerateFiles(InputDir, name, SearchOption.AllDirectories);
-                if (!files.Any())
-                {
-                    throw new HttpStatusCodeException("找不到文件" + name, System.Net.HttpStatusCode.NotFound);
-                }
-                if (files.Count() > 2)
-                {
-                    throw new HttpStatusCodeException($"存在多个文件名为{name}的文件", System.Net.HttpStatusCode.Conflict);
-                }
-                return files.First();
+                throw new HttpStatusCodeException("找不到文件" + name, System.Net.HttpStatusCode.NotFound);
             }
-            else
+            if (files.Count() > 2)
             {
-                return await pipeClient.InvokeAsync(p => p.GetSingleFileInDir(InputDir, name));
+                throw new HttpStatusCodeException($"存在多个文件名为{name}的文件", System.Net.HttpStatusCode.Conflict);
             }
+            return files.First();
         }
         else
         {
             string path = Path.Combine(InputDir, name);
-            if (CanAccessInputDir())
+            if (System.IO.File.Exists(path))
             {
-                if (System.IO.File.Exists(path))
-                {
-                    throw new HttpStatusCodeException($"不存在文件{path}", System.Net.HttpStatusCode.NotFound);
-                }
-                return path;
+                throw new HttpStatusCodeException($"不存在文件{path}", System.Net.HttpStatusCode.NotFound);
             }
-
-            else
-            {
-                if (!await pipeClient.InvokeAsync(p => p.IsFileExist(path)))
-                {
-                    throw new HttpStatusCodeException($"不存在文件{path}", System.Net.HttpStatusCode.NotFound);
-                }
-                return path;
-            }
+            return path;
         }
     }
 

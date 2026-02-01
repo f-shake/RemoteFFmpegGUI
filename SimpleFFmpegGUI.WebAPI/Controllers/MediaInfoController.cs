@@ -12,7 +12,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     {
         public MediaInfoController(ILogger<MediaInfoController> Logger,
             IConfiguration config,
-        PipeClient pipeClient) : base(Logger, config, pipeClient) { }
+        PipeClient pipeClient) : base(config) { }
 
         [HttpGet]
         public async Task<MediaInfoGeneral> GetAsync(string name)

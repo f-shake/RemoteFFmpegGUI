@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi;
+using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
+using SimpleFFmpegGUI.WebAPI.Controllers;
 using SimpleFFmpegGUI.WebAPI.Converter;
 
 // 公共属性
@@ -28,13 +31,18 @@ void CreateWebApplication(string[] args)
 
 void ConfigureServices(WebApplicationBuilder builder)
 {
-    // 注册单例服务
-    builder.Services.AddSingleton<PipeClient>();
+    builder.Services.AddSingleton<TaskManager>();
+    builder.Services.AddSingleton<QueueManager>();
+    builder.Services.AddSingleton<PresetManager>();
+    builder.Services.AddSingleton<ConfigManager>();
+    builder.Services.AddSingleton<LogManager>();
+    builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
+    builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);
     builder.Services.AddHealthChecks();
     // 添加控制器
     builder.Services.AddControllers(options =>
     {
-        // options.Filters.Add(new TokenFilter(builder.Configuration));
+         options.Filters.Add(new TokenFilter(builder.Configuration));
     })
     .AddJsonOptions(options =>
     {

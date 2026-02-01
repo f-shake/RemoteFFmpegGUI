@@ -2,77 +2,74 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Manager;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class QueueController : FFmpegControllerBase
+    public class QueueController(IConfiguration config, QueueManager queue) : FFmpegControllerBase(config)
     {
-        public QueueController(ILogger<MediaInfoController> Logger,
-            IConfiguration config,
-        PipeClient pipeClient) : base(Logger, config, pipeClient) { }
-
         [HttpPost]
         [Route("Cancel")]
         public async Task CancelAsync()
         {
-            await pipeClient.InvokeAsync(p => p.CancelQueue());
+            await queue.CancelAsync();
         }
 
         [HttpPost]
         [Route("CancelSchedule")]
-        public async Task CancelScheduleAsync()
+        public void CancelSchedule()
         {
-            await pipeClient.InvokeAsync(p => p.CancelQueueSchedule());
+            queue.CancelQueueSchedule();
         }
 
         [HttpGet]
         [Route("QueueScheduleTime")]
-        public async Task<DateTime?> GetQueueScheduleTime()
+        public DateTime? GetQueueScheduleTime()
         {
-            return await pipeClient.InvokeAsync(p => p.GetQueueScheduleTime());
+            return queue.GetQueueScheduleTime();
         }
 
         [HttpGet]
         [Route("Status")]
-        public async Task<StatusDto> GetStatus()
+        public StatusDto GetMainQueueStatus()
         {
-            var status = await pipeClient.InvokeAsync(p => p.GetStatus());
+            var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
             HideAbsolutePath(status.Task);
             return status;
         }
 
         [HttpPost]
         [Route("Pause")]
-        public async Task PauseAsync()
+        public void PauseMainQueue()
         {
-            await pipeClient.InvokeAsync(p => p.PauseQueue());
+            queue.SuspendMainQueue();
         }
 
         [HttpPost]
         [Route("Resume")]
-        public async Task ResumeAsync()
+        public void Resume()
         {
-            await pipeClient.InvokeAsync(p => p.ResumeQueue());
+            queue.ResumeMainQueue();
         }
 
         [HttpPost]
         [Route("Schedule")]
-        public async Task ScheduleAsync(DateTime time)
+        public void Schedule(DateTime time)
         {
             if (time <= DateTime.Now)
             {
                 throw new ArgumentException("计划的时间早于当前时间");
             }
-            await pipeClient.InvokeAsync(p => p.ScheduleQueue(time));
+            queue.ScheduleQueue(time);
         }
 
         [HttpPost]
         [Route("Start")]
-        public async Task StartAsync()
+        public void Start()
         {
-            await pipeClient.InvokeAsync(p => p.StartQueue());
+            queue.StartQueue();
         }
     }
 }

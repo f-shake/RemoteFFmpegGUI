@@ -11,7 +11,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     {
         public PowerController(ILogger<MediaInfoController> Logger,
             IConfiguration config,
-        PipeClient pipeClient) : base(Logger, config, pipeClient) { }
+        PipeClient pipeClient) : base(config) { }
 
         [HttpPost]
         [Route("AbortShutdown")]
