@@ -1,0 +1,13 @@
+2026-02-02T13:13:19.725Z [INF] [PID:29112] 程序启动
+2026-02-02T13:13:19.831Z [FTL] [PID:29112] 数据库迁移失败
+Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 1: 'index IX_Logs_Type already exists'.
+   at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+   at Microsoft.Data.Sqlite.SqliteCommand.PrepareAndEnumerateStatements()+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteCommand.GetStatements()+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader()
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
+   at SimpleFFmpegGUI.Model.FFmpegDbContext.Migrate20230408(SqliteConnection sqlite) in C:\Users\fshake\source\repos\RemoteFFmpegGUI\SimpleFFmpegGUI.Core\Model\FFmpegDbContext.cs:line 131
+   at SimpleFFmpegGUI.Model.FFmpegDbContext.Migrate() in C:\Users\fshake\source\repos\RemoteFFmpegGUI\SimpleFFmpegGUI.Core\Model\FFmpegDbContext.cs:line 103
+   at Program.<<Main>$>g__MigrateDb|0_6() in C:\Users\fshake\source\repos\RemoteFFmpegGUI\SimpleFFmpegGUI.WebAPI\Program.cs:line 162

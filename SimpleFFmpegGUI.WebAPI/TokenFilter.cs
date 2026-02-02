@@ -30,7 +30,7 @@ namespace SimpleFFmpegGUI.WebAPI
                     context.Result = new UnauthorizedObjectResult("需要Token");
                     return;
                 }
-                if (value != token)
+                if (value != $"Bearer {token}")
                 {
                     context.Result = new UnauthorizedObjectResult("Token不正确");
                     return;

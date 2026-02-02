@@ -71,7 +71,7 @@ static void InitializeLogs()
 
 void CreateWebApplication(string[] args)
 {
-
+    Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     InitializeLogs();
     MigrateDb();
     GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
@@ -109,7 +109,22 @@ void ConfigureServices(WebApplicationBuilder builder)
             Title = "SimpleFFmpegGUI API",
             Version = "v1"
         });
+
+        // 配置认证类型
+        c.AddSecurityDefinition("bearer", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme."
+        });
+
+        c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("bearer", document)] = []
+        });
     });
+
 
     // 配置表单选项
     builder.Services.Configure<FormOptions>(options =>
