@@ -11,6 +11,11 @@
     <OutputPath>..\Generation\Release\Core</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />

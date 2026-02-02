@@ -6,26 +6,13 @@
     <SatelliteResourceLanguages>zh-cn</SatelliteResourceLanguages>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\Generation\Debug\Api</OutputPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\Generation\Release\Api</OutputPath>
-  </PropertyGroup>
-
   <ItemGroup>
-    <Compile Remove="logs\**" />
-    <Content Remove="logs\**" />
-    <EmbeddedResource Remove="logs\**" />
-    <None Remove="logs\**" />
+    <Compile Remove="obj\**" />
+    <Content Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="db.sqlite" />
-    <None Remove="db.sqlite-shm" />
-    <None Remove="db.sqlite-wal" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FzLib" />
