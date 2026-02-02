@@ -26,9 +26,7 @@ FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() =>
     CreateWebApplication(args);
 }).Catch((ex, source) =>
 {
-    Console.ForegroundColor = ConsoleColor.Red;
-    Console.WriteLine($"程序发生未捕获的异常，停止运行：\r\n {ex}");
-    Log.Error("程序发生未捕获的异常", ex);
+    Log.Fatal(ex, "程序发生未捕获的异常");
 })
 .Run();
 
@@ -90,6 +88,7 @@ void ConfigureServices(WebApplicationBuilder builder)
     builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);
     builder.Services.AddHealthChecks();
+    builder.Services.AddWindowsService();
     // 添加控制器
     builder.Services.AddControllers(options =>
     {
@@ -164,10 +163,7 @@ static void MigrateDb()
     }
     catch (Exception ex)
     {
-        Log.Error("数据库迁移失败", ex);
-        Console.WriteLine("数据库迁移失败：" + ex);
-        Console.WriteLine("程序终止");
-        Console.ReadKey();
+        Log.Fatal(ex, "数据库迁移失败");
         Environment.Exit(-1);
     }
 }

@@ -19,10 +19,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		日志.md = 日志.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.Host.WindowsService", "SimpleFFmpegGUI.Host.WindowsService\SimpleFFmpegGUI.Host.WindowsService.csproj", "{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.Host.Console", "SimpleFFmpegGUI.Host.Console\SimpleFFmpegGUI.Host.Console.csproj", "{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Inkore.Extension", "Inkore.Extension\Inkore.Extension.csproj", "{7CEABDEB-0D2B-48BF-A84B-5F6E47E382CA}"
 EndProject
 Global
@@ -57,22 +53,6 @@ Global
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Release|x64.ActiveCfg = Release|Any CPU
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Release|x64.Build.0 = Release|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Debug|x64.Build.0 = Debug|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Release|x64.ActiveCfg = Release|Any CPU
-		{AD930286-CAB2-4CB2-B87A-C7E6F85A1F9B}.Release|x64.Build.0 = Release|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Debug|x64.Build.0 = Debug|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Release|x64.ActiveCfg = Release|Any CPU
-		{9B0C4D9F-E9D2-4BAC-9769-D8406678A1C2}.Release|x64.Build.0 = Release|Any CPU
 		{7CEABDEB-0D2B-48BF-A84B-5F6E47E382CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7CEABDEB-0D2B-48BF-A84B-5F6E47E382CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CEABDEB-0D2B-48BF-A84B-5F6E47E382CA}.Debug|x64.ActiveCfg = Debug|Any CPU
