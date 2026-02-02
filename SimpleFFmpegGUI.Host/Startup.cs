@@ -27,6 +27,7 @@ namespace SimpleFFmpegGUI
             catcher.RegisterThreadsCatcher();
             catcher.UnhandledExceptionCatched += UnhandledException_UnhandledExceptionCatched;
 #endif
+            LogManager.
             InitializeLogs();
             try
             {
@@ -64,35 +65,8 @@ namespace SimpleFFmpegGUI
                     });
         }
 
-        private static void InitializeLogs()
-        {
-            //本地日志
-            AppLog = LogManager.GetLogger(typeof(Startup));
-            AppLog.Info("程序启动");
+        
 
-            //数据库日志
-            Logger.Log += Logger_Log;
-            Logger.LogSaveFailed += Logger_LogSaveFailed;
-            void Logger_Log(object sender, LogEventArgs e)
-            {
-                switch (e.Log.Type)
-                {
-                    case 'E': AppLog.Error(e.Log.Message); break;
-                    case 'W': AppLog.Warn(e.Log.Message); break;
-                    case 'I': AppLog.Info(e.Log.Message); break;
-                }
-            }
-            void Logger_LogSaveFailed(object sender, ExceptionEventArgs e)
-            {
-                AppLog.Error(e.Exception.Message, e.Exception);
-            }
-        }
-
-        private static void UnhandledException_UnhandledExceptionCatched(object sender, FzLib.Program.Runtime.UnhandledExceptionEventArgs e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"程序发生未捕获的异常，停止运行：\r\n {e.Exception}");
-            AppLog.Error(e.Exception);
-        }
+    
     }
 }

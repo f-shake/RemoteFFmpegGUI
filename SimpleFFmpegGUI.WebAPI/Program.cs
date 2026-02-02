@@ -1,49 +1,99 @@
+using FFMpegCore;
 using FubarDev.FtpServer.FileSystem.DotNet;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi;
+using Serilog;
+using SimpleFFmpegGUI;
 using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
 using SimpleFFmpegGUI.WebAPI.Controllers;
 using SimpleFFmpegGUI.WebAPI.Converter;
+using System;
+using System.Diagnostics;
+using System.IO;
+using Log = Serilog.Log;
 
-// 公共属性
-bool webApp = false;
-string pipeName = null;
 WebApplication app = null;
 
+FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() =>
+{
+    CreateWebApplication(args);
+}).Catch((ex, source) =>
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine($"程序发生未捕获的异常，停止运行：\r\n {ex}");
+    Log.Error("程序发生未捕获的异常", ex);
+})
+.Run();
 
-CreateWebApplication(args);
 
+
+
+
+
+
+
+
+
+static void InitializeLogs()
+{
+    int processId = Process.GetCurrentProcess().Id;
+    Log.Logger = new LoggerConfiguration()
+              .MinimumLevel.Debug()
+              .Enrich.WithProperty("ProcessId", processId)
+              .WriteTo.File("logs/logs.txt",
+                  outputTemplate: "{Timestamp:yyyy-MM-ddTHH:mm:ss.fffZ} [{Level:u3}] [PID:{ProcessId}] {Message:lj}{NewLine}{Exception}",
+                  rollingInterval: RollingInterval.Day)
+              .CreateLogger();
+    Log.Information("程序启动");
+
+    //数据库日志
+    Logger.Log += Logger_Log;
+    Logger.LogSaveFailed += Logger_LogSaveFailed;
+    void Logger_Log(object sender, LogEventArgs e)
+    {
+        switch (e.Log.Type)
+        {
+            case 'E': Log.Error(e.Log.Message); break;
+            case 'W': Log.Warning(e.Log.Message); break;
+            case 'I': Log.Information(e.Log.Message); break;
+        }
+    }
+    void Logger_LogSaveFailed(object sender, ExceptionEventArgs e)
+    {
+        Log.Error(e.Exception.Message, e.Exception);
+    }
+}
 
 void CreateWebApplication(string[] args)
 {
+
+    InitializeLogs();
+    MigrateDb();
+    GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
     var builder = WebApplication.CreateBuilder(args);
     ConfigureServices(builder);
-
     app = builder.Build();
     ConfigureMiddleware(app);
-
     app.Run();
 }
 
 void ConfigureServices(WebApplicationBuilder builder)
 {
-    builder.Services.AddSingleton<TaskManager>();
-    builder.Services.AddSingleton<QueueManager>();
-    builder.Services.AddSingleton<PresetManager>();
-    builder.Services.AddSingleton<ConfigManager>();
-    builder.Services.AddSingleton<LogManager>();
+    builder.Services.AddFFmpegServices();
     builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);
     builder.Services.AddHealthChecks();
     // 添加控制器
     builder.Services.AddControllers(options =>
     {
-         options.Filters.Add(new TokenFilter(builder.Configuration));
+        options.Filters.Add(new TokenFilter(builder.Configuration));
     })
     .AddJsonOptions(options =>
     {
@@ -91,10 +141,10 @@ void ConfigureMiddleware(WebApplication app)
 
     app.UseHttpsRedirection();
 
-    if (webApp)
-    {
-        app.UseStaticFiles();
-    }
+    //if (webApp)
+    //{
+    //    app.UseStaticFiles();
+    //}
 
     app.UseRouting();
     app.UseCors("AllowAll");
@@ -104,4 +154,20 @@ void ConfigureMiddleware(WebApplication app)
     app.MapHealthChecks("/health");
 
     app.MapGet("/", () => "SimpleFFmpegGUI API is running!");
+}
+
+static void MigrateDb()
+{
+    try
+    {
+        FFmpegDbContext.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Log.Error("数据库迁移失败", ex);
+        Console.WriteLine("数据库迁移失败：" + ex);
+        Console.WriteLine("程序终止");
+        Console.ReadKey();
+        Environment.Exit(-1);
+    }
 }

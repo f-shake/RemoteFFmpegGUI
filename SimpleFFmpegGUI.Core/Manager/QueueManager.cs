@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.Model;
 using System;
@@ -10,9 +11,8 @@ using Tasks = System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Manager
 {
-    public class QueueManager
+    public class QueueManager(PowerManager powerManager, IServiceProvider serviceProvider)
     {
-        private readonly FFmpegDbContext db;
         private bool cancelQueue = false;
 
         /// <summary>
@@ -23,12 +23,6 @@ namespace SimpleFFmpegGUI.Manager
         private bool running = false;
         private DateTime? scheduleTime = null;
         private List<FFmpegManager> taskProcessManagers = new List<FFmpegManager>();
-
-        public QueueManager(FFmpegDbContext db, PowerManager powerManager)
-        {
-            this.db = db;
-            PowerManager = powerManager;
-        }
 
         /// <summary>
         /// 任务发生改变
@@ -53,7 +47,7 @@ namespace SimpleFFmpegGUI.Manager
         /// <summary>
         /// 电源性能管理
         /// </summary>
-        public PowerManager PowerManager { get; }
+        public PowerManager PowerManager { get; } = powerManager;
 
         /// <summary>
         /// 独立任务
@@ -139,6 +133,8 @@ namespace SimpleFFmpegGUI.Manager
                 return;
             }
             running = true;
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
             scheduleTime = null;
             Logger.Info("开始队列");
             List<TaskInfo> tasks;
@@ -167,6 +163,8 @@ namespace SimpleFFmpegGUI.Manager
         /// <exception cref="Exception"></exception>
         public async void StartStandalone(int id)
         {
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
             var task = db.Tasks.Find(id) ?? throw new Exception("找不到ID为" + id + "的任务");
             if (task.Status != TaskStatus.Queue)
             {
@@ -217,6 +215,8 @@ namespace SimpleFFmpegGUI.Manager
 
         private async Task ProcessTaskAsync(TaskInfo task, bool main)
         {
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
             FFmpegManager ffmpegManager = new FFmpegManager(task);
 
             task.Status = TaskStatus.Processing;

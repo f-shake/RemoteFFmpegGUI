@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32210.238
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.WPF", "SimpleFFmpegGUI.WPF\SimpleFFmpegGUI.WPF.csproj", "{CD3D63A2-ED0B-4C46-AF94-9FC072321CA5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.Core", "SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj", "{E14A7CCE-9262-4D68-9B62-3A6E73D6A11C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.Host", "SimpleFFmpegGUI.Host\SimpleFFmpegGUI.Host.csproj", "{967603BB-74FB-4E39-9609-11679BD39564}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleFFmpegGUI.WebAPI", "SimpleFFmpegGUI.WebAPI\SimpleFFmpegGUI.WebAPI.csproj", "{3FA65787-B01F-4490-A662-990B7D46B1FE}"
 EndProject
@@ -16,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		build.ps1 = build.ps1
 		clean.ps1 = clean.ps1
+		Directory.Packages.props = Directory.Packages.props
 		ReadMe.md = ReadMe.md
 		日志.md = 日志.md
 	EndProjectSection
@@ -50,14 +49,6 @@ Global
 		{E14A7CCE-9262-4D68-9B62-3A6E73D6A11C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E14A7CCE-9262-4D68-9B62-3A6E73D6A11C}.Release|x64.ActiveCfg = Release|Any CPU
 		{E14A7CCE-9262-4D68-9B62-3A6E73D6A11C}.Release|x64.Build.0 = Release|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Debug|x64.Build.0 = Debug|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Release|Any CPU.Build.0 = Release|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Release|x64.ActiveCfg = Release|Any CPU
-		{967603BB-74FB-4E39-9609-11679BD39564}.Release|x64.Build.0 = Release|Any CPU
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3FA65787-B01F-4490-A662-990B7D46B1FE}.Debug|x64.ActiveCfg = Debug|Any CPU
