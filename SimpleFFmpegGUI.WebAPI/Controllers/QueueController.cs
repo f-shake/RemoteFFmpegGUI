@@ -69,7 +69,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Start")]
         public void Start()
         {
-            queue.StartQueue();
+            _ = queue.StartQueueAsync();
         }
     }
 }

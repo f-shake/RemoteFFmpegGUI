@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.Model;
@@ -6,21 +7,22 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 using Task = System.Threading.Tasks.Task;
 using Tasks = System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Manager
 {
-    public class QueueManager(PowerManager powerManager, IServiceProvider serviceProvider)
+    public class QueueManager(PowerManager powerManager, IDbContextFactory<FFmpegDbContext> dbFactory)
     {
-        private bool cancelQueue = false;
+        private volatile bool cancelQueue = false;
 
         /// <summary>
         /// 用于判断是否为有效计划的队列计划ID
         /// </summary>
         private int currentScheduleID = 0;
 
-        private bool running = false;
+        private int runningFlag = 0;
         private DateTime? scheduleTime = null;
         private List<FFmpegManager> taskProcessManagers = new List<FFmpegManager>();
 
@@ -108,45 +110,55 @@ namespace SimpleFFmpegGUI.Manager
         /// <exception cref="ArgumentException"></exception>
         public async void ScheduleQueue(DateTime time)
         {
-            if (time <= DateTime.Now)
-            {
-                throw new ArgumentException("计划的时间早于当前时间");
-            }
-            currentScheduleID++;
-            scheduleTime = time;
-            int id = currentScheduleID;
-            await Task.Delay(time - DateTime.Now);
-            if (id == currentScheduleID)
-            {
-                StartQueue();
-            }
+            throw new NotImplementedException("准备修改为Timer");
+            //if (time <= DateTime.Now)
+            //{
+            //    throw new ArgumentException("计划的时间早于当前时间");
+            //}
+            //currentScheduleID++;
+            //scheduleTime = time;
+            //int id = currentScheduleID;
+            //await Task.Delay(time - DateTime.Now);
+            //if (id == currentScheduleID)
+            //{
+            //    StartQueue();
+            //}
         }
 
         /// <summary>
         /// 开始队列
         /// </summary>
-        public async void StartQueue()
+        public async Task StartQueueAsync()
         {
-            if (running)
+            if (Interlocked.Exchange(ref runningFlag, 1) == 1)
             {
                 Logger.Warn("队列正在运行，开始队列失败");
                 return;
             }
-            running = true;
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
-            scheduleTime = null;
-            Logger.Info("开始队列");
-            List<TaskInfo> tasks;
-            while (!cancelQueue && await GetQueueTasksQuery(db).AnyAsync())
+            try
             {
-                tasks = await GetQueueTasksQuery(db).OrderBy(p => p.CreateTime).ToListAsync();
+                scheduleTime = null;
+                Logger.Info("开始队列");
+                List<TaskInfo> tasks;
+                while (!cancelQueue)
+                {
+                    using (var db = dbFactory.CreateDbContext())
+                    {
+                        if (!await db.Tasks.IsQueueing().AnyAsync())
+                        {
+                            break;
+                        }
+                        tasks = await db.Tasks.IsQueueing().OrderBy(p => p.CreateTime).ToListAsync();
+                    }
+                    var task = tasks[0];
 
-                var task = tasks[0];
-
-                await ProcessTaskAsync(task, true);
+                    await ProcessTaskAsync(task, true);
+                }
             }
-            running = false;
+            finally
+            {
+                Interlocked.Exchange(ref runningFlag, 0);
+            }
             bool cancelManually = cancelQueue;
             cancelQueue = false;
             Logger.Info("队列完成");
@@ -161,11 +173,14 @@ namespace SimpleFFmpegGUI.Manager
         /// </summary>
         /// <param name="id"></param>
         /// <exception cref="Exception"></exception>
-        public async void StartStandalone(int id)
+        public async Task StartStandaloneAsync(int id)
         {
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
-            var task = db.Tasks.Find(id) ?? throw new Exception("找不到ID为" + id + "的任务");
+            TaskInfo task = null;
+
+            using (var db = dbFactory.CreateDbContext())
+            {
+                task = await db.Tasks.FindAsync(id) ?? throw new Exception("找不到ID为" + id + "的任务");
+            }
             if (task.Status != TaskStatus.Queue)
             {
                 throw new Exception("任务的状态不正确，不可开始任务");
@@ -206,25 +221,28 @@ namespace SimpleFFmpegGUI.Manager
             }
         }
 
-        private IQueryable<TaskInfo> GetQueueTasksQuery(FFmpegDbContext db)
-        {
-            return db.Tasks
-                .Where(p => p.Status == TaskStatus.Queue)
-                .Where(p => !p.IsDeleted);
-        }
+
 
         private async Task ProcessTaskAsync(TaskInfo task, bool main)
         {
-            using var scope = serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<FFmpegDbContext>();
             FFmpegManager ffmpegManager = new FFmpegManager(task);
+            using (var db = dbFactory.CreateDbContext())
+            {
+                var rows = await db.Tasks
+                    .Where(t => t.Id == task.Id && t.Status == TaskStatus.Queue)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(t => t.Status, TaskStatus.Processing)
+                        .SetProperty(t => t.StartTime, DateTime.Now)
+                        .SetProperty(t => t.Message, "")
+                        .SetProperty(t => t.FFmpegArguments, "")
+                    );
 
-            task.Status = TaskStatus.Processing;
-            task.StartTime = DateTime.Now;
-            task.Message = "";
-            task.FFmpegArguments = "";
-            db.Update(task);
-            await db.SaveChangesAsync();
+                if (rows == 0)
+                {
+                    // 被别人抢走了
+                    return;
+                }
+            }
             AddManager(task, ffmpegManager, main);
             try
             {
@@ -245,12 +263,20 @@ namespace SimpleFFmpegGUI.Manager
                     Logger.Warn(task, "任务被取消");
                 }
             }
-            finally
+            using (var db = dbFactory.CreateDbContext())
             {
-                task.FinishTime = DateTime.Now;
+                var thisDbTask = await db.Tasks.FindAsync(task.Id);
+                if (thisDbTask == null)
+                {
+                    Logger.Warn($"找不到数据库中ID为{task.Id}的任务");
+                    return;
+                }
+                thisDbTask.Status = task.Status;
+                thisDbTask.Message = task.Message;
+                thisDbTask.FinishTime = DateTime.Now;
+                db.Update(thisDbTask);
+                await db.SaveChangesAsync();
             }
-            db.Update(task);
-            await db.SaveChangesAsync();
             RemoveManager(task, ffmpegManager, main);
         }
 
@@ -265,6 +291,14 @@ namespace SimpleFFmpegGUI.Manager
                 MainQueueTask = null;
             }
             TaskManagersChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, ffmpegManager));
+        }
+    }
+
+    public static class QueueManagerExtensions
+    {
+        public static IQueryable<TaskInfo> IsQueueing(this DbSet<TaskInfo> tasks)
+        {
+            return tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
         }
     }
 }

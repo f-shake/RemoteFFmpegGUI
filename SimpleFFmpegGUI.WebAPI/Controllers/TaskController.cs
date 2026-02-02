@@ -42,7 +42,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             }
             if (request.Start)
             {
-                queue.StartQueue();
+                _ = queue.StartQueueAsync();
             }
             return ids;
         }
@@ -68,7 +68,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
             if (request.Start)
             {
-                queue.StartQueue();
+                _ = queue.StartQueueAsync();
             }
             return task.Id;
         }
@@ -93,7 +93,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             var task = await taskService.AddTaskAsync(TaskType.Compare, request.Inputs, null, null);
             if (request.Start)
             {
-                queue.StartQueue();
+                _ = queue.StartQueueAsync();
             }
             return task.Id;
         }
@@ -117,7 +117,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             ids.Add(task.Id);
             if (request.Start)
             {
-                queue.StartQueue();
+                _ = queue.StartQueueAsync();
             }
             return ids;
         }
@@ -131,7 +131,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             var task = await taskService.AddTaskAsync(TaskType.Custom, null, null, request.Argument);
             if (request.Start)
             {
-                queue.StartQueue();
+                _ = queue.StartQueueAsync();
             }
             return task.Id;
         }
