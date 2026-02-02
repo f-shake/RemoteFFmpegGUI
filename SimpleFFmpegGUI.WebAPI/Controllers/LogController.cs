@@ -2,18 +2,15 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class LogController : FFmpegControllerBase
+    public class LogController(IConfiguration config, LogManager log) : FFmpegControllerBase(config)
     {
-        public LogController(ILogger<MediaInfoController> Logger,
-            IConfiguration config,
-        PipeClient pipeClient) : base(config) { }
-
         [HttpGet]
         [Route("List")]
         public async Task<PagedListDto<Log>> GetLogs(char? type = null, int taskId = 0, DateTime? from = null, DateTime? to = null, int skip = 0, int take = 0)
@@ -26,7 +23,8 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 to = to.Value.ToLocalTime();
             }
-            var result = await pipeClient.InvokeAsync(p => p.GetLogsAsync(type, taskId, from, to, skip, take));
+
+            var result = await log.GetLogsAsync(type, taskId, from, to, skip, take);
             return result;
         }
     }

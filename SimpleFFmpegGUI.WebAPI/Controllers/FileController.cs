@@ -1,11 +1,9 @@
 ﻿using FzLib.IO;
-using FzLib.Net;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI.Dto;
@@ -72,8 +70,9 @@ public class FileController(IConfiguration config,
     [Route("List/Output")]
     public async Task<List<FileInfoDto>> GetOutputFiles()
     {
-            return [.. Directory.EnumerateFiles(OutputDir).Select(p => new FileInfoDto(p))];
+        return [.. Directory.EnumerateFiles(OutputDir).Select(p => new FileInfoDto(p))];
     }
+
     /// <summary>
     /// 获取FTP状态
     /// </summary>
@@ -83,39 +82,35 @@ public class FileController(IConfiguration config,
     [Route("Ftp/Status")]
     public async Task<FtpStatusDto> GetStatus()
     {
-        var input = ftpInput.Port;
-        var output = ftpOutput.Port;
         var status = new FtpStatusDto()
         {
-            InputOn = ftpInput.
-            OutputOn = output != null,
-            InputPort = input ?? 0,
-            OutputPort = output ?? 0
+            InputOn = ftpInput.IsRunning,
+            OutputOn = ftpOutput.IsRunning,
+            InputPort = ftpInput.Port,
+            OutputPort = ftpOutput.Port
         };
         return status;
     }
 
     [HttpPost]
     [Route("Ftp/Input/On")]
-    public async Task OpenInput()
+    public Task OpenInput()
     {
-        await pipeClient.InvokeAsync(p => p.OpenFtp(1, InputDir, config.GetValue("InputFtpPort", 0)));
+        return ftpInput.StartAsync(InputDir, config.GetValue(AppSettingsKeys.InputFtpPortKey, 0));
     }
+
     [HttpPost]
     [Route("Ftp/Output/On")]
-    public async Task OpenOutput()
+    public Task OpenOutput()
     {
-        await pipeClient.InvokeAsync(p => p.OpenFtp(2, InputDir, config.GetValue("InputFtpPort", 0)));
+        return ftpOutput.StartAsync(OutputDir, config.GetValue(AppSettingsKeys.OutputFtpPortKey, 0));
     }
+
     [HttpPost, HttpOptions]
     [Route("Upload")]
     [DisableRequestSizeLimit]
     public async Task UploadFile([FromQuery] IFormFile file)
     {
-        //if (!CanAccessInputDir())
-        //{
-        //    throw new HttpStatusCodeException("无法访问输入文件夹，请使用其他方式上传");
-        //}
         if (file.Length > 0)
         {
             string name = Path.Combine(InputDir, file.FileName);

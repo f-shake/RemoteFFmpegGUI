@@ -14,40 +14,17 @@ namespace SimpleFFmpegGUI.Services;
 
 public class FtpService : IDisposable
 {
-    private readonly IFtpServerHost ftpServerHost;
+    private IFtpServerHost ftpServerHost;
 
-    private readonly ServiceProvider serviceProvider;
+    private ServiceProvider serviceProvider;
 
-    这里融合，不要单独FTP服务了
-    internal FtpService(string path, int port)
-    {
-        if (port <= 0)
-        {
-            port = FreeTcpPort();
-        }
-        var services = new ServiceCollection();
-
-        services.Configure<DotNetFileSystemOptions>(opt => opt
-            .RootPath = path);
-
-        services.AddFtpServer(builder => builder
-            .UseDotNetFileSystem()
-            .EnableAnonymousAuthentication());
-
-        services.Configure<FtpServerOptions>(opt => opt.Port = port);
-
-        serviceProvider = services.BuildServiceProvider();
-        ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
-        Path = path;
-        Port = port;
-    }
     ~FtpService()
     {
         Dispose();
     }
 
-    public string Path { get; }
-    public int Port { get; }
+    public string Path { get; private set; }
+    public int Port { get; private set; }
 
     public static int FreeTcpPort()
     {
@@ -63,12 +40,29 @@ public class FtpService : IDisposable
         serviceProvider?.Dispose();
     }
 
-    public Task StartAsync()
+    public Task StartAsync(string path, int port)
     {
-        if (ftpServerHost == null)
+        if (ftpServerHost != null)
         {
-            throw new NullReferenceException("请先初始化");
+            throw new InvalidOperationException("Ftp服务已启动");
         }
+        if (port <= 0)
+        {
+            port = FreeTcpPort();
+        }
+        var services = new ServiceCollection();
+
+        services.Configure<DotNetFileSystemOptions>(opt => opt.RootPath = path);
+        services.Configure<FtpServerOptions>(opt => opt.Port = port);
+
+        services.AddFtpServer(builder => builder
+            .UseDotNetFileSystem()
+            .EnableAnonymousAuthentication());
+
+        serviceProvider = services.BuildServiceProvider();
+        ftpServerHost = serviceProvider.GetRequiredService<IFtpServerHost>();
+        Path = path;
+        Port = port;
         return ftpServerHost.StartAsync(CancellationToken.None);
     }
 
@@ -78,15 +72,10 @@ public class FtpService : IDisposable
         {
             throw new NullReferenceException("请先初始化");
         }
-        return ftpServerHost.StopAsync(CancellationToken.None);
+        var server = ftpServerHost;
+        ftpServerHost = null;
+        return server.StopAsync(CancellationToken.None);
     }
 
-    public bool IsRunning()
-    {
-        if (ftpServerHost == null)
-        {
-            throw new NullReferenceException("请先初始化");
-        }
-        return ftpServerHost.;
-    }
+    public bool IsRunning => ftpServerHost != null;
 }

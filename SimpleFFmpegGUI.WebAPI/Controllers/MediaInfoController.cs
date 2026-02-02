@@ -2,25 +2,23 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Model.MediaInfo;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class MediaInfoController : FFmpegControllerBase
+    public class MediaInfoController(IConfiguration config, ConfigManager dbConfig) : FFmpegControllerBase(config)
     {
-        public MediaInfoController(ILogger<MediaInfoController> Logger,
-            IConfiguration config,
-        PipeClient pipeClient) : base(config) { }
-
         [HttpGet]
         public async Task<MediaInfoGeneral> GetAsync(string name)
         {
             CheckNull(name, "文件");
             string path = await CheckAndGetInputFilePathAsync(name);
 
-            var result = await pipeClient.InvokeAsync(p => p.GetInfoAsync(path));
+            var result = await MediaInfoManager.GetMediaInfoAsync(path);
             return result;
         }
 
@@ -31,16 +29,9 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             try
             {
                 videoPath = await CheckAndGetInputFilePathAsync(videoPath);
-                string path = await pipeClient.InvokeAsync(p => p.GetSnapshot(videoPath, seconds));
+                string path = await MediaInfoManager.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds), dbConfig.SnapshotSize);
 
-                if (CanAccessInputDir())
-                {
-                    return PhysicalFile(path, "image/jpeg");
-                }
-                else
-                {
-                    return File(await pipeClient.InvokeAsync(p => p.ReadFiles(path)), "image/jpeg");
-                }
+                return PhysicalFile(path, "image/jpeg");
             }
             catch (Exception ex)
             {

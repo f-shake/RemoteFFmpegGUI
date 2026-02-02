@@ -21,8 +21,8 @@ public class FFmpegControllerBase : ControllerBase
     public FFmpegControllerBase(IConfiguration config)
     {
         this.config = config;
-        InputDir = config.GetValue<string>("InputDir") ?? throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
-        OutputDir = config.GetValue<string>("OutputDir") ?? throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
+        InputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ?? throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
+        OutputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ?? throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
     }
 
     protected async Task<string> CheckAndGetInputFilePathAsync(string name)

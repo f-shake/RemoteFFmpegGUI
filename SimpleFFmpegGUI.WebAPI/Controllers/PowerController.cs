@@ -2,64 +2,61 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Manager;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class PowerController : FFmpegControllerBase
+    public class PowerController(IConfiguration config, QueueManager queue, ConfigManager dbConfig) : FFmpegControllerBase(config)
     {
-        public PowerController(ILogger<MediaInfoController> Logger,
-            IConfiguration config,
-        PipeClient pipeClient) : base(config) { }
-
         [HttpPost]
         [Route("AbortShutdown")]
-        public async Task AbortShutdown()
+        public void AbortShutdown()
         {
-            await pipeClient.InvokeAsync(p => p.AbortShutdown());
+            queue.PowerManager.AbortShutdown();
         }
 
         [HttpGet]
         [Route("CpuCoreUsage")]
-        public async Task<CpuCoreUsageDto[]> GetCpuCoreUsage()
+        public Task<CpuCoreUsageDto[]> GetCpuCoreUsage()
         {
-            return await pipeClient.InvokeAsync(p => p.GetCpuUsage(TimeSpan.FromSeconds(0.1)));
+            return PowerManager.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
         }
 
         [HttpGet]
         [Route("DefaultProcessPriority")]
-        public async Task<int> GetDefaultProcessPriority()
+        public int GetDefaultProcessPriority()
         {
-            return await pipeClient.InvokeAsync(p => p.GetDefaultProcessPriority());
+            return dbConfig.DefaultProcessPriority;
         }
 
         [HttpGet]
         [Route("ShutdownQueue")]
-        public async Task<bool> IsShutdownAfterQueueFinished()
+        public bool IsShutdownAfterQueueFinished()
         {
-            return await pipeClient.InvokeAsync(p => p.IsShutdownAfterQueueFinished());
+            return queue.PowerManager.ShutdownAfterQueueFinished;
         }
 
         [HttpPost]
         [Route("DefaultProcessPriority")]
-        public async Task SetDefaultProcessPriority(int priority)
+        public void SetDefaultProcessPriority(int priority)
         {
-            await pipeClient.InvokeAsync(p => p.SetDefaultProcessPriority(priority));
+            dbConfig.DefaultProcessPriority = priority;
         }
 
         [HttpPost]
         [Route("ShutdownQueue")]
-        public async Task SetShutdownAfterQueueFinished([FromForm] bool on)
+        public void SetShutdownAfterQueueFinished([FromForm] bool on)
         {
-            await pipeClient.InvokeAsync(p => p.SetShutdownAfterQueueFinished(on));
+            queue.PowerManager.ShutdownAfterQueueFinished = true;
         }
 
         [HttpPost]
         [Route("Shutdown")]
         public async Task Shutdown()
         {
-            await pipeClient.InvokeAsync(p => p.Shutdown());
+            queue.PowerManager.Shutdown();
         }
     }
 }

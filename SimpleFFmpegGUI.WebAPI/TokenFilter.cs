@@ -20,7 +20,7 @@ namespace SimpleFFmpegGUI.WebAPI
             }
             var http = context.HttpContext;
 
-            token ??= config.GetValue<string>("token") ?? "";
+            token ??= config.GetValue<string>(AppSettingsKeys.TokenKey) ?? "";
             if (token != "")
             {
                 if (!http.Request.Headers.TryGetValue("Authorization", out StringValues value)
