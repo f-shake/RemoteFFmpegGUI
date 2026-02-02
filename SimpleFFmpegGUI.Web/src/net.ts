@@ -5,11 +5,11 @@ import { Dictionary } from 'vue-router/types/router';
 
 function getUrl(controller: string): string {
         if (process.env.NODE_ENV === 'production') {
-                return `/api/${controller}`;//发布
+                return `api/${controller}`;//发布
         }
         else {
                 // return `http://autodotua.top:12316/api/${controller}`;//发布API调试
-                return `https://localhost:44305/${controller}`;//调试
+                return `http://localhost:5001/${controller}`;//调试
         }
 }
 
@@ -214,14 +214,14 @@ export function getFormats(): Promise<AxiosResponse<any>> {
 }
 
 export function setHeader(): void {
-        Vue.axios.defaults.headers.common['Authorization'] = Cookies.get("token");
+        Vue.axios.defaults.headers.common['Authorization'] = `Bearer ${Cookies.get("token")}`;
 }
 
 export function getHeader(): any {
         if (Cookies.get("token") == null) {
                 return {}
         }
-        return { "Authorization": Cookies.get("token") };
+        return { "Authorization": `Bearer ${Cookies.get("token")}` };
 }
 
 export function getNeedToken(): Promise<AxiosResponse<any>> {

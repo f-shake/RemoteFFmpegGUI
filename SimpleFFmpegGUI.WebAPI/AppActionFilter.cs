@@ -2,33 +2,20 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
+using NGettext.Plural.Ast;
+using SimpleFFmpegGUI.WebAPI.Controllers;
+using System.Linq;
 
 namespace SimpleFFmpegGUI.WebAPI
 {
-    public class ExceptionActionFilter(IConfiguration config) : IActionFilter
+    public class AppActionFilter : IActionFilter
     {
-        private readonly IConfiguration config = config;
+        private readonly string token;
 
-        public void OnActionExecuting(ActionExecutingContext context)
+        public AppActionFilter(IConfiguration config)
         {
-#if !DEBUG
-        var token = config["Token"];
-        if (context.HttpContext.Request.Method is not ("GET" or "OPTION") && !string.IsNullOrEmpty(token))
-        {
-            var headers = context.HttpContext.Request.Headers;
-            if (headers.ContainsKey("Authorization"))
-            {
-                if (headers["Authorization"] != token)
-                {
-                    context.Result = new UnauthorizedObjectResult("登陆密钥不正确");
-                }
-            }
-            else
-            {
-                context.Result = new UnauthorizedObjectResult("敏感操作，未登录");
-            }
-        }
-#endif
+            token ??= config.GetValue<string>(AppSettingsKeys.TokenKey) ?? "";
         }
 
         public void OnActionExecuted(ActionExecutedContext context)
@@ -55,6 +42,30 @@ namespace SimpleFFmpegGUI.WebAPI
                         context.ExceptionHandled = true;
                     }
                     context.ExceptionHandled = true;
+                }
+            }
+        }
+
+        public void OnActionExecuting(ActionExecutingContext context)
+        {
+            if (context.Controller is TokenController)
+            {
+                return;
+            }
+
+            if (token != "")
+            {
+                if (!context.HttpContext.Request.Headers.TryGetValue("Authorization", out StringValues value)
+                    || StringValues.IsNullOrEmpty(value)
+                    || value.FirstOrDefault() == "undefined")
+                {
+                    context.Result = new UnauthorizedObjectResult("需要Token");
+                    return;
+                }
+                if (value != $"Bearer {token}")
+                {
+                    context.Result = new UnauthorizedObjectResult("Token不正确");
+                    return;
                 }
             }
         }

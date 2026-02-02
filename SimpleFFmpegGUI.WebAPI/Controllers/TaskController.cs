@@ -34,6 +34,8 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 var file = request.Inputs[i];
                 //检查输入文件存在
+
+
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
                 var task = await taskService.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i), request.Argument);
                 ids.Add(task.Id);

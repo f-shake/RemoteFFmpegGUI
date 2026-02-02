@@ -44,7 +44,7 @@ public class FFmpegControllerBase : ControllerBase
         else
         {
             string path = Path.Combine(InputDir, name);
-            if (System.IO.File.Exists(path))
+            if (!System.IO.File.Exists(path))
             {
                 throw new HttpStatusCodeException($"不存在文件{path}", System.Net.HttpStatusCode.NotFound);
             }

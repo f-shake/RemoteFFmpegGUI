@@ -17,8 +17,8 @@
 
   <!--指定bin目录和obj目录位置-->
   <PropertyGroup Condition="'$(SpecialOutputDir)' == 'true'">
-    <OutputPath>$(OutputDir)\$(SolutionName)\bin\$(Configuration)\$(MSBuildProjectName)</OutputPath>
-    <BaseIntermediateOutputPath>$(OutputDir)\$(SolutionName)\obj\$(Configuration)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>$(OutputDir)\bin\$(Configuration)\$(MSBuildProjectName)</OutputPath>
+    <BaseIntermediateOutputPath>$(OutputDir)\obj\$(Configuration)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <!--使用本地FzLib--><!--

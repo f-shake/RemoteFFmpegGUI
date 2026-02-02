@@ -92,7 +92,7 @@ void ConfigureServices(WebApplicationBuilder builder)
     // Ìí¼Ó¿ØÖÆÆ÷
     builder.Services.AddControllers(options =>
     {
-        options.Filters.Add(new TokenFilter(builder.Configuration));
+        options.Filters.Add<AppActionFilter>();
     })
     .AddJsonOptions(options =>
     {
