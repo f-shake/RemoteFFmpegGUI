@@ -1,22 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Manager
 {
-    public class LogManager
+    public class LogManager(FFmpegDbContext db, DbLoggerService logger)
     {
-        private readonly FFmpegDbContext db;
-
-        public LogManager(FFmpegDbContext db)
-        {
-            this.db = db;
-        }
-
         public async Task<PagedListDto<Log>> GetLogsAsync(char? type = null,
             int taskId = 0,
             DateTime? from = null,
@@ -24,7 +17,7 @@ namespace SimpleFFmpegGUI.Manager
             int skip = 0,
             int take = 0)
         {
-            await DbLogger.SaveAllAsync();
+            await logger.SaveAllAsync();
 
             IQueryable<Log> logs = db.Logs;
             if (type.HasValue)

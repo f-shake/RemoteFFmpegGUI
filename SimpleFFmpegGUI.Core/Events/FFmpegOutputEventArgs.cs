@@ -1,4 +1,4 @@
-﻿namespace SimpleFFmpegGUI.Manager
+﻿namespace SimpleFFmpegGUI.Events
 {
     public class FFmpegOutputEventArgs
     {

@@ -6,8 +6,10 @@ using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Converters;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
@@ -60,7 +62,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(OutputText), nameof(IOText))]
         private string output;
 
-        private FFmpegManager processManager;
+        private FFmpegTaskServiceFactory processManager;
 
         [ObservableProperty]
         private int processPriority = App.ServiceProvider.GetRequiredService<ConfigManager>().DefaultProcessPriority;
@@ -186,7 +188,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         public double Percent => ProcessStatus == null || ProcessStatus.HasDetail == false ? 0 : ProcessStatus.Progress.Percent;
-        public FFmpegManager ProcessManager
+        public FFmpegTaskServiceFactory ProcessManager
         {
             get => processManager;
             set

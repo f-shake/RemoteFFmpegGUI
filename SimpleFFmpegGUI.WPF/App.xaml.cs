@@ -17,10 +17,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using static SimpleFFmpegGUI.DependencyInjectionExtension;
+using static SimpleFFmpegGUI.Services.DependencyInjectionExtension;
 using System.Windows.Interop;
 using FFMpegCore;
 using SimpleFFmpegGUI.Logging;
+using SimpleFFmpegGUI.Services;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
 

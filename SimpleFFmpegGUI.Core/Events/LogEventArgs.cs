@@ -1,7 +1,7 @@
 ﻿using SimpleFFmpegGUI.Model;
 using System;
 
-namespace SimpleFFmpegGUI.Logging
+namespace SimpleFFmpegGUI.Events
 {
     public class LogEventArgs : EventArgs
     {

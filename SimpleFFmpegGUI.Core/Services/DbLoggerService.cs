@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SimpleFFmpegGUI.Logging;
+using Microsoft.Extensions.Hosting;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Concurrent;
@@ -10,38 +11,43 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Services
 {
-    public class DbLoggerService: BackgroundService
+    public class DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory) : BackgroundService
     {
-        private static readonly object lockObj = new();
-
-        private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
-
         private ConcurrentBag<Log> queueLogs = new ConcurrentBag<Log>();
 
         private int saving = 0;
 
-        private Task timerTask;
-
-        public DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory)
-        {
-            lock (lockObj)
-            {
-                if (Instance != null)
-                {
-                    throw new InvalidOperationException("DbLoggerService只能有一个实例");
-                }
-
-                Instance = this;
-            }
-            this.dbFactory = dbFactory;
-            StartTimer();
-        }
+        private PeriodicTimer timer;
 
         public event EventHandler<LogEventArgs> Log;
 
         public event EventHandler<ExceptionEventArgs> LogSaveFailed;
 
-        internal static DbLoggerService Instance { get; private set; }
+        public void Error(string message)
+        {
+            AddLog('E', message);
+        }
+
+        public void Error(TaskInfo task, string message)
+        {
+            AddLog('E', message, task);
+        }
+
+        public void Info(TaskInfo task, string message)
+        {
+            AddLog('I', message, task);
+        }
+
+        public void Info(string message)
+        {
+            AddLog('I', message);
+        }
+
+        public void Output(TaskInfo task, string message)
+        {
+            AddLog('O', message, task);
+        }
+
         public async Task SaveAllAsync()
         {
             if (Interlocked.Exchange(ref saving, 1) == 1)
@@ -72,22 +78,40 @@ namespace SimpleFFmpegGUI.Services
             }
         }
 
-        internal void AddLog(Log log)
+        public void Warn(string message)
         {
-            queueLogs.Add(log);
+            AddLog('W', message);
         }
-        private async Task RunTimerAsync()
+
+        public void Warn(TaskInfo task, string message)
         {
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
-            while (await timer.WaitForNextTickAsync())
+            AddLog('W', message, task);
+        }
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+            while (await timer.WaitForNextTickAsync(stoppingToken))
             {
                 await SaveAllAsync();
             }
         }
 
-        private void StartTimer()
+        private void AddLog(char type, string message, TaskInfo task = null)
         {
-            timerTask = RunTimerAsync();
+            Log log = new Log()
+            {
+                Time = DateTime.Now,
+                Type = type,
+                Message = message,
+                TaskId = task?.Id
+            };
+            Log?.Invoke(null, new LogEventArgs(log));
+            AddLog(log);
+            Debug.WriteLine($"[{type}] {message}");
+        }
+        private void AddLog(Log log)
+        {
+            queueLogs.Add(log);
         }
     }
 }

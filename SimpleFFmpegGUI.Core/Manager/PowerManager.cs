@@ -1,7 +1,7 @@
 ﻿using FzLib.Application;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Logging;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,7 +14,7 @@ namespace SimpleFFmpegGUI.Manager
     /// <summary>
     /// 计算机电源管理，控制关机
     /// </summary>
-    public class PowerManager( )
+    public class PowerManager(DbLoggerService logger)
     {
         private static readonly string abortShutdownCommand = "-a";
         private static readonly string shutdownCommand = $"-s -t 180 -c \"{ApplicationInfo.ProgramName}\"";
@@ -26,14 +26,14 @@ namespace SimpleFFmpegGUI.Manager
             set
             {
                 shutdownAfterQueueFinished = value;
-                DbLogger.Info("收到队列结束后自动关机命令：" + value.ToString());
+                logger.Info("收到队列结束后自动关机命令：" + value.ToString());
             }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:验证平台兼容性", Justification = "<挂起>")]
-        public static async Task<CpuCoreUsageDto[]> GetCpuUsageAsync(TimeSpan sampleSpan=default,Task task=default)
+        public static async Task<CpuCoreUsageDto[]> GetCpuUsageAsync(TimeSpan sampleSpan = default, Task task = default)
         {
-            if(sampleSpan ==default && task==default)
+            if (sampleSpan == default && task == default)
             {
                 throw new ArgumentException("至少提供一个参数");
             }
@@ -106,13 +106,13 @@ namespace SimpleFFmpegGUI.Manager
 
         public void AbortShutdown()
         {
-            DbLogger.Warn("收到终止关机命令");
+            logger.Warn("收到终止关机命令");
             Shutdown(false);
         }
 
         public void Shutdown()
         {
-            DbLogger.Warn("收到关机命令");
+            logger.Warn("收到关机命令");
             Shutdown(true);
         }
 

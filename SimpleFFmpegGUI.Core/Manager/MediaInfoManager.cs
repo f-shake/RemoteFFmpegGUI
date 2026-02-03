@@ -5,6 +5,7 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -51,7 +52,7 @@ namespace SimpleFFmpegGUI.Manager
                 "-max_muxing_queue_size 2 " +                // 限制缓存
                 $"\"{tempPath}\"";
 
-            FFmpegProcess process = new FFmpegProcess(args);
+            FFmpegProcessService process = new FFmpegProcessService(args);
             await process.StartAsync(null, null);
 
             return tempPath;

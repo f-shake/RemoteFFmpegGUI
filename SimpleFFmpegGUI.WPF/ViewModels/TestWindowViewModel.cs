@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private int qCMode;
 
-        private FFmpegManager runningFFmpeg = null;
+        private FFmpegTaskServiceFactory runningFFmpeg = null;
 
         private bool stopping = false;
 

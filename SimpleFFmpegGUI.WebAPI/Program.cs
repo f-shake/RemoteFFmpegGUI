@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi;
 using Serilog;
 using SimpleFFmpegGUI;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;

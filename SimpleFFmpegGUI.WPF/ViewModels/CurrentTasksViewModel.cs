@@ -16,6 +16,7 @@ using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using SimpleFFmpegGUI.WPF.Messages;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -73,7 +74,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         private void Manager_StatusChanged(object sender, EventArgs e)
         {
-            var manager = sender as FFmpegManager;
+            var manager = sender as FFmpegTaskServiceFactory;
             var newStatus = manager.GetStatus();
 
             var task = Tasks.FirstOrDefault(p => p.Id == newStatus.Task.Id);
@@ -108,7 +109,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)//新增任务
             {
-                var manager = e.NewItems[0] as FFmpegManager;
+                var manager = e.NewItems[0] as FFmpegTaskServiceFactory;
                 var unstartStatus = new StatusDto(manager.Task); //先放入一个StatusDto进行占位，因为此时Status还未生成
 
                 var task = Tasks.FirstOrDefault(p => p.Id == manager.Task.Id);//找到对应的TaskInfoViewModel
@@ -128,7 +129,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
             else
             {
-                var manager = e.OldItems[0] as FFmpegManager;
+                var manager = e.OldItems[0] as FFmpegTaskServiceFactory;
                 var status = Statuses.FirstOrDefault(p => p.Task.Id == manager.Task.Id);
                 Debug.Assert(status != null);
 

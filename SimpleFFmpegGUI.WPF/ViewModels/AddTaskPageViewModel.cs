@@ -22,6 +22,7 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using System.Text;
 using Mapster;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -120,7 +121,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 if (Type is TaskType.Code)
                 {
-                    FFmpegManager.TestOutputArguments(args);
+                    FFmpegTaskServiceFactory.TestOutputArguments(args);
                 }
             }
             catch (FFmpegArgumentException ex)
@@ -216,7 +217,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 if (Type is TaskType.Code)
                 {
-                    FFmpegManager.TestOutputArguments(args);
+                    FFmpegTaskServiceFactory.TestOutputArguments(args);
                 }
             }
             catch (FFmpegArgumentException ex)
@@ -285,7 +286,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             try
             {
                 OutputArguments args = CodeArgumentsViewModel.GetArguments();
-                await CommonDialog.ShowOkDialogAsync("输出参数", FFmpegManager.TestOutputArguments(args));
+                await CommonDialog.ShowOkDialogAsync("输出参数", FFmpegTaskServiceFactory.TestOutputArguments(args));
             }
             catch (Exception ex)
             {
