@@ -1,6 +1,5 @@
 ﻿using FFMpegCore.Arguments;
 using FFMpegCore.Enums;
-using FzLib.DataAnalysis;
 using SimpleFFmpegGUI.FFmpegArgument;
 using System.Collections;
 using System.Collections.Generic;

@@ -16,6 +16,7 @@
     <None Remove="obj\**" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="FzLib" />
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
@@ -24,10 +25,5 @@
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
     <PackageReference Include="FubarDev.FtpServer" />
     <PackageReference Include="FubarDev.FtpServer.FileSystem.DotNet" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="FzStandardLib">
-      <HintPath>..\libs\FzStandardLib.dll</HintPath>
-    </Reference>
   </ItemGroup>
 </Project>

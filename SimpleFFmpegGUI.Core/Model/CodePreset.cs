@@ -1,4 +1,5 @@
 ﻿using FzLib;
+using FzLib.Programming;
 using System.ComponentModel;
 
 namespace SimpleFFmpegGUI.Model

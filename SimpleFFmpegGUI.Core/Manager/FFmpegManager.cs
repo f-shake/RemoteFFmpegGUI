@@ -1,7 +1,6 @@
 ﻿using FFMpegCore;
 using FzLib;
 using FzLib.IO;
-using FzLib.Program;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.FFmpegLib;
@@ -19,6 +18,8 @@ using static SimpleFFmpegGUI.FileSystemUtility;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using FzLib.Programming;
+using FzLib.Application;
 
 namespace SimpleFFmpegGUI.Manager
 {
@@ -579,7 +580,7 @@ namespace SimpleFFmpegGUI.Manager
             }
             Progress = GetProgress(true);
             string argument = "-lavfi \"ssim;[0:v][1:v]psnr\" -f null -";
-            string vmafModel = Directory.EnumerateFiles(App.ProgramDirectoryPath, "vmaf*.json").FirstOrDefault();
+            string vmafModel = Directory.EnumerateFiles(ApplicationInfo.ProgramDirectoryPath, "vmaf*.json").FirstOrDefault();
             if (vmafModel != null)
             {
                 vmafModel = Path.GetFileName(vmafModel);

@@ -6,6 +6,7 @@ using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Task = System.Threading.Tasks.Task;
@@ -13,19 +14,30 @@ using Tasks = System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Manager
 {
-    public class QueueManager(PowerManager powerManager, IDbContextFactory<FFmpegDbContext> dbFactory)
+    public static class QueueManagerExtensions
     {
-        private volatile bool cancelQueue = false;
+        public static IQueryable<TaskInfo> IsQueueing(this DbSet<TaskInfo> tasks)
+        {
+            return tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
+        }
+    }
 
-        /// <summary>
-        /// 用于判断是否为有效计划的队列计划ID
-        /// </summary>
-        private int currentScheduleID = 0;
+    public class QueueManager
+    {
+        private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
+        private volatile bool cancelQueue = false;
+        private Timer queueTimer;  // 定时器
+
 
         private int runningFlag = 0;
         private DateTime? scheduleTime = null;
         private List<FFmpegManager> taskProcessManagers = new List<FFmpegManager>();
-
+        public QueueManager(PowerManager powerManager, IDbContextFactory<FFmpegDbContext> dbFactory)
+        {
+            this.dbFactory = dbFactory;
+            PowerManager = powerManager;
+            queueTimer = new Timer(QueueTimerCallback, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+        }
         /// <summary>
         /// 任务发生改变
         /// </summary>
@@ -49,7 +61,7 @@ namespace SimpleFFmpegGUI.Manager
         /// <summary>
         /// 电源性能管理
         /// </summary>
-        public PowerManager PowerManager { get; } = powerManager;
+        public PowerManager PowerManager { get; }
 
         /// <summary>
         /// 独立任务
@@ -88,7 +100,6 @@ namespace SimpleFFmpegGUI.Manager
         /// </summary>
         public void CancelQueueSchedule()
         {
-            currentScheduleID++;
             scheduleTime = null;
         }
 
@@ -108,21 +119,9 @@ namespace SimpleFFmpegGUI.Manager
         /// </summary>
         /// <param name="time"></param>
         /// <exception cref="ArgumentException"></exception>
-        public async void ScheduleQueue(DateTime time)
+        public void ScheduleQueue(DateTime time)
         {
-            throw new NotImplementedException("准备修改为Timer");
-            //if (time <= DateTime.Now)
-            //{
-            //    throw new ArgumentException("计划的时间早于当前时间");
-            //}
-            //currentScheduleID++;
-            //scheduleTime = time;
-            //int id = currentScheduleID;
-            //await Task.Delay(time - DateTime.Now);
-            //if (id == currentScheduleID)
-            //{
-            //    StartQueue();
-            //}
+            scheduleTime = time;
         }
 
         /// <summary>
@@ -139,19 +138,18 @@ namespace SimpleFFmpegGUI.Manager
             {
                 scheduleTime = null;
                 Logger.Info("开始队列");
-                List<TaskInfo> tasks;
                 while (!cancelQueue)
                 {
+                    TaskInfo task;
                     using (var db = dbFactory.CreateDbContext())
                     {
                         if (!await db.Tasks.IsQueueing().AnyAsync())
                         {
                             break;
                         }
-                        tasks = await db.Tasks.IsQueueing().OrderBy(p => p.CreateTime).ToListAsync();
+                        task = await db.Tasks.IsQueueing().OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
                     }
-                    var task = tasks[0];
-
+                    Debug.Assert(task != null, "task != null");
                     await ProcessTaskAsync(task, true);
                 }
             }
@@ -221,8 +219,6 @@ namespace SimpleFFmpegGUI.Manager
             }
         }
 
-
-
         private async Task ProcessTaskAsync(TaskInfo task, bool main)
         {
             FFmpegManager ffmpegManager = new FFmpegManager(task);
@@ -280,6 +276,14 @@ namespace SimpleFFmpegGUI.Manager
             RemoveManager(task, ffmpegManager, main);
         }
 
+        private void QueueTimerCallback(object state)
+        {
+            // 如果当前的计划ID有效，则开始执行队列任务
+            if (scheduleTime != null && scheduleTime < DateTime.Now)
+            {
+                _ = StartQueueAsync();
+            }
+        }
         private void RemoveManager(TaskInfo task, FFmpegManager ffmpegManager, bool main)
         {
             if (!taskProcessManagers.Remove(ffmpegManager))
@@ -291,14 +295,6 @@ namespace SimpleFFmpegGUI.Manager
                 MainQueueTask = null;
             }
             TaskManagersChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, ffmpegManager));
-        }
-    }
-
-    public static class QueueManagerExtensions
-    {
-        public static IQueryable<TaskInfo> IsQueueing(this DbSet<TaskInfo> tasks)
-        {
-            return tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
         }
     }
 }

@@ -127,7 +127,7 @@ namespace SimpleFFmpegGUI
             }
 
             //获取非重复文件名
-            task.RealOutput = FileSystem.GetNoDuplicateFile(output);
+            task.RealOutput = FileNameHelper.GenerateUniquePath(output,new HashSet<string>());
 
             //创建目录
             if (!new FileInfo(task.RealOutput).Directory.Exists)

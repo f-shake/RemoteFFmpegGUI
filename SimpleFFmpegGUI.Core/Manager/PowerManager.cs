@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using FzLib.Application;
+using Mapster;
 using SimpleFFmpegGUI.Dto;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace SimpleFFmpegGUI.Manager
     public class PowerManager( )
     {
         private static readonly string abortShutdownCommand = "-a";
-        private static readonly string shutdownCommand = $"-s -t 180 -c \"{FzLib.Program.App.ProgramName}\"";
+        private static readonly string shutdownCommand = $"-s -t 180 -c \"{ApplicationInfo.ProgramName}\"";
         private bool shutdownAfterQueueFinished = false;
 
         public bool ShutdownAfterQueueFinished

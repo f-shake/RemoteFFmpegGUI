@@ -1,4 +1,5 @@
-﻿using SimpleFFmpegGUI.Model;
+﻿using FzLib.Application;
+using SimpleFFmpegGUI.Model;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -28,7 +29,7 @@ namespace SimpleFFmpegGUI.Manager
         public FFmpegProcess(string argument) : this()
         {
             string ffmpeg = "ffmpeg";
-            string fileFFmpeg = Path.Combine(FzLib.Program.App.ProgramDirectoryPath, "ffmpeg", "ffmpeg.exe");
+            string fileFFmpeg = Path.Combine(ApplicationInfo.ProgramDirectoryPath, "ffmpeg", "ffmpeg.exe");
             if (File.Exists(fileFFmpeg))
             {
                 ffmpeg = fileFFmpeg;
