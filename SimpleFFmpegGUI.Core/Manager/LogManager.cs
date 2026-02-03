@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace SimpleFFmpegGUI.Manager
             int skip = 0,
             int take = 0)
         {
-            await Logger.SaveAllAsync();
+            await DbLogger.SaveAllAsync();
 
             IQueryable<Log> logs = db.Logs;
             if (type.HasValue)

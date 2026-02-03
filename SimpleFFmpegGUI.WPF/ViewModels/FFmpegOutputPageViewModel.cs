@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Input;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.ObjectModel;
@@ -11,7 +12,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
     {
         public FFmpegOutputPageViewModel()
         {
-            Logger.Log += Logger_Log;
+            DbLogger.Log += Logger_Log;
         }
         public ObservableCollection<Log> Outputs { get; } = new ObservableCollection<Log>();
 

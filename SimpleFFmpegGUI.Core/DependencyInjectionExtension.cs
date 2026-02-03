@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI
 {
@@ -15,7 +17,9 @@ namespace SimpleFFmpegGUI
                 .AddTransient<PresetManager>()
                 .AddTransient<TaskManager>()
                 .AddTransient<PowerManager>()
-                .AddSingleton<QueueManager>();
+                .AddSingleton<QueueManager>()
+                .AddSingleton<DbLoggerService>();
+
         }
     }
 }

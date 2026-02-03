@@ -20,6 +20,7 @@ using System.Windows;
 using static SimpleFFmpegGUI.DependencyInjectionExtension;
 using System.Windows.Interop;
 using FFMpegCore;
+using SimpleFFmpegGUI.Logging;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
 
@@ -139,8 +140,8 @@ namespace SimpleFFmpegGUI.WPF
             AppLog.Info("程序启动");
 
             //数据库日志
-            Logger.Log += Logger_Log;
-            Logger.LogSaveFailed += Logger_LogSaveFailed;
+            DbLogger.Log += Logger_Log;
+            DbLogger.LogSaveFailed += Logger_LogSaveFailed;
             void Logger_Log(object sender, LogEventArgs e)
             {
                 switch (e.Log.Type)
@@ -177,7 +178,7 @@ namespace SimpleFFmpegGUI.WPF
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            Logger.SaveAll();
+            DbLogger.SaveAll();
         }
     }
 }

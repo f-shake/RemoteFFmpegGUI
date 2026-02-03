@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Generic;
@@ -47,7 +48,7 @@ namespace SimpleFFmpegGUI.Manager
             };
             db.Tasks.Add(task);
             await db.SaveChangesAsync();
-            Logger.Info(task, "新建任务");
+            DbLogger.Info(task, "新建任务");
             return task;
         }
 

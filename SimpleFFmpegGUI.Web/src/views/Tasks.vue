@@ -18,6 +18,7 @@
 
         <el-button
           v-if="isProcessing == false && hasSchedule == false"
+          :disabled="scheduleTime == null || scheduleTime == ''"
           type="secondary"
           @click="schedule"
           class="right24"
@@ -325,6 +326,11 @@ export default Vue.extend({
   methods: {
     jump,
     schedule(item: any) {
+      if (this.scheduleTime == null || this.scheduleTime == "") {
+        showError("请选择计划时间");
+        return;
+      }
+      
       net
         .postSchedule(this.scheduleTime)
         .then((r) => {

@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.FFmpegArgument;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Generic;
@@ -9,8 +11,10 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
 using Tasks = System.Threading.Tasks;
+using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.Manager
 {
@@ -127,17 +131,30 @@ namespace SimpleFFmpegGUI.Manager
         /// <summary>
         /// 开始队列
         /// </summary>
-        public async Task StartQueueAsync()
+        public void StartQueue()
         {
+            RunQueueAsync()
+            .ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                {
+                    DbLogger.Error($"队列运行错误：{t.Exception}");
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        public async Task RunQueueAsync()
+        {
+            throw new NotImplementedException("test");
             if (Interlocked.Exchange(ref runningFlag, 1) == 1)
             {
-                Logger.Warn("队列正在运行，开始队列失败");
+                DbLogger.Warn("队列正在运行，开始队列失败");
                 return;
             }
             try
             {
                 scheduleTime = null;
-                Logger.Info("开始队列");
+                DbLogger.Info("开始队列");
                 while (!cancelQueue)
                 {
                     TaskInfo task;
@@ -159,11 +176,22 @@ namespace SimpleFFmpegGUI.Manager
             }
             bool cancelManually = cancelQueue;
             cancelQueue = false;
-            Logger.Info("队列完成");
+            DbLogger.Info("队列完成");
             if (!cancelManually && PowerManager.ShutdownAfterQueueFinished)
             {
                 PowerManager.Shutdown();
             }
+        }
+        public void StartStandalone(int id)
+        {
+            RunStandaloneAsync(id)
+            .ContinueWith(t =>
+            {
+                if (t.Exception != null)
+                {
+                    DbLogger.Error($"独立运行{id}错误：{t.Exception}");
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <summary>
@@ -171,7 +199,7 @@ namespace SimpleFFmpegGUI.Manager
         /// </summary>
         /// <param name="id"></param>
         /// <exception cref="Exception"></exception>
-        public async Task StartStandaloneAsync(int id)
+        public async Task RunStandaloneAsync(int id)
         {
             TaskInfo task = null;
 
@@ -187,9 +215,9 @@ namespace SimpleFFmpegGUI.Manager
             {
                 throw new Exception("任务正在进行中，但状态不是正在处理中");
             }
-            Logger.Info(task, "开始独立任务");
+            DbLogger.Info(task, "开始独立任务");
             await ProcessTaskAsync(task, false);
-            Logger.Info(task, "独立任务完成");
+            DbLogger.Info(task, "独立任务完成");
         }
 
         /// <summary>
@@ -249,14 +277,14 @@ namespace SimpleFFmpegGUI.Manager
             {
                 if (task.Status != TaskStatus.Cancel)
                 {
-                    Logger.Error(task, "运行错误：" + ex.ToString());
+                    DbLogger.Error(task, "运行错误：" + ex.ToString());
                     task.Status = TaskStatus.Error;
                     task.Message = ex is FFmpegArgumentException ?
                         ex.Message : await ffmpegManager.GetErrorMessageAsync() ?? ex.Message;
                 }
                 else
                 {
-                    Logger.Warn(task, "任务被取消");
+                    DbLogger.Warn(task, "任务被取消");
                 }
             }
             using (var db = dbFactory.CreateDbContext())
@@ -264,7 +292,7 @@ namespace SimpleFFmpegGUI.Manager
                 var thisDbTask = await db.Tasks.FindAsync(task.Id);
                 if (thisDbTask == null)
                 {
-                    Logger.Warn($"找不到数据库中ID为{task.Id}的任务");
+                    DbLogger.Warn($"找不到数据库中ID为{task.Id}的任务");
                     return;
                 }
                 thisDbTask.Status = task.Status;
@@ -281,7 +309,7 @@ namespace SimpleFFmpegGUI.Manager
             // 如果当前的计划ID有效，则开始执行队列任务
             if (scheduleTime != null && scheduleTime < DateTime.Now)
             {
-                _ = StartQueueAsync();
+                StartQueue();
             }
         }
         private void RemoveManager(TaskInfo task, FFmpegManager ffmpegManager, bool main)

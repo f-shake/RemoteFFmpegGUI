@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi;
 using Serilog;
 using SimpleFFmpegGUI;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
@@ -52,8 +53,8 @@ static void InitializeLogs()
     Log.Information("程序启动");
 
     //数据库日志
-    Logger.Log += Logger_Log;
-    Logger.LogSaveFailed += Logger_LogSaveFailed;
+    DbLogger.Log += Logger_Log;
+    DbLogger.LogSaveFailed += Logger_LogSaveFailed;
     void Logger_Log(object sender, LogEventArgs e)
     {
         switch (e.Log.Type)

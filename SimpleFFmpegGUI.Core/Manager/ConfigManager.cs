@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Generic;
@@ -47,7 +48,7 @@ namespace SimpleFFmpegGUI.Manager
             T value = Parse<T>(item.Value);
             cache.Add(key, value);
 
-            Logger.Info($"读取配置：[{key}]={value}");
+            DbLogger.Info($"读取配置：[{key}]={value}");
             return value;
         }
         public void SetConfig<T>(string key, T value)
@@ -74,7 +75,7 @@ namespace SimpleFFmpegGUI.Manager
 
             db.SaveChanges();
 
-            Logger.Info($"写入配置：[{key}]={value}");
+            DbLogger.Info($"写入配置：[{key}]={value}");
         }
 
         private static string GetString<T>(T data)

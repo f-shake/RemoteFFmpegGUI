@@ -1,6 +1,7 @@
 ﻿using FzLib.Application;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +26,7 @@ namespace SimpleFFmpegGUI.Manager
             set
             {
                 shutdownAfterQueueFinished = value;
-                Logger.Info("收到队列结束后自动关机命令：" + value.ToString());
+                DbLogger.Info("收到队列结束后自动关机命令：" + value.ToString());
             }
         }
 
@@ -105,13 +106,13 @@ namespace SimpleFFmpegGUI.Manager
 
         public void AbortShutdown()
         {
-            Logger.Warn("收到终止关机命令");
+            DbLogger.Warn("收到终止关机命令");
             Shutdown(false);
         }
 
         public void Shutdown()
         {
-            Logger.Warn("收到关机命令");
+            DbLogger.Warn("收到关机命令");
             Shutdown(true);
         }
 
