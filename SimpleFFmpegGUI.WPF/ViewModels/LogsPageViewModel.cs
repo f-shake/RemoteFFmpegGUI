@@ -2,8 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Mapster;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class LogsPageViewModel : ViewModelBase
     {
-        private readonly LogManager logManager;
+        private readonly LogRepository logManager;
 
         [ObservableProperty]
         private DateTime from = DateTime.Now.AddDays(-1);
@@ -36,7 +36,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private int typeIndex;
 
-        public LogsPageViewModel(TaskManager taskManager, LogManager logManager)
+        public LogsPageViewModel(TaskRepository taskManager, LogRepository logManager)
         {
             taskManager.GetTasksAsync(take: 20).ContinueWith(data =>
               {

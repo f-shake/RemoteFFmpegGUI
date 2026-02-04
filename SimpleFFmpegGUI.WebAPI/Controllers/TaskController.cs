@@ -6,8 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI.Dto;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class TaskController(IConfiguration config, TaskManager taskService, QueueManager queue) : FFmpegControllerBase(config)
+    public class TaskController(IConfiguration config, TaskRepository taskService, QueueService queue) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("Add/Code")]

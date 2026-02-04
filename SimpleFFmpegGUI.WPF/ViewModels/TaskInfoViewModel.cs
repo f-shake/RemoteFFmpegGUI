@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Converters;
 using SimpleFFmpegGUI.WPF.Messages;
@@ -65,7 +65,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private FFmpegTaskServiceFactory processManager;
 
         [ObservableProperty]
-        private int processPriority = App.ServiceProvider.GetRequiredService<ConfigManager>().DefaultProcessPriority;
+        private int processPriority = App.ServiceProvider.GetRequiredService<DbConfigService>().DefaultProcessPriority;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Percent), nameof(Status), nameof(StatusText), nameof(IsIndeterminate))]
@@ -222,7 +222,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public Task<TaskInfo> GetTaskAsync()
         {
-            return App.ServiceProvider.GetRequiredService<TaskManager>().GetTaskAsync(Id);
+            return App.ServiceProvider.GetRequiredService<TaskRepository>().GetTaskAsync(Id);
         }
 
         public TaskInfo ToTask()
@@ -261,7 +261,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             string path = null;
             try
             {
-                path = await MediaInfoManager.GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
+                path = await MediaInfoService.GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
             }
             catch (Exception ex)
             {

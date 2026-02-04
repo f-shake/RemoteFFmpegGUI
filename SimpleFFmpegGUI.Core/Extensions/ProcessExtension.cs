@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace SimpleFFmpegGUI.Manager
+namespace SimpleFFmpegGUI.Extensions
 {
     public static class ProcessExtension
     {

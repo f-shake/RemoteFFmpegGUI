@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Microsoft.Win32;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
@@ -397,7 +396,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <exception cref="Exception"></exception>
         private async Task TestAsync(string input)
         {
-            var media = await MediaInfoManager.GetMediaInfoAsync(input);
+            var media = await MediaInfoService.GetMediaInfoAsync(input);
             var frameCount = media.Videos[0].FrameRate * media.Videos[0].DurationSeconds;
             await CreateRefVideosAsync(input, sizes);
             MaxProgress = Tests.Sum(p => p.Items.Count(q => q.IsChecked));

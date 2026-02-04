@@ -3,7 +3,6 @@ using FzLib.WPF;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WPF.Converters;
 using SimpleFFmpegGUI.WPF.Messages;
@@ -33,19 +32,20 @@ using System.Windows.Shapes;
 using CommonDialog = iNKORE.Extension.CommonDialog.CommonDialog;
 using Task = System.Threading.Tasks.Task;
 using iNKORE.UI.WPF.Modern.Controls.Helpers;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WPF
 {
     public partial class MainWindow : Window
     {
-        private readonly QueueManager queue;
+        private readonly QueueService queue;
         private bool hasShownTrayMessage = false;
         private StatusPanel statusPanel;
         private TaskList taskPanel;
         private FzLib.Program.Runtime.TrayIcon tray;
         private bool isUiCompressMode;
 
-        public MainWindow(QueueManager queue)
+        public MainWindow(QueueService queue)
         {
             if (Config.Instance.WindowMaximum)
             {

@@ -9,109 +9,108 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleFFmpegGUI.Services
+namespace SimpleFFmpegGUI.Services;
+
+public class DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory) : BackgroundService
 {
-    public class DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory) : BackgroundService
+    private ConcurrentBag<Log> queueLogs = new ConcurrentBag<Log>();
+
+    private int saving = 0;
+
+    private PeriodicTimer timer;
+
+    public event EventHandler<LogEventArgs> Log;
+
+    public event EventHandler<ExceptionEventArgs> LogSaveFailed;
+
+    public void Error(string message)
     {
-        private ConcurrentBag<Log> queueLogs = new ConcurrentBag<Log>();
+        AddLog('E', message);
+    }
 
-        private int saving = 0;
+    public void Error(TaskInfo task, string message)
+    {
+        AddLog('E', message, task);
+    }
 
-        private PeriodicTimer timer;
+    public void Info(TaskInfo task, string message)
+    {
+        AddLog('I', message, task);
+    }
 
-        public event EventHandler<LogEventArgs> Log;
+    public void Info(string message)
+    {
+        AddLog('I', message);
+    }
 
-        public event EventHandler<ExceptionEventArgs> LogSaveFailed;
+    public void Output(TaskInfo task, string message)
+    {
+        AddLog('O', message, task);
+    }
 
-        public void Error(string message)
+    public async Task SaveAllAsync()
+    {
+        if (Interlocked.Exchange(ref saving, 1) == 1)
         {
-            AddLog('E', message);
+            return;
         }
-
-        public void Error(TaskInfo task, string message)
+        try
         {
-            AddLog('E', message, task);
-        }
-
-        public void Info(TaskInfo task, string message)
-        {
-            AddLog('I', message, task);
-        }
-
-        public void Info(string message)
-        {
-            AddLog('I', message);
-        }
-
-        public void Output(TaskInfo task, string message)
-        {
-            AddLog('O', message, task);
-        }
-
-        public async Task SaveAllAsync()
-        {
-            if (Interlocked.Exchange(ref saving, 1) == 1)
+            var oldBag = Interlocked.Exchange(ref queueLogs, new ConcurrentBag<Log>());
+            if (oldBag.IsEmpty)
             {
                 return;
             }
-            try
-            {
-                var oldBag = Interlocked.Exchange(ref queueLogs, new ConcurrentBag<Log>());
-                if (oldBag.IsEmpty)
-                {
-                    return;
-                }
-                using var db = await dbFactory.CreateDbContextAsync();
-                var logs = oldBag.ToList();
-                db.Logs.AddRange(logs);
-                await db.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("保存日志失败");
-                Debug.WriteLine(ex);
-                LogSaveFailed?.Invoke(null, new ExceptionEventArgs(ex, "保存日志失败"));
-            }
-            finally
-            {
-                Volatile.Write(ref saving, 0);
-            }
+            using var db = await dbFactory.CreateDbContextAsync();
+            var logs = oldBag.ToList();
+            db.Logs.AddRange(logs);
+            await db.SaveChangesAsync();
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("保存日志失败");
+            Debug.WriteLine(ex);
+            LogSaveFailed?.Invoke(null, new ExceptionEventArgs(ex, "保存日志失败"));
+        }
+        finally
+        {
+            Volatile.Write(ref saving, 0);
+        }
+    }
 
-        public void Warn(string message)
-        {
-            AddLog('W', message);
-        }
+    public void Warn(string message)
+    {
+        AddLog('W', message);
+    }
 
-        public void Warn(TaskInfo task, string message)
+    public void Warn(TaskInfo task, string message)
+    {
+        AddLog('W', message, task);
+    }
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            AddLog('W', message, task);
+            await SaveAllAsync();
         }
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
-            while (await timer.WaitForNextTickAsync(stoppingToken))
-            {
-                await SaveAllAsync();
-            }
-        }
+    }
 
-        private void AddLog(char type, string message, TaskInfo task = null)
+    private void AddLog(char type, string message, TaskInfo task = null)
+    {
+        Log log = new Log()
         {
-            Log log = new Log()
-            {
-                Time = DateTime.Now,
-                Type = type,
-                Message = message,
-                TaskId = task?.Id
-            };
-            Log?.Invoke(null, new LogEventArgs(log));
-            AddLog(log);
-            Debug.WriteLine($"[{type}] {message}");
-        }
-        private void AddLog(Log log)
-        {
-            queueLogs.Add(log);
-        }
+            Time = DateTime.Now,
+            Type = type,
+            Message = message,
+            TaskId = task?.Id
+        };
+        Log?.Invoke(null, new LogEventArgs(log));
+        AddLog(log);
+        Debug.WriteLine($"[{type}] {message}");
+    }
+    private void AddLog(Log log)
+    {
+        queueLogs.Add(log);
     }
 }

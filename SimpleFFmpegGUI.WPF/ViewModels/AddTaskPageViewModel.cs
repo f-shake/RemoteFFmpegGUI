@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Panels;
@@ -23,12 +22,13 @@ using Newtonsoft.Json;
 using System.Text;
 using Mapster;
 using SimpleFFmpegGUI.Services;
+using SimpleFFmpegGUI.Repositories;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class AddTaskPageViewModel : ViewModelBase
     {
-        private readonly TaskManager taskManager;
+        private readonly TaskRepository taskManager;
         private readonly CurrentTasksViewModel tasks;
         [ObservableProperty]
         private bool allowChangeType = true;
@@ -37,7 +37,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(CanAddFile))]
         private TaskType type;
 
-        public AddTaskPageViewModel(TaskManager taskManager, CurrentTasksViewModel tasks)
+        public AddTaskPageViewModel(TaskRepository taskManager, CurrentTasksViewModel tasks)
         {
             this.taskManager = taskManager;
             this.tasks = tasks;
@@ -173,20 +173,20 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     case TaskEnqueueStrategy.EnqueueOnly:
                         break;
                     case TaskEnqueueStrategy.EnqueueAndRun:
-                        await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartQueue());
+                        await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartQueue());
                         QueueSuccessMessage("已开始队列");
                         break;
                     case TaskEnqueueStrategy.RunIndependently:
                         if (createdTasks.Count == 1)
                         {
-                            await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartStandalone(createdTasks[0].Id));
+                            await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartStandalone(createdTasks[0].Id));
                             QueueSuccessMessage("已开始独立执行");
                         }
                         else if (createdTasks.Count < 5)
                         {
                             foreach (var t in createdTasks)
                             {
-                                await Task.Run(() => App.ServiceProvider.GetService<QueueManager>().StartStandalone(t.Id));
+                                await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartStandalone(t.Id));
 
                             }
                             QueueSuccessMessage($"已开始{createdTasks.Count}个任务的独立执行");

@@ -1,7 +1,7 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.ComponentModel;
@@ -78,8 +78,8 @@ namespace SimpleFFmpegGUI.WPF.Panels
                     try
                     {
                         IsEnabled = false;
-                        var info = await MediaInfoManager.GetMediaInfoAsync(file);
-                        var videoArgs = MediaInfoManager.ConvertToVideoArguments(info);
+                        var info = await MediaInfoService.GetMediaInfoAsync(file);
+                        var videoArgs = MediaInfoService.ConvertToVideoArguments(info);
                         ViewModel.Video = videoArgs.Adapt<VideoArgumentsViewModel>();
                         if (videoArgs.Crf.HasValue)
                         {

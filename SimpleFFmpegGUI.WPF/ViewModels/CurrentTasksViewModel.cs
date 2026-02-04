@@ -2,7 +2,6 @@
 using FzLib.Collection;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,6 +16,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.Services;
+using SimpleFFmpegGUI.Repositories;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -25,9 +25,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private List<TaskInfoViewModel> processingTasks;
 
-        private readonly TaskManager taskManager;
+        private readonly TaskRepository taskManager;
 
-        public CurrentTasksViewModel(QueueManager queue, TaskManager tm)
+        public CurrentTasksViewModel(QueueService queue, TaskRepository tm)
         {
             Queue = queue;
             taskManager = tm;
@@ -44,7 +44,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             });
         }
 
-        public QueueManager Queue { get; }
+        public QueueService Queue { get; }
 
         public ObservableCollection<StatusDto> Statuses { get; } = new ObservableCollection<StatusDto>();
 

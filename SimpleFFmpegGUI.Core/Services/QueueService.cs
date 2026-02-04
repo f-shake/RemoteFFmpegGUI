@@ -2,9 +2,9 @@
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -16,10 +16,10 @@ using Task = System.Threading.Tasks.Task;
 using Tasks = System.Threading.Tasks;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
-namespace SimpleFFmpegGUI.Manager
+namespace SimpleFFmpegGUI.Services
 {
 
-    public class QueueManager
+    public class QueueService
     {
         private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
         private readonly DbLoggerService logger;
@@ -30,7 +30,7 @@ namespace SimpleFFmpegGUI.Manager
         private int runningFlag = 0;
         private DateTime? scheduleTime = null;
         private List<FFmpegTaskService> taskProcessManagers = new List<FFmpegTaskService>();
-        public QueueManager(PowerManager powerManager,
+        public QueueService(PowerService powerManager,
                             IDbContextFactory<FFmpegDbContext> dbFactory,
                             DbLoggerService logger,
                             IFFmpegTaskServiceFactory ffmpegServiceFactory,
@@ -66,7 +66,7 @@ namespace SimpleFFmpegGUI.Manager
         /// <summary>
         /// 电源性能管理
         /// </summary>
-        public PowerManager PowerManager { get; }
+        public PowerService PowerManager { get; }
 
         /// <summary>
         /// 独立任务
@@ -121,7 +121,6 @@ namespace SimpleFFmpegGUI.Manager
 
         public async Task RunQueueAsync()
         {
-            throw new NotImplementedException("test");
             if (Interlocked.Exchange(ref runningFlag, 1) == 1)
             {
                 logger.Warn("队列正在运行，开始队列失败");
@@ -136,11 +135,11 @@ namespace SimpleFFmpegGUI.Manager
                     TaskInfo task;
                     using (var db = dbFactory.CreateDbContext())
                     {
-                        if (!await db.Tasks.IsQueueing().AnyAsync())
+                        if (!await db.Tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue).AnyAsync())
                         {
                             break;
                         }
-                        task = await db.Tasks.IsQueueing().OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
+                        task = await db.Tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue).OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
                     }
                     Debug.Assert(task != null, "task != null");
                     await ProcessTaskAsync(task, true);

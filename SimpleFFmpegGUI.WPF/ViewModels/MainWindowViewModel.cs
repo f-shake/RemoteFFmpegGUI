@@ -2,7 +2,6 @@
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.Pages;
 using System;
@@ -10,16 +9,18 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using SimpleFFmpegGUI.Services;
+using SimpleFFmpegGUI.Repositories;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class MainWindowViewModel : ViewModelBase
     {
-        public QueueManager queue;
-        private readonly TaskManager taskManager;
+        public QueueService queue;
+        private readonly TaskRepository taskManager;
         private bool isTabControlVisiable = true;
 
-        public MainWindowViewModel(QueueManager queue, TaskManager taskManager)
+        public MainWindowViewModel(QueueService queue, TaskRepository taskManager)
         {
             this.queue = queue;
             this.taskManager = taskManager;

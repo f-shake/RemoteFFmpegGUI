@@ -5,9 +5,10 @@ using FzLib.Programming;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Events;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.FFmpegArgument;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -31,7 +32,8 @@ namespace SimpleFFmpegGUI.Services;
 /// </param>
 public class FFmpegTaskService(TaskInfo task,
                                DbLoggerService logger,
-                               LogManager logManager,
+                               LogRepository logManager,
+                               MediaInfoService mediaInfoService,
                                IFFmpegProcessServiceFactory ffmpegProcessServiceFactory) : INotifyPropertyChanged
 {
     /// <summary>
@@ -137,6 +139,7 @@ public class FFmpegTaskService(TaskInfo task,
     /// FFmpeg任务
     /// </summary>
     public TaskInfo Task => task;
+
     /// <summary>
     /// 测试输出参数是否合法
     /// </summary>
@@ -374,7 +377,7 @@ public class FFmpegTaskService(TaskInfo task,
         TimeSpan realLength;
         try
         {
-            realLength = MediaInfoManager.GetVideoDurationByFFprobe(path);
+            realLength = mediaInfoService.GetVideoDurationByFFprobe(path);
 
             logger.Info($"视频的长度为：{realLength}");
         }

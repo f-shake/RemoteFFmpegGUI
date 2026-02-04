@@ -2,14 +2,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class LogController(IConfiguration config, LogManager log) : FFmpegControllerBase(config)
+    public class LogController(IConfiguration config, LogRepository log) : FFmpegControllerBase(config)
     {
         [HttpGet]
         [Route("List")]

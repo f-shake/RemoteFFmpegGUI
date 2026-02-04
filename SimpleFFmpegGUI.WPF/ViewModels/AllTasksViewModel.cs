@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
 using Mapster;
-using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,7 +12,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class AllTasksViewModel : TaskCollectionViewModelBase
     {
-        private readonly TaskManager taskManager;
+        private readonly TaskRepository taskManager;
 
         [ObservableProperty]
         private int count;
@@ -26,7 +26,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private int pageCount;
 
-        public AllTasksViewModel(TaskManager tm)
+        public AllTasksViewModel(TaskRepository tm)
         {
             taskManager = tm;
             RefreshAsync();

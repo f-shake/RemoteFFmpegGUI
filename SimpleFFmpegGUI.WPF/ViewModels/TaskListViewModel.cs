@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
@@ -19,14 +18,16 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using SimpleFFmpegGUI.Services;
+using SimpleFFmpegGUI.Repositories;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class TaskListViewModel : ViewModelBase
     {
-        private readonly QueueManager queue;
+        private readonly QueueService queue;
 
-        private readonly TaskManager taskManager;
+        private readonly TaskRepository taskManager;
 
         private readonly CurrentTasksViewModel currentTasks;
         private readonly AllTasksViewModel allTasks;
@@ -34,7 +35,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(Tasks))]
         private bool showAllTasks;
 
-        public TaskListViewModel(QueueManager queue, CurrentTasksViewModel currentTasks, AllTasksViewModel allTasks, TaskManager taskManager)
+        public TaskListViewModel(QueueService queue, CurrentTasksViewModel currentTasks, AllTasksViewModel allTasks, TaskRepository taskManager)
         {
             this.queue = queue;
             this.taskManager = taskManager;

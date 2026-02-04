@@ -6,9 +6,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SimpleFFmpegGUI.Manager
+namespace SimpleFFmpegGUI.Repositories
 {
-    public class LogManager(FFmpegDbContext db, DbLoggerService logger)
+    public class LogRepository(FFmpegDbContext db, DbLoggerService logger)
     {
         public async Task<PagedListDto<Log>> GetLogsAsync(char? type = null,
             int taskId = 0,

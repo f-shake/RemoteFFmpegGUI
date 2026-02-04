@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Mapster;
 using Microsoft.Win32;
-using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
 using System.Collections;
@@ -15,12 +15,12 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class SettingPageViewModel : ViewModelBase
     {
-        private readonly ConfigManager configManager;
+        private readonly DbConfigService configManager;
 
         [ObservableProperty]
         private Config configs;
 
-        public SettingPageViewModel(ConfigManager configManager)
+        public SettingPageViewModel(DbConfigService configManager)
         {
             configs = Config.Instance.DeepCopy();
             this.configManager = configManager;

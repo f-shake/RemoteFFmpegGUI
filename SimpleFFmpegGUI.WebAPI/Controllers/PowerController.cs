@@ -2,13 +2,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class PowerController(IConfiguration config, QueueManager queue, ConfigManager dbConfig) : FFmpegControllerBase(config)
+    public class PowerController(IConfiguration config, QueueService queue, DbConfigService dbConfig) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("AbortShutdown")]
@@ -21,7 +21,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("CpuCoreUsage")]
         public Task<CpuCoreUsageDto[]> GetCpuCoreUsage()
         {
-            return PowerManager.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
+            return PowerService.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
         }
 
         [HttpGet]

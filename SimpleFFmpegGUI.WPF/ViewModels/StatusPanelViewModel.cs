@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.ComponentModel;
@@ -11,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -21,7 +21,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private bool isEnabled = true;
 
-        public StatusPanelViewModel(QueueManager queue, CurrentTasksViewModel tasks)
+        public StatusPanelViewModel(QueueService queue, CurrentTasksViewModel tasks)
         {
             Debug.Assert(!created);
             created = true;
@@ -32,7 +32,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public bool IsRunning => Queue.Tasks.Any();
 
-        public QueueManager Queue { get; }
+        public QueueService Queue { get; }
 
         public CurrentTasksViewModel Tasks { get; }
         [RelayCommand]

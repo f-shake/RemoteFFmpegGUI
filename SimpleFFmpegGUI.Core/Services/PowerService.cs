@@ -1,7 +1,6 @@
 ﻿using FzLib.Application;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,12 +8,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleFFmpegGUI.Manager
+namespace SimpleFFmpegGUI.Services
 {
     /// <summary>
     /// 计算机电源管理，控制关机
     /// </summary>
-    public class PowerManager(DbLoggerService logger)
+    public class PowerService(DbLoggerService logger)
     {
         private static readonly string abortShutdownCommand = "-a";
         private static readonly string shutdownCommand = $"-s -t 180 -c \"{ApplicationInfo.ProgramName}\"";

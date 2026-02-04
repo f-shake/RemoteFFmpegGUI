@@ -1,15 +1,14 @@
 ﻿using Newtonsoft.Json;
 using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleFFmpegGUI.Manager
+namespace SimpleFFmpegGUI.Services
 {
-	public class ConfigManager(FFmpegDbContext db, DbLoggerService logger)
+	public class DbConfigService(FFmpegDbContext db, DbLoggerService logger)
 	{
 		public const string DefaultProcessPriorityKey = "DefaultProcessPriority";
 		public const string SnapshotSizeKey = "SnapshotSize";

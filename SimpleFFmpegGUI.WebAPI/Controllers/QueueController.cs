@@ -2,13 +2,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class QueueController(IConfiguration config, QueueManager queue) : FFmpegControllerBase(config)
+    public class QueueController(IConfiguration config, QueueService queue) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("Cancel")]

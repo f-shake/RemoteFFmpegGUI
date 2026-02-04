@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 
 namespace SimpleFFmpegGUI.Services;
 
@@ -10,12 +10,12 @@ public static class DependencyInjectionExtension
     {
         services
             .AddDbContextFactory<FFmpegDbContext>()
-            .AddTransient<LogManager>()
-            .AddTransient<ConfigManager>()
+            .AddTransient<LogRepository>()
+            .AddTransient<DbConfigService>()
             .AddTransient<PresetManager>()
-            .AddTransient<TaskManager>()
-            .AddTransient<PowerManager>()
-            .AddSingleton<QueueManager>()
+            .AddTransient<TaskRepository>()
+            .AddTransient<PowerService>()
+            .AddSingleton<QueueService>()
             .AddTransient<IFFmpegTaskServiceFactory, FFmpegTaskServiceFactory>()
             .AddHostedService<DbLoggerService>();
 

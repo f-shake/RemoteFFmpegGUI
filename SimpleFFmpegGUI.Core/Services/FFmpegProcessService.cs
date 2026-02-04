@@ -1,6 +1,5 @@
 ﻿using FzLib.Application;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.ComponentModel;
@@ -24,7 +23,7 @@ public class FFmpegProcessService
 
     private TaskCompletionSource<bool> tcs;
 
-    public FFmpegProcessService(ConfigManager config, string argument)
+    public FFmpegProcessService(DbConfigService config, string argument)
     {
         Priority = config.DefaultProcessPriority;
 

@@ -1,5 +1,4 @@
-﻿using SimpleFFmpegGUI.Manager;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -9,7 +8,7 @@ public interface IFFmpegProcessServiceFactory
 {
     FFmpegProcessService Create(string argument);
 }
-public class FFmpegProcessServiceFactory(ConfigManager configManager, DbLoggerService logger) : IFFmpegProcessServiceFactory
+public class FFmpegProcessServiceFactory(DbConfigService configManager, DbLoggerService logger) : IFFmpegProcessServiceFactory
 {
     public FFmpegProcessService Create(string argument)
     {
