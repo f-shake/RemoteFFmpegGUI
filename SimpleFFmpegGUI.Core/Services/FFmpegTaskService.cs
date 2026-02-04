@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using static SimpleFFmpegGUI.FileSystemUtility;
+using static SimpleFFmpegGUI.Helpers.FileSystemHelper;
 using Task = System.Threading.Tasks.Task;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
@@ -32,7 +32,7 @@ namespace SimpleFFmpegGUI.Services;
 /// </param>
 public class FFmpegTaskService(TaskInfo task,
                                DbLoggerService logger,
-                               LogRepository logManager,
+                               LogRepository logRepository,
                                MediaInfoService mediaInfoService,
                                IFFmpegProcessServiceFactory ffmpegProcessServiceFactory) : INotifyPropertyChanged
 {
@@ -184,7 +184,7 @@ public class FFmpegTaskService(TaskInfo task,
     /// <returns></returns>
     public async Task<string> GetErrorMessageAsync()
     {
-        var logs = await logManager.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
+        var logs = await logRepository.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
         var log = logs.List
             .Where(p => ErrorMessageRegexs.Any(q => q.IsMatch(p.Message)))
             .OrderByDescending(p => p.Time).FirstOrDefault();
@@ -221,7 +221,7 @@ public class FFmpegTaskService(TaskInfo task,
         Paused = false;
         Progress.PauseTime += DateTime.Now - pauseStartTime;
         logger.Info(task, "恢复队列");
-        ProcessExtension.ResumeProcess(Process.Id);
+        ProcessSuspensionHelper.ResumeProcess(Process.Id);
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -340,7 +340,7 @@ public class FFmpegTaskService(TaskInfo task,
         Paused = true;
         logger.Info(task, "暂停队列");
         pauseStartTime = DateTime.Now;
-        ProcessExtension.SuspendProcess(Process.Id);
+        ProcessSuspensionHelper.SuspendProcess(Process.Id);
         StatusChanged?.Invoke(this, EventArgs.Empty);
     }
 

@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Model.MediaInfo
@@ -16,7 +16,7 @@ namespace SimpleFFmpegGUI.Model.MediaInfo
         [JsonIgnore]
         public TimeSpan Duration => TimeSpan.FromSeconds(DurationSeconds);
 
-        [JsonProperty("Duration")]
+        [JsonPropertyName("Duration")]
         public double DurationSeconds { get; set; }
 
         public string Encoded_Application { get; set; }

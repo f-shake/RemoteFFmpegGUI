@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Services
@@ -72,12 +73,13 @@ namespace SimpleFFmpegGUI.Services
 
 		private static string GetString<T>(T data)
 		{
-			return JsonConvert.SerializeObject(data);
-		}
+			return data.SerializeWithDefaultSettings();
+        }
 
 		private static T Parse<T>(string data)
 		{
-			return JsonConvert.DeserializeObject<T>(data);
-		}
+			return data.DeserializeWithDefaultSettings<T>();
+
+        }
 	}
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleFFmpegGUI
+namespace SimpleFFmpegGUI.Events
 {
     public class ExceptionEventArgs : EventArgs
     {

@@ -9,7 +9,7 @@ using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class TaskService(TaskRepository taskRepository, DbLoggerService logger, QueueService queue)
+public class TaskService(TaskRepository taskRepository, QueueService queue)
 {
     public async Task ResetTaskAsync(int id)
     {

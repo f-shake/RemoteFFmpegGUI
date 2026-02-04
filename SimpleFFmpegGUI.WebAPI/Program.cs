@@ -9,8 +9,6 @@ using Microsoft.OpenApi;
 using Serilog;
 using SimpleFFmpegGUI;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Logging;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
@@ -19,6 +17,9 @@ using SimpleFFmpegGUI.WebAPI.Converter;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Log = Serilog.Log;
 
 WebApplication app = null;
@@ -41,7 +42,7 @@ FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() =>
 
 
 
-static void InitializeLogs()
+static void InitializeLogs(IServiceProvider services)
 {
     int processId = Process.GetCurrentProcess().Id;
     Log.Logger = new LoggerConfiguration()
@@ -54,8 +55,8 @@ static void InitializeLogs()
     Log.Information("程序启动");
 
     //数据库日志
-    DbLogger.Log += Logger_Log;
-    DbLogger.LogSaveFailed += Logger_LogSaveFailed;
+    services.GetRequiredService<DbLoggerService>().Log += Logger_Log;
+    services.GetRequiredService<DbLoggerService>().LogSaveFailed += Logger_LogSaveFailed;
     void Logger_Log(object sender, LogEventArgs e)
     {
         switch (e.Log.Type)
@@ -74,16 +75,15 @@ static void InitializeLogs()
 void CreateWebApplication(string[] args)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-    InitializeLogs();
     MigrateDb();
     GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
     var builder = WebApplication.CreateBuilder(args);
     ConfigureServices(builder);
     app = builder.Build();
     ConfigureMiddleware(app);
+    InitializeLogs(app.Services);
     app.Run();
 }
-
 void ConfigureServices(WebApplicationBuilder builder)
 {
     builder.Services.AddFFmpegServices();

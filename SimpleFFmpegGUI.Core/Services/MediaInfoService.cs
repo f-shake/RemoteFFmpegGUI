@@ -1,14 +1,16 @@
 ﻿using FFMpegCore;
 using Mapster;
-using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
+using SimpleFFmpegGUI.Helpers;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Model.MediaInfo;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -20,7 +22,7 @@ namespace SimpleFFmpegGUI.Services
         {
             VideoCodeArguments arguments = new VideoCodeArguments();
 
-            var tracks = JObject.Parse(mediaInfo.Raw)["media"]["track"] as JArray;
+            var tracks = JsonNode.Parse(mediaInfo.Raw)["media"]["track"] as JsonArray;
             if (mediaInfo.Videos.Count == 0)
             {
                 throw new Exception("源文件不含视频");
@@ -62,7 +64,7 @@ namespace SimpleFFmpegGUI.Services
                 }
                 catch (Exception ex)
                 {
-                    throw;
+                    throw new Exception($"读取编码设置失败：{ex.Message}");
                 }
 
                 int preset = 0;
@@ -154,7 +156,7 @@ namespace SimpleFFmpegGUI.Services
             {
                 var mediaInfoJSON = GetMediaInfoProcessOutput(path);
                 mediaInfo = ParseMediaInfoJSON(mediaInfoJSON);
-                mediaInfo.Raw = mediaInfoJSON.ToString(Newtonsoft.Json.Formatting.Indented);
+                mediaInfo.Raw = mediaInfoJSON.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
                 foreach (var video in mediaInfo.Videos)
                 {
                     if (!string.IsNullOrEmpty(video.Encoded_Library_Settings))
@@ -170,7 +172,7 @@ namespace SimpleFFmpegGUI.Services
         public async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale, string format = "jpg")
         {
             Debug.WriteLine("正在采集截图");
-            string tempPath = $"{FileSystemUtility.GetTempFileName("snapshot")}.{format}";
+            string tempPath = $"{FileSystemHelper.GetTempFileName("snapshot")}.{format}";
 
             string args =
                 $"-ss {time.TotalSeconds:0.000} " +        // 快速 seek（在 -i 前）
@@ -198,9 +200,9 @@ namespace SimpleFFmpegGUI.Services
             return (await FFProbe.AnalyseAsync(path)).Duration;
         }
 
-        private static JObject GetMediaInfoProcessOutput(string path)
+        private static JsonObject GetMediaInfoProcessOutput(string path)
         {
-            string tmpFile = FileSystemUtility.GetTempFileName("mediainfo");
+            string tmpFile = FileSystemHelper.GetTempFileName("mediainfo");
             var p = Process.Start(new ProcessStartInfo
             {
                 FileName = "MediaInfo",
@@ -209,7 +211,7 @@ namespace SimpleFFmpegGUI.Services
             });
             p.WaitForExit();
             string output = System.IO.File.ReadAllText(tmpFile);
-            return JObject.Parse(output);
+            return JsonNode.Parse(output) as JsonObject;
         }
 
         /// <summary>
@@ -252,32 +254,32 @@ namespace SimpleFFmpegGUI.Services
             return settings; // 返回编码设置项列表
         }
 
-        private static MediaInfoGeneral ParseMediaInfoJSON(JObject json)
+        private static MediaInfoGeneral ParseMediaInfoJSON(JsonObject json)
         {
             MediaInfoGeneral info = null;
-            var tracks = json["media"]["track"] as JArray;
-            foreach (JObject track in tracks)
+            var tracks = json["media"]["track"] as JsonArray;
+            foreach (JsonObject track in tracks)
             {
-                if (track["@type"].Value<string>() == "General")
+                if (track["@type"].GetValue<string>() == "General")
                 {
-                    info = track.ToObject<MediaInfoGeneral>();
+                    info = track.Deserialize<MediaInfoGeneral>();
                 }
-                else if (track["@type"].Value<string>() == "Video")
+                else if (track["@type"].GetValue<string>() == "Video")
                 {
                     Debug.Assert(info != null);
-                    info.Videos.Add(track.ToObject<MediaInfoVideo>());
+                    info.Videos.Add(track.Deserialize<MediaInfoVideo>());
                     info.Videos[^1].Index = info.Videos.Count;
                 }
-                else if (track["@type"].Value<string>() == "Audio")
+                else if (track["@type"].GetValue<string>() == "Audio")
                 {
                     Debug.Assert(info != null);
-                    info.Audios.Add(track.ToObject<MediaInfoAudio>());
+                    info.Audios.Add(track.Deserialize<MediaInfoAudio>());
                     info.Audios[^1].Index = info.Audios.Count;
                 }
-                else if (track["@type"].Value<string>() == "Text")
+                else if (track["@type"].GetValue<string>() == "Text")
                 {
                     Debug.Assert(info != null);
-                    info.Texts.Add(track.ToObject<MediaInfoText>());
+                    info.Texts.Add(track.Deserialize<MediaInfoText>());
                     info.Texts[^1].Index = info.Texts.Count;
                 }
             }

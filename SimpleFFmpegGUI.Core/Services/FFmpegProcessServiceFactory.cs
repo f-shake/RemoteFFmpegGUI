@@ -8,7 +8,7 @@ public interface IFFmpegProcessServiceFactory
 {
     FFmpegProcessService Create(string argument);
 }
-public class FFmpegProcessServiceFactory(DbConfigService configManager, DbLoggerService logger) : IFFmpegProcessServiceFactory
+public class FFmpegProcessServiceFactory(DbConfigService configManager) : IFFmpegProcessServiceFactory
 {
     public FFmpegProcessService Create(string argument)
     {

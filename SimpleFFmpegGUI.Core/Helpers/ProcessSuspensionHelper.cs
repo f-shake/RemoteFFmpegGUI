@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace SimpleFFmpegGUI.Extensions
 {
-    public static class ProcessExtension
+    public static class ProcessSuspensionHelper
     {
         [Flags]
         public enum ThreadAccess : int

@@ -1,7 +1,5 @@
 ﻿using FzLib;
 using FzLib.Programming;
-using Newtonsoft.Json;
-using SimpleFFmpegGUI.Manager;
 using SimpleFFmpegGUI.Model;
 using System;
 using System.ComponentModel;

@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class TaskController(IConfiguration config, TaskRepository taskService, QueueService queue) : FFmpegControllerBase(config)
+    public class TaskController(IConfiguration config, TaskService taskService, TaskRepository taskRepository, QueueService queue) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("Add/Code")]
@@ -38,7 +38,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
 
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-                var task = await taskService.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i), request.Argument);
+                var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i), request.Argument);
                 ids.Add(task.Id);
             }
             if (request.Start)
@@ -65,7 +65,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
             request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
-            var task = await taskService.AddTaskAsync(TaskType.Combine, request.Inputs, GetOutput(request, 0), request.Argument);
+            var task = await taskRepository.AddTaskAsync(TaskType.Combine, request.Inputs, GetOutput(request, 0), request.Argument);
 
             if (request.Start)
             {
@@ -91,7 +91,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
             request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
-            var task = await taskService.AddTaskAsync(TaskType.Compare, request.Inputs, null, null);
+            var task = await taskRepository.AddTaskAsync(TaskType.Compare, request.Inputs, null, null);
             if (request.Start)
             {
                 queue.StartQueue();
@@ -114,7 +114,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
-            var task = await taskService.AddTaskAsync(TaskType.Concat, request.Inputs, GetOutput(request, 0), request.Argument);
+            var task = await taskRepository.AddTaskAsync(TaskType.Concat, request.Inputs, GetOutput(request, 0), request.Argument);
             ids.Add(task.Id);
             if (request.Start)
             {
@@ -129,7 +129,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         {
             CheckNull(request.Argument, "参数");
             CheckNull(request.Argument.Extra, "参数");
-            var task = await taskService.AddTaskAsync(TaskType.Custom, null, null, request.Argument);
+            var task = await taskRepository.AddTaskAsync(TaskType.Custom, null, null, request.Argument);
             if (request.Start)
             {
                 queue.StartQueue();
@@ -146,7 +146,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
         [HttpPost]
         [Route("Cancel/List")]
-        public Task CancelTasksAsync(IEnumerable<int> ids)
+        public Task CancelTasksAsync(ICollection<int> ids)
         {
             return taskService.TryCancelTasksAsync(ids);
         }
@@ -160,16 +160,16 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
         [HttpPost]
         [Route("Delete/List")]
-        public Task DeleteTasksAsync(IEnumerable<int> ids)
+        public Task DeleteTasksAsync(ICollection<int> ids)
         {
-            return taskService.TryDeleteTasks(ids);
+            return taskService.TryDeleteTasksAsync(ids);
         }
 
         [HttpGet]
         [Route("")]
         public async Task<IActionResult> GetTask(int id)
         {
-            var task = await taskService.GetTaskAsync(id);
+            var task = await taskRepository.GetTaskAsync(id);
             if (task == null)
             {
                 return NotFound();
@@ -188,7 +188,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("List")]
         public async Task<PagedListDto<TaskInfo>> GetTasks(int status = 0, int skip = 0, int take = 0)
         {
-            var tasks = await taskService.GetTasksAsync(status == 0 ? null : (Model.TaskStatus)status, skip, take);
+            var tasks = await taskRepository.GetTasksAsync(status == 0 ? null : (Model.TaskStatus)status, skip, take);
             tasks.List.ForEach(p => HideAbsolutePath(p));
             return tasks;
         }

@@ -23,24 +23,20 @@ namespace SimpleFFmpegGUI.Services
     {
         private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
         private readonly DbLoggerService logger;
-        private readonly IFFmpegTaskServiceFactory ffmpegServiceFactory;
-        private readonly IServiceProvider services;
+        private readonly IServiceScopeFactory scopeFactory;
         private volatile bool cancelQueue = false;
         private Timer queueTimer;  // 定时器
         private int runningFlag = 0;
         private DateTime? scheduleTime = null;
         private List<FFmpegTaskService> taskProcessManagers = new List<FFmpegTaskService>();
-        public QueueService(PowerService powerManager,
-                            IDbContextFactory<FFmpegDbContext> dbFactory,
+        public QueueService(IDbContextFactory<FFmpegDbContext> dbFactory,
                             DbLoggerService logger,
-                            IFFmpegTaskServiceFactory ffmpegServiceFactory,
-                            IServiceProvider services)
+                           IServiceScopeFactory scopeFactory
+                      )
         {
             this.dbFactory = dbFactory;
             this.logger = logger;
-            this.ffmpegServiceFactory = ffmpegServiceFactory;
-            this.services = services;
-            PowerManager = powerManager;
+            this.scopeFactory = scopeFactory;
             queueTimer = new Timer(QueueTimerCallback, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
         }
         /// <summary>
@@ -62,11 +58,6 @@ namespace SimpleFFmpegGUI.Services
         /// 所有任务
         /// </summary>
         public IReadOnlyList<FFmpegTaskService> Managers => taskProcessManagers.AsReadOnly();
-
-        /// <summary>
-        /// 电源性能管理
-        /// </summary>
-        public PowerService PowerManager { get; }
 
         /// <summary>
         /// 独立任务
@@ -152,9 +143,11 @@ namespace SimpleFFmpegGUI.Services
             bool cancelManually = cancelQueue;
             cancelQueue = false;
             logger.Info("队列完成");
-            if (!cancelManually && PowerManager.ShutdownAfterQueueFinished)
+            using var scope = scopeFactory.CreateScope();
+            var power = scope.ServiceProvider.GetRequiredService<PowerService>();
+            if (!cancelManually && power.ShutdownAfterQueueFinished)
             {
-                PowerManager.Shutdown();
+                power.Shutdown();
             }
         }
 
@@ -248,7 +241,9 @@ namespace SimpleFFmpegGUI.Services
 
         private async Task ProcessTaskAsync(TaskInfo task, bool main)
         {
-            FFmpegTaskService ffmpegManager = ffmpegServiceFactory.Create(task);
+            using var scope = scopeFactory.CreateScope();
+
+            FFmpegTaskService ffmpegManager = scope.ServiceProvider.GetRequiredService<IFFmpegTaskServiceFactory>().Create(task);
             using (var db = dbFactory.CreateDbContext())
             {
                 var rows = await db.Tasks

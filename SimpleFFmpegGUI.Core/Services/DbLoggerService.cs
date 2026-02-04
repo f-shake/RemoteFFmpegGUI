@@ -11,13 +11,24 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory) : BackgroundService
+public class DbLoggerService : BackgroundService
 {
+    private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
     private ConcurrentBag<Log> queueLogs = new ConcurrentBag<Log>();
 
     private int saving = 0;
 
     private PeriodicTimer timer;
+    private static bool hasInstance = false;
+    public DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory)
+    {
+        if (hasInstance)
+        {
+            throw new InvalidOperationException("DbLoggerService只能有一个实例");
+        }
+        hasInstance = true;
+        this.dbFactory = dbFactory;
+    }
 
     public event EventHandler<LogEventArgs> Log;
 

@@ -1,6 +1,8 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,12 +83,12 @@ public class PresetService(PresetRepository repository)
     public async Task<string> ExportAsync()
     {
         var presets = await repository.GetAllAsync();
-        return JsonSerializer.Serialize(presets);
+        return presets.SerializeWithFriendlySettings();
     }
 
     public async Task ImportAsync(string json, bool overwrite = false)
     {
-        var presets = JsonSerializer.Deserialize<List<CodePreset>>(json) ?? throw new ArgumentException("无效的JSON数据");
+        var presets = json.DeserializeWithFriendlySettings<List<CodePreset>>() ?? throw new ArgumentException("无效的JSON数据");
 
 
         foreach (var preset in presets)

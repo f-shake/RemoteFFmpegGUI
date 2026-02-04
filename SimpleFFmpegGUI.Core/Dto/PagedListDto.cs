@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace SimpleFFmpegGUI.Dto
 {
@@ -18,7 +17,6 @@ namespace SimpleFFmpegGUI.Dto
 
         public IList<T> List { get; set; }
 
-        [JsonProperty]
         public int TotalCount { get; set; }
     }
 }

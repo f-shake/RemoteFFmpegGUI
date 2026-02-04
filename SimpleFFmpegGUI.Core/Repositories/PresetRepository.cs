@@ -45,7 +45,7 @@ public class PresetRepository(FFmpegDbContext db)
             .OrderBy(p => p.Name)
             .ToListAsync();
 
-    public Task<CodePreset?> GetDefaultByTypeAsync(TaskType type) =>
+    public Task<CodePreset> GetDefaultByTypeAsync(TaskType type) =>
         db.Presets.FirstOrDefaultAsync(p => p.Type == type && p.Default && !p.IsDeleted);
 
     public async Task<int> SetAsDefaultAsync(int id) => await db.Presets

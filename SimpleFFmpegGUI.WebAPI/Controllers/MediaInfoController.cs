@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class MediaInfoController(IConfiguration config, DbConfigService dbConfig) : FFmpegControllerBase(config)
+    public class MediaInfoController(IConfiguration config, DbConfigService dbConfig, MediaInfoService mediaInfoService) : FFmpegControllerBase(config)
     {
         [HttpGet]
         public async Task<MediaInfoGeneral> GetAsync(string name)
@@ -18,7 +18,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             CheckNull(name, "文件");
             string path = await CheckAndGetInputFilePathAsync(name);
 
-            var result = await MediaInfoService.GetMediaInfoAsync(path);
+            var result = await mediaInfoService.GetMediaInfoAsync(path);
             return result;
         }
 
@@ -29,7 +29,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             try
             {
                 videoPath = await CheckAndGetInputFilePathAsync(videoPath);
-                string path = await MediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds), dbConfig.SnapshotSize);
+                string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds), dbConfig.SnapshotSize);
 
                 return PhysicalFile(path, "image/jpeg");
             }

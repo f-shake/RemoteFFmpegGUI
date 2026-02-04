@@ -7,9 +7,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace SimpleFFmpegGUI
+namespace SimpleFFmpegGUI.Helpers
 {
-    public static class FileSystemUtility
+    public static class FileSystemHelper
     {
         private const string TempDirKey = "TempDir";
 

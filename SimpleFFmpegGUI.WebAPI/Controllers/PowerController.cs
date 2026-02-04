@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class PowerController(IConfiguration config, QueueService queue, DbConfigService dbConfig) : FFmpegControllerBase(config)
+    public class PowerController(IConfiguration config, DbConfigService dbConfig, PowerService power) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("AbortShutdown")]
         public void AbortShutdown()
         {
-            queue.PowerManager.AbortShutdown();
+            power.AbortShutdown();
         }
 
         [HttpGet]
@@ -35,7 +35,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("ShutdownQueue")]
         public bool IsShutdownAfterQueueFinished()
         {
-            return queue.PowerManager.ShutdownAfterQueueFinished;
+            return power.ShutdownAfterQueueFinished;
         }
 
         [HttpPost]
@@ -49,14 +49,14 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("ShutdownQueue")]
         public void SetShutdownAfterQueueFinished([FromForm] bool on)
         {
-            queue.PowerManager.ShutdownAfterQueueFinished = true;
+            power.ShutdownAfterQueueFinished = true;
         }
 
         [HttpPost]
         [Route("Shutdown")]
         public async Task Shutdown()
         {
-            queue.PowerManager.Shutdown();
+            power.Shutdown();
         }
     }
 }
