@@ -13,6 +13,7 @@
     <SpecialOutputDir>true</SpecialOutputDir>
     <OutputDir>..\Generation</OutputDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <SatelliteResourceLanguages>zh-cn</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <!--指定bin目录和obj目录位置-->

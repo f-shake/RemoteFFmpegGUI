@@ -24,39 +24,28 @@ using Log = Serilog.Log;
 
 WebApplication app = null;
 
-FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() =>
-{
-    CreateWebApplication(args);
-}).Catch((ex, source) =>
-{
-    Log.Fatal(ex, "程序发生未捕获的异常");
-})
-.Run();
-
-
-
-
-
-
-
-
+FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() => { CreateWebApplication(args); })
+    .Catch((ex, source) => { Log.Fatal(ex, "程序发生未捕获的异常"); })
+    .Run();
 
 
 static void InitializeLogs(IServiceProvider services)
 {
     int processId = Process.GetCurrentProcess().Id;
     Log.Logger = new LoggerConfiguration()
-              .MinimumLevel.Debug()
-              .Enrich.WithProperty("ProcessId", processId)
-              .WriteTo.File("logs/logs.txt",
-                  outputTemplate: "{Timestamp:yyyy-MM-ddTHH:mm:ss.fffZ} [{Level:u3}] [PID:{ProcessId}] {Message:lj}{NewLine}{Exception}",
-                  rollingInterval: RollingInterval.Day)
-              .CreateLogger();
+        .MinimumLevel.Debug()
+        .Enrich.WithProperty("ProcessId", processId)
+        .WriteTo.File("logs/logs.txt",
+            outputTemplate:
+            "{Timestamp:yyyy-MM-ddTHH:mm:ss.fffZ} [{Level:u3}] [PID:{ProcessId}] {Message:lj}{NewLine}{Exception}",
+            rollingInterval: RollingInterval.Day)
+        .CreateLogger();
     Log.Information("程序启动");
 
     //数据库日志
     services.GetRequiredService<DbLoggerService>().Log += Logger_Log;
     services.GetRequiredService<DbLoggerService>().LogSaveFailed += Logger_LogSaveFailed;
+
     void Logger_Log(object sender, LogEventArgs e)
     {
         switch (e.Log.Type)
@@ -66,6 +55,7 @@ static void InitializeLogs(IServiceProvider services)
             case 'I': Log.Information(e.Log.Message); break;
         }
     }
+
     void Logger_LogSaveFailed(object sender, ExceptionEventArgs e)
     {
         Log.Error(e.Exception.Message, e.Exception);
@@ -76,7 +66,8 @@ void CreateWebApplication(string[] args)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     MigrateDb();
-    GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
+    GlobalFFOptions.Configure(new FFOptions
+        { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
     var builder = WebApplication.CreateBuilder(args);
     ConfigureServices(builder);
     app = builder.Build();
@@ -84,6 +75,7 @@ void CreateWebApplication(string[] args)
     InitializeLogs(app.Services);
     app.Run();
 }
+
 void ConfigureServices(WebApplicationBuilder builder)
 {
     builder.Services.AddFFmpegServices();
@@ -92,15 +84,12 @@ void ConfigureServices(WebApplicationBuilder builder)
     builder.Services.AddHealthChecks();
     builder.Services.AddWindowsService();
     // 添加控制器
-    builder.Services.AddControllers(options =>
-    {
-        options.Filters.Add<AppActionFilter>();
-    })
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new DoubleConverter());
-        options.JsonSerializerOptions.Converters.Add(new TimeSpanConverter());
-    });
+    builder.Services.AddControllers(options => { options.Filters.Add<AppActionFilter>(); })
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new DoubleConverter());
+            options.JsonSerializerOptions.Converters.Add(new TimeSpanConverter());
+        });
 
     // 添加API探索器和Swagger
     builder.Services.AddEndpointsApiExplorer();
@@ -129,10 +118,7 @@ void ConfigureServices(WebApplicationBuilder builder)
 
 
     // 配置表单选项
-    builder.Services.Configure<FormOptions>(options =>
-    {
-        options.MultipartBodyLengthLimit = int.MaxValue;
-    });
+    builder.Services.Configure<FormOptions>(options => { options.MultipartBodyLengthLimit = int.MaxValue; });
 
     // 配置CORS
     builder.Services.AddCors(options =>
@@ -140,8 +126,8 @@ void ConfigureServices(WebApplicationBuilder builder)
         options.AddPolicy("AllowAll", policy =>
         {
             policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+                .AllowAnyMethod()
+                .AllowAnyHeader();
         });
     });
 }
@@ -183,4 +169,9 @@ static void MigrateDb()
         Log.Fatal(ex, "数据库迁移失败");
         Environment.Exit(-1);
     }
+}
+
+
+public partial class Program
+{
 }
