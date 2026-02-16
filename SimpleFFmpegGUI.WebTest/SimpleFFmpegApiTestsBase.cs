@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,19 +7,32 @@ using SimpleFFmpegGUI.WebAPI;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public class SimpleFFmpegApiTestsBase : IClassFixture<WebApplicationFactory<Program>>
+public abstract class SimpleFFmpegApiTestsBase : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> factory;
-    protected readonly HttpClient client;
+    private readonly HttpClient client;
     private string token;
 
-    public SimpleFFmpegApiTestsBase(WebApplicationFactory<Program> factory)
+    protected abstract string ControllerName { get; }
+
+    protected SimpleFFmpegApiTestsBase(WebApplicationFactory<Program> factory)
     {
-        this.factory = factory;
+        this.factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration(ConfigureAppConfiguration);
+        });
         var config = factory.Services.GetRequiredService<IConfiguration>();
         token = config.GetValue<string>(AppSettingsKeys.TokenKey);
-
         client = factory.CreateClient();
+    }
+
+    private void ConfigureAppConfiguration(WebHostBuilderContext context, IConfigurationBuilder builder)
+    {
+        builder.AddInMemoryCollection(new Dictionary<string, string>
+        {
+            ["Token"] = "Test_Token_123",
+            ["Database:ConnectionString"] = "DataSource=:memory:"
+        });
     }
 
     protected Task<HttpResponseMessage> GetAsync(string endpoint)
@@ -33,7 +47,7 @@ public class SimpleFFmpegApiTestsBase : IClassFixture<WebApplicationFactory<Prog
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint)
     {
-        var request = new HttpRequestMessage(method, endpoint);
+        var request = new HttpRequestMessage(method, $"/{ControllerName}/{endpoint}");
         if (token != null)
         {
             request.Headers.Add("Authorization", $"Bearer {token}");

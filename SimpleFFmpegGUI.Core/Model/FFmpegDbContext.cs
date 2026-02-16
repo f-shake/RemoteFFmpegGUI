@@ -11,15 +11,14 @@ namespace SimpleFFmpegGUI.Model
 {
     public class FFmpegDbContext : DbContext
     {
-        private const string dbName = "db.sqlite";
-
-        private const string connectionString = "Data Source=db.sqlite";
+        public FFmpegDbContext(DbContextOptions<FFmpegDbContext> options) : base(options)
+        {
+        }
 
         private const string CurrentVersion = "20230408";
 
         public FFmpegDbContext()
         {
-            Database.EnsureCreated();
         }
 
         public DbSet<Config> Configs { get; set; }
@@ -39,16 +38,13 @@ namespace SimpleFFmpegGUI.Model
                 item.Status = TaskStatus.Error;
                 item.Message = "状态异常：启动时处于正在运行状态";
             }
+
             if (changed)
             {
                 SaveChanges();
             }
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlite(connectionString);
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -107,8 +103,10 @@ namespace SimpleFFmpegGUI.Model
                     reader.Read();
                     string version = reader.GetString(0);
                 }
+
                 sqlite.Close();
             }
+
             using var db = new FFmpegDbContext();
             var item = db.Configs.FirstOrDefault(p => p.Key == "Version");
             if (item == null)
@@ -120,14 +118,15 @@ namespace SimpleFFmpegGUI.Model
                 item.Value = CurrentVersion;
                 db.Entry(item).State = EntityState.Modified;
             }
+
             db.SaveChanges();
             db.Dispose();
         }
 
         private static void Migrate20230408(SqliteConnection sqlite)
         {
-            Debug.WriteLine("数据库迁移："+nameof(Migrate20230408));
-            Console.WriteLine("数据库迁移："+nameof(Migrate20230408));
+            Debug.WriteLine("数据库迁移：" + nameof(Migrate20230408));
+            Console.WriteLine("数据库迁移：" + nameof(Migrate20230408));
             new SqliteCommand("CREATE INDEX IX_Logs_Type ON Logs (Type);", sqlite).ExecuteNonQuery();
             new SqliteCommand("CREATE INDEX IX_Logs_Time ON Logs (Time);", sqlite).ExecuteNonQuery();
             new SqliteCommand("CREATE INDEX IX_Logs_TaskId ON Logs (TaskId);", sqlite).ExecuteNonQuery();
@@ -138,7 +137,6 @@ namespace SimpleFFmpegGUI.Model
             new SqliteCommand("CREATE INDEX IX_Tasks_Status ON Tasks (Status);", sqlite).ExecuteNonQuery();
 
             new SqliteCommand("CREATE INDEX IX_Presets_Type ON Presets (Type);", sqlite).ExecuteNonQuery();
-
         }
     }
 }

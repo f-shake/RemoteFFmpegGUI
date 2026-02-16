@@ -7,19 +7,29 @@ namespace SimpleFFmpegGUI.WebTest;
 
 public class FileApiTests(WebApplicationFactory<Program> factory) : SimpleFFmpegApiTestsBase(factory)
 {
+    protected override string ControllerName => "File";
+
     [Fact]
     public async Task TestFtpAsync()
     {
-        var inputOnResponse = await PostAsync("/File/Ftp/Input/On");
+        var inputOnResponse = await PostAsync("Ftp/Input/On");
         await CheckResponseAsync(inputOnResponse);
         await Task.Delay(TimeSpan.FromSeconds(2));
-        var inputOffResponse = await PostAsync("/File/Ftp/Input/Off");
+        var inputOffResponse = await PostAsync("Ftp/Input/Off");
         await CheckResponseAsync(inputOffResponse);
         await Task.Delay(TimeSpan.FromSeconds(2));
-        var outputOnResponse = await PostAsync("/File/Ftp/Output/On");
+        var outputOnResponse = await PostAsync("Ftp/Output/On");
         await CheckResponseAsync(outputOnResponse);
         await Task.Delay(TimeSpan.FromSeconds(2));
-        var outputOffResponse = await PostAsync("/File/Ftp/Output/Off");
+        var outputOffResponse = await PostAsync("Ftp/Output/Off");
         await CheckResponseAsync(outputOffResponse);
+    }
+
+
+    [Fact]
+    public async Task TestListAsync()
+    {
+        var dirResponse = await GetAsync("Dir");
+        await CheckResponseAsync(dirResponse);
     }
 }
