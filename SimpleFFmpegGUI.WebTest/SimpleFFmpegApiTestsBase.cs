@@ -1,9 +1,12 @@
 ﻿using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.WebAPI;
+using SQLitePCL;
 
 namespace SimpleFFmpegGUI.WebTest;
 
@@ -23,18 +26,35 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
         client = this.factory.CreateClient();
     }
 
-    private void ConfigureAppConfiguration(WebHostBuilderContext context, IConfigurationBuilder builder)
-    {
-        builder.AddInMemoryCollection(new Dictionary<string, string>
-        {
-            ["Token"] = "Test_Token_123",
-            ["Database:ConnectionString"] = "DataSource=:memory:"
-        });
-    }
-
     protected Task<HttpResponseMessage> GetAsync(string endpoint)
     {
         return SendAsync(HttpMethod.Get, endpoint);
+    }
+
+    protected async Task<T> GetObjectFromJsonAsync<T>(string endpoint)
+    {
+        var response = await SendAsync(HttpMethod.Get, endpoint);
+        var content = await response.Content.ReadAsStringAsync();
+        T result;
+        try
+        {
+            result = content.DeserializeWithDefaultSettings<T>();
+        }
+        catch (Exception ex)
+        {
+            string exceptionContent = content.Length > 100 ? content[..100] : content;
+            throw new Exception($"反序列为{typeof(T).Name}失败：{exceptionContent}", ex);
+        }
+
+        return result;
+    }
+
+
+    protected async Task<string> GetStringAsync(string endpoint)
+    {
+        var response = await SendAsync(HttpMethod.Get, endpoint);
+        var content = await response.Content.ReadAsStringAsync();
+        return content;
     }
 
     protected Task<HttpResponseMessage> PostAsync(string endpoint)
@@ -50,10 +70,12 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
             request.Headers.Add("Authorization", $"Bearer {token}");
         }
 
-        return await client.SendAsync(request);
+        var response = await client.SendAsync(request);
+        await CheckResponseAsync(response);
+        return response;
     }
 
-    protected async Task CheckResponseAsync(HttpResponseMessage response)
+    private async Task CheckResponseAsync(HttpResponseMessage response)
     {
         if (response.StatusCode != HttpStatusCode.OK)
         {

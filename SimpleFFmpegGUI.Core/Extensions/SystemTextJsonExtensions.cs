@@ -12,11 +12,12 @@ public static class SystemTextJsonExtensions
     private static JsonSerializerOptions defaultOptions = new JsonSerializerOptions
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        //PropertyNamingPolicy = null,
+        PropertyNameCaseInsensitive = true,
         WriteIndented = false,
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
         //NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
     };
+
     private static JsonSerializerOptions friendlyOptions = new JsonSerializerOptions
     {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
