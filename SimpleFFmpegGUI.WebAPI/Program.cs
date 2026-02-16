@@ -162,7 +162,7 @@ static void MigrateDb()
 {
     try
     {
-        FFmpegDbContext.Migrate();
+        // FFmpegDbContext.Migrate();
     }
     catch (Exception ex)
     {

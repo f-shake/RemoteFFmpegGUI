@@ -20,12 +20,14 @@ public class DbLoggerService : BackgroundService
 
     private PeriodicTimer timer;
     private static bool hasInstance = false;
+
     public DbLoggerService(IDbContextFactory<FFmpegDbContext> dbFactory)
     {
         if (hasInstance)
         {
             throw new InvalidOperationException("DbLoggerService只能有一个实例");
         }
+
         hasInstance = true;
         this.dbFactory = dbFactory;
     }
@@ -65,6 +67,7 @@ public class DbLoggerService : BackgroundService
         {
             return;
         }
+
         try
         {
             var oldBag = Interlocked.Exchange(ref queueLogs, new ConcurrentBag<Log>());
@@ -72,7 +75,8 @@ public class DbLoggerService : BackgroundService
             {
                 return;
             }
-            using var db = await dbFactory.CreateDbContextAsync();
+
+            await using var db = await dbFactory.CreateDbContextAsync();
             var logs = oldBag.ToList();
             db.Logs.AddRange(logs);
             await db.SaveChangesAsync();
@@ -98,6 +102,7 @@ public class DbLoggerService : BackgroundService
     {
         AddLog('W', message, task);
     }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
@@ -120,6 +125,7 @@ public class DbLoggerService : BackgroundService
         AddLog(log);
         Debug.WriteLine($"[{type}] {message}");
     }
+
     private void AddLog(Log log)
     {
         queueLogs.Add(log);

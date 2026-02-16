@@ -5,7 +5,7 @@ using FluentAssertions;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public class FileApiTests(WebApplicationFactory<Program> factory) : SimpleFFmpegApiTestsBase(factory)
+public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
 {
     protected override string ControllerName => "File";
 
@@ -14,13 +14,13 @@ public class FileApiTests(WebApplicationFactory<Program> factory) : SimpleFFmpeg
     {
         var inputOnResponse = await PostAsync("Ftp/Input/On");
         await CheckResponseAsync(inputOnResponse);
-        await Task.Delay(TimeSpan.FromSeconds(2));
+        await Task.Delay(TimeSpan.FromSeconds(1));
         var inputOffResponse = await PostAsync("Ftp/Input/Off");
         await CheckResponseAsync(inputOffResponse);
-        await Task.Delay(TimeSpan.FromSeconds(2));
+        await Task.Delay(TimeSpan.FromSeconds(1));
         var outputOnResponse = await PostAsync("Ftp/Output/On");
         await CheckResponseAsync(outputOnResponse);
-        await Task.Delay(TimeSpan.FromSeconds(2));
+        await Task.Delay(TimeSpan.FromSeconds(1));
         var outputOffResponse = await PostAsync("Ftp/Output/Off");
         await CheckResponseAsync(outputOffResponse);
     }

@@ -7,7 +7,7 @@ using SimpleFFmpegGUI.WebAPI;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public abstract class SimpleFFmpegApiTestsBase : IClassFixture<WebApplicationFactory<Program>>
+public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebApplicationFactory>
 {
     private readonly WebApplicationFactory<Program> factory;
     private readonly HttpClient client;
@@ -15,15 +15,12 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<WebApplicationFac
 
     protected abstract string ControllerName { get; }
 
-    protected SimpleFFmpegApiTestsBase(WebApplicationFactory<Program> factory)
+    protected SimpleFFmpegApiTestsBase(SimpleFFmpegWebApplicationFactory factory)
     {
-        this.factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureAppConfiguration(ConfigureAppConfiguration);
-        });
-        var config = factory.Services.GetRequiredService<IConfiguration>();
+        this.factory = factory;
+        var config = this.factory.Services.GetRequiredService<IConfiguration>();
         token = config.GetValue<string>(AppSettingsKeys.TokenKey);
-        client = factory.CreateClient();
+        client = this.factory.CreateClient();
     }
 
     private void ConfigureAppConfiguration(WebHostBuilderContext context, IConfigurationBuilder builder)
