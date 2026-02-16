@@ -9,19 +9,8 @@ using SimpleFFmpegGUI.WebAPI;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public class FileApiTests : SimpleFFmpegApiTestsBase
+public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
 {
-    private string testVideo10s;
-    private string outputTestVideo10s;
-
-    public FileApiTests(SimpleFFmpegWebApplicationFactory factory) : base(factory)
-    {
-        testVideo10s = factory.Services.GetRequiredService<IConfiguration>()
-            .GetValue<string>(AppTestSettingsKeys.TestVideo10sKey);
-        outputTestVideo10s = factory.Services.GetRequiredService<IConfiguration>()
-            .GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey);
-    }
-
     protected override string ControllerName => "File";
 
     [Fact]
@@ -42,16 +31,19 @@ public class FileApiTests : SimpleFFmpegApiTestsBase
 
         var inputs = await GetObjectFromJsonAsync<List<string>>("List/Input");
         inputs.Count.Should().BeGreaterThanOrEqualTo(1);
-        inputs.Should().Contain(Path.GetFileName(testVideo10s));
+        inputs.Should().Contain(Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestVideo10sKey)));
 
         var outputs = await GetObjectFromJsonAsync<List<FileInfoDto>>("List/Output");
         outputs.Count.Should().BeGreaterThanOrEqualTo(1);
-        outputs.Should().Contain(p => p.Name == Path.GetFileName(outputTestVideo10s));
+        outputs.Should().Contain(p =>
+            p.Name == Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
     }
 
     [Fact]
     public async Task TestDownloadAsync()
     {
-        var dirResponse = await GetAsync($"Download?name={Path.GetFileName(outputTestVideo10s)}");
+        var dirResponse =
+            await GetAsync(
+                $"Download?name={Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey))}");
     }
 }

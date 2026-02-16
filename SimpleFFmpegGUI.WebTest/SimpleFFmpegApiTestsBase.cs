@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,14 +15,15 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
 {
     private readonly WebApplicationFactory<Program> factory;
     private readonly HttpClient client;
-    private string token;
+    private readonly string token;
+    protected readonly IConfiguration config;
 
     protected abstract string ControllerName { get; }
 
     protected SimpleFFmpegApiTestsBase(SimpleFFmpegWebApplicationFactory factory)
     {
         this.factory = factory;
-        var config = this.factory.Services.GetRequiredService<IConfiguration>();
+        config = this.factory.Services.GetRequiredService<IConfiguration>();
         token = config.GetValue<string>(AppSettingsKeys.TokenKey);
         client = this.factory.CreateClient();
     }
@@ -35,18 +37,27 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
     {
         var response = await SendAsync(HttpMethod.Get, endpoint);
         var content = await response.Content.ReadAsStringAsync();
-        T result;
+        return ParseJson<T>(content);
+    }
+
+    protected async Task<T> PostObjectFromJsonAsync<T>(string endpoint, object body = null)
+    {
+        var response = await SendAsync(HttpMethod.Post, endpoint, body);
+        var content = await response.Content.ReadAsStringAsync();
+        return ParseJson<T>(content);
+    }
+
+    private T ParseJson<T>(string content)
+    {
         try
         {
-            result = content.DeserializeWithDefaultSettings<T>();
+            return content.DeserializeWithDefaultSettings<T>();
         }
         catch (Exception ex)
         {
             string exceptionContent = content.Length > 100 ? content[..100] : content;
             throw new Exception($"反序列为{typeof(T).Name}失败：{exceptionContent}", ex);
         }
-
-        return result;
     }
 
 
@@ -57,17 +68,22 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
         return content;
     }
 
-    protected Task<HttpResponseMessage> PostAsync(string endpoint)
+    protected Task<HttpResponseMessage> PostAsync(string endpoint, object body = null)
     {
-        return SendAsync(HttpMethod.Post, endpoint);
+        return SendAsync(HttpMethod.Post, endpoint, body);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint)
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
         var request = new HttpRequestMessage(method, $"/{ControllerName}/{endpoint}");
         if (token != null)
         {
             request.Headers.Add("Authorization", $"Bearer {token}");
+        }
+
+        if (method == HttpMethod.Post && body != null)
+        {
+            request.Content = JsonContent.Create(body);
         }
 
         var response = await client.SendAsync(request);

@@ -1,4 +1,4 @@
-﻿namespace SimpleFFmpegGUI.WebAPI;
+﻿namespace SimpleFFmpegGUI;
 
 public class AppSettingsKeys
 {
@@ -7,4 +7,5 @@ public class AppSettingsKeys
     public const string InputFtpPortKey = "InputFtpPort";
     public const string OutputFtpPortKey = "OutputFtpPort";
     public const string TokenKey = "Token";
+    public const string LocalDbKey = "LocalSqlite";
 }

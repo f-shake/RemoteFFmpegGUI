@@ -1,4 +1,5 @@
-﻿using FzLib;
+﻿using System;
+using FzLib;
 using FzLib.Net;
 using FzLib.Programming;
 using Microsoft.AspNetCore.Mvc;
@@ -18,17 +19,22 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class TaskController(IConfiguration config, TaskService taskService, TaskRepository taskRepository, QueueService queue) : FFmpegControllerBase(config)
+    public class TaskController(
+        IConfiguration config,
+        TaskService taskService,
+        TaskRepository taskRepository,
+        QueueService queue) : FFmpegControllerBase(config)
     {
         [HttpPost]
         [Route("Add/Code")]
         public async Task<List<int>> AddCodeTaskAsync([FromBody] TaskDto request)
         {
             if (request.Inputs == null || request.Inputs.Count == 0
-                || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+                                       || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
             {
                 throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
             }
+
             List<int> ids = new List<int>();
 
             for (int i = 0; i < request.Inputs.Count; i++)
@@ -38,13 +44,16 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
 
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-                var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i), request.Argument);
+                var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i),
+                    request.Argument);
                 ids.Add(task.Id);
             }
+
             if (request.Start)
             {
                 queue.StartQueue();
             }
+
             return ids;
         }
 
@@ -52,25 +61,31 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Add/Combine")]
         public async Task<int> AddCombineTaskAsync([FromBody] TaskDto request)
         {
-            if (request.Inputs == null || request.Inputs.Count() == 0 || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+            if (request.Inputs == null || request.Inputs.Count() == 0 ||
+                request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
             {
                 throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
             }
+
             if (request.Inputs.Count() != 2)
             {
                 throw new HttpStatusCodeException("输入文件必须为2个", System.Net.HttpStatusCode.BadRequest);
             }
+
             foreach (var file in request.Inputs)
             {
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
+
             request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
-            var task = await taskRepository.AddTaskAsync(TaskType.Combine, request.Inputs, GetOutput(request, 0), request.Argument);
+            var task = await taskRepository.AddTaskAsync(TaskType.Combine, request.Inputs, GetOutput(request, 0),
+                request.Argument);
 
             if (request.Start)
             {
                 queue.StartQueue();
             }
+
             return task.Id;
         }
 
@@ -78,24 +93,29 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Add/Compare")]
         public async Task<int> AddCompareTaskAsync([FromBody] TaskDto request)
         {
-            if (request.Inputs == null || request.Inputs.Count() == 0 || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+            if (request.Inputs == null || request.Inputs.Count() == 0 ||
+                request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
             {
                 throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
             }
+
             if (request.Inputs.Count != 2)
             {
                 throw new HttpStatusCodeException("输入文件必须为2个", System.Net.HttpStatusCode.BadRequest);
             }
+
             foreach (var file in request.Inputs)
             {
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
+
             request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
             var task = await taskRepository.AddTaskAsync(TaskType.Compare, request.Inputs, null, null);
             if (request.Start)
             {
                 queue.StartQueue();
             }
+
             return task.Id;
         }
 
@@ -104,22 +124,26 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public async Task<List<int>> AddConcatTaskAsync([FromBody] TaskDto request)
         {
             if (request.Inputs == null || request.Inputs.Count < 2
-                || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+                                       || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
             {
                 throw new HttpStatusCodeException("输入文件为空或少于2个", System.Net.HttpStatusCode.BadRequest);
             }
+
             List<int> ids = new List<int>();
 
             foreach (var file in request.Inputs)
             {
                 file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
             }
-            var task = await taskRepository.AddTaskAsync(TaskType.Concat, request.Inputs, GetOutput(request, 0), request.Argument);
+
+            var task = await taskRepository.AddTaskAsync(TaskType.Concat, request.Inputs, GetOutput(request, 0),
+                request.Argument);
             ids.Add(task.Id);
             if (request.Start)
             {
                 queue.StartQueue();
             }
+
             return ids;
         }
 
@@ -134,6 +158,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 queue.StartQueue();
             }
+
             return task.Id;
         }
 
@@ -166,15 +191,24 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpGet]
-        [Route("")]
-        public async Task<IActionResult> GetTask(int id)
+        [Route("Detail/{id:int}")]
+        public async Task<TaskInfo> GetTaskAsync(int id)
         {
             var task = await taskRepository.GetTaskAsync(id);
             if (task == null)
             {
-                return NotFound();
+                throw new HttpStatusCodeException($"任务{id}不存在", System.Net.HttpStatusCode.NotFound);
             }
-            return Ok(HideAbsolutePath(task));
+
+            return HideAbsolutePath(task);
+        }
+
+        [Obsolete("请使用 /Task/Detail/{id} 访问")]
+        [HttpGet]
+        [Route("")]
+        public Task<TaskInfo> GetTaskOld(int id)
+        {
+            return GetTaskAsync(id);
         }
 
         /// <summary>
@@ -192,6 +226,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             tasks.List.ForEach(p => HideAbsolutePath(p));
             return tasks;
         }
+
         [HttpGet]
         [Route("Formats")]
         public VideoFormat[] GetVideoFormats()
@@ -221,6 +256,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 output = output[1..];
             }
+
             if (string.IsNullOrWhiteSpace(output))
             {
                 if (request.Inputs.Count > 0)

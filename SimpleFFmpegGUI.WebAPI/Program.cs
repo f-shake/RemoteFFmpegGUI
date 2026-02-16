@@ -78,7 +78,7 @@ void CreateWebApplication(string[] args)
 
 void ConfigureServices(WebApplicationBuilder builder)
 {
-    builder.Services.AddFFmpegServices();
+    builder.Services.AddFFmpegServices(builder.Configuration);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);
     builder.Services.AddHealthChecks();

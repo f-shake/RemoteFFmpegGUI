@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
@@ -7,10 +9,11 @@ namespace SimpleFFmpegGUI;
 
 public static class DependencyInjectionExtension
 {
-    public static void AddFFmpegServices(this IServiceCollection services)
+    public static void AddFFmpegServices(this IServiceCollection services, IConfiguration config)
     {
+        var connectionString = config.GetConnectionString(AppSettingsKeys.LocalDbKey);
         services
-            .AddDbContextFactory<FFmpegDbContext>()
+            .AddDbContextFactory<FFmpegDbContext>(o => { o.UseSqlite(connectionString); })
             .AddTransient<LogRepository>()
             .AddTransient<DbConfigService>()
             .AddTransient<PresetRepository>()
