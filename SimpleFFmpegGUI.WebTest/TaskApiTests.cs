@@ -16,9 +16,15 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     protected override string ControllerName => "Task";
 
     [Fact]
-    public async Task TestAddTasksAsync()
+    public async Task TestTasksCurdAsync()
     {
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", new TaskDto
+        var tasks = await GetObjectFromJsonAsync<PagedListDto<TaskInfo>>("List");
+        tasks.List.Count.Should().Be(0);
+    }
+
+    private TaskDto GetCodeTask()
+    {
+        return new TaskDto
         {
             Inputs =
             [
@@ -42,7 +48,13 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
                     Bitrate = 128,
                 },
             },
-        });
+        };
+    }
+
+    [Fact]
+    public async Task TestTasksAsync()
+    {
+        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask());
         ids.Count.Should().Be(1);
         var id = ids[0];
         var task = await GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");

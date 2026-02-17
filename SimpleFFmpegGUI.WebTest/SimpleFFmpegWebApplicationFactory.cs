@@ -16,29 +16,31 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        if (hasInitialized)
+        {
+            throw new Exception("SimpleFFmpegWebApplicationFactory 只能初始化一次");
+        }
+
+        hasInitialized = true;
+
+        var tempDir = Path.Combine(Path.GetTempPath(), nameof(SimpleFFmpegGUI) + nameof(WebTest));
+        var inputDir = Path.Combine(tempDir, "input");
+        var outputDir = Path.Combine(tempDir, "output");
+        Directory.CreateDirectory(inputDir);
+        Directory.CreateDirectory(outputDir);
+        Console.WriteLine($"测试目录：{inputDir}");
+
+        var testVideo10s = PrepareTestVideos(inputDir);
+        var testOutputVideo10s = PrepareTestVideos(outputDir);
+
+
+        builder.UseSetting($"ConnectionStrings:{AppSettingsKeys.LocalDbKey}",
+            $"DataSource={Path.Combine(tempDir, "db_test.sqlite")}");
         builder.ConfigureAppConfiguration((context, configBuilder) =>
         {
-            if (hasInitialized)
-            {
-                throw new Exception("SimpleFFmpegWebApplicationFactory 只能初始化一次");
-            }
-
-            hasInitialized = true;
-
-            var tempDir = Path.Combine(Path.GetTempPath(), nameof(SimpleFFmpegGUI) + nameof(WebTest));
-            var inputDir = Path.Combine(tempDir, "input");
-            var outputDir = Path.Combine(tempDir, "output");
-            Directory.CreateDirectory(inputDir);
-            Directory.CreateDirectory(outputDir);
-            Console.WriteLine($"测试目录：{inputDir}");
-
-            var testVideo10s = PrepareTestVideos(inputDir);
-            var testOutputVideo10s = PrepareTestVideos(outputDir);
-
             configBuilder.AddInMemoryCollection(new Dictionary<string, string>
             {
                 [AppSettingsKeys.TokenKey] = "Test_Token_123",
-                ["Database:ConnectionString"] = "DataSource=:memory:",
                 [AppSettingsKeys.InputDirKey] = inputDir,
                 [AppSettingsKeys.OutputDirKey] = outputDir,
                 [AppTestSettingsKeys.TestVideoKey] = TestVideo,

@@ -219,11 +219,28 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         /// <param name="take"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("List")]
-        public async Task<PagedListDto<TaskInfo>> GetTasks(int status = 0, int skip = 0, int take = 0)
+        [Route("ListOld")]
+        public async Task<PagedListDto<TaskInfo>> GetTasksOld(int status = 0, int skip = 0, int take = 0)
         {
             var tasks = await taskRepository.GetTasksAsync(status == 0 ? null : (Model.TaskStatus)status, skip, take);
             tasks.List.ForEach(p => HideAbsolutePath(p));
+            return tasks;
+        }
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [HttpGet("List")]
+        public async Task<PagedListDto<TaskInfo>> GetTasksAsync([FromQuery] TaskQueryDto query)
+        {
+            int skip = (query.Page - 1) * query.PageSize;
+            var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;
+            var tasks = await taskRepository.GetTasksAsync(statusEnum, skip, query.PageSize);
+            tasks.List.ForEach(p => HideAbsolutePath(p));
+
             return tasks;
         }
 

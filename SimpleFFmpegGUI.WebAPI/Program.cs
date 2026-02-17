@@ -20,6 +20,8 @@ using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Log = Serilog.Log;
 
 WebApplication app = null;
@@ -72,8 +74,17 @@ void CreateWebApplication(string[] args)
     ConfigureServices(builder);
     app = builder.Build();
     ConfigureMiddleware(app);
+    InitializeDatabase(app);
     InitializeLogs(app.Services);
     app.Run();
+}
+
+void InitializeDatabase(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
+    using var context = contextFactory.CreateDbContext();
+    context.Database.EnsureCreated();
 }
 
 void ConfigureServices(WebApplicationBuilder builder)
