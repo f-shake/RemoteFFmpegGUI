@@ -3,9 +3,11 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Extensions;
+using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WebAPI;
 using SQLitePCL;
 
@@ -26,6 +28,18 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
         config = this.factory.Services.GetRequiredService<IConfiguration>();
         token = config.GetValue<string>(AppSettingsKeys.TokenKey);
         client = this.factory.CreateClient();
+        ClearDatabase();
+    }
+
+    private void ClearDatabase()
+    {
+        using var scope = factory.Services.CreateScope();
+        var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
+        using var context = dbContextFactory.CreateDbContext();
+
+        context.Tasks.ExecuteDelete();
+        context.Logs.ExecuteDelete();
+        context.Presets.ExecuteDelete();
     }
 
     protected Task<HttpResponseMessage> GetAsync(string endpoint)
