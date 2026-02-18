@@ -20,6 +20,7 @@
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
     <PackageReference Include="FubarDev.FtpServer" />

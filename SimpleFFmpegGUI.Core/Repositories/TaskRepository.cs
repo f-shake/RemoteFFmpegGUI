@@ -34,13 +34,14 @@ public class TaskRepository
                     item.Status = TaskStatus.Error;
                     item.Message = "状态异常：启动时处于正在运行状态";
                 }
+
                 db.SaveChanges();
             }
         }
-
     }
 
-    public async Task<TaskInfo> AddTaskAsync(TaskType type, List<InputArguments> path, string outputPath, OutputArguments arg)
+    public async Task<TaskInfo> AddTaskAsync(TaskType type, List<InputArguments> path, string outputPath,
+        OutputArguments arg)
     {
         var task = new TaskInfo()
         {
@@ -59,9 +60,12 @@ public class TaskRepository
         var tasks = db.Tasks.Where(p => p.IsDeleted == false);
         var runningTasks = await tasks.Where(p => p.Status == TaskStatus.Processing).ToListAsync();
         var queueTasks = await tasks.Where(p => p.Status == TaskStatus.Queue).ToListAsync();
-        var doneTasks = await tasks.Where(p => p.Status == TaskStatus.Done).Where(p => p.StartTime > startTime).ToListAsync();
-        var errorTasks = await tasks.Where(p => p.Status == TaskStatus.Error).Where(p => p.StartTime > startTime).ToListAsync();
-        var cancelTasks = await tasks.Where(p => p.Status == TaskStatus.Cancel).Where(p => p.StartTime > startTime).ToListAsync();
+        var doneTasks = await tasks.Where(p => p.Status == TaskStatus.Done).Where(p => p.StartTime > startTime)
+            .ToListAsync();
+        var errorTasks = await tasks.Where(p => p.Status == TaskStatus.Error).Where(p => p.StartTime > startTime)
+            .ToListAsync();
+        var cancelTasks = await tasks.Where(p => p.Status == TaskStatus.Cancel).Where(p => p.StartTime > startTime)
+            .ToListAsync();
         return [.. runningTasks, .. queueTasks, .. doneTasks, .. errorTasks, .. cancelTasks];
     }
 
@@ -89,15 +93,18 @@ public class TaskRepository
         {
             tasks = tasks.OrderByDescending(p => p.CreateTime);
         }
+
         int count = await tasks.CountAsync();
         if (skip > 0)
         {
             tasks = tasks.Skip(skip);
         }
+
         if (take > 0)
         {
             tasks = tasks.Take(take);
         }
+
         return new PagedListDto<TaskInfo>(await tasks.ToListAsync(), count);
     }
 
@@ -113,23 +120,26 @@ public class TaskRepository
         return db.Tasks.AnyAsync(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
     }
 
-    public Task<int> SoftDeleteAsync(int id)
-    {
-        return db.Tasks.Where(p => p.Id == id).ExecuteUpdateAsync(p => p.SetProperty(t => t.IsDeleted, true));
-    }
 
-    public Task<int> SoftDeleteAsync(ICollection<int> ids)
+    public async Task<int> SoftDeleteAsync(ICollection<int> ids)
     {
-        return db.Tasks.Where(p => ids.Any(id => id == p.Id)).ExecuteUpdateAsync(p => p.SetProperty(t => t.IsDeleted, true));
-    }
-
-    public Task<int> UpdateStatusAsync(int id, TaskStatus status)
-    {
-        return db.Tasks.Where(p => p.Id == id).ExecuteUpdateAsync(p => p.SetProperty(t => t.Status, status));
+        switch (ids.Count)
+        {
+            case 0:
+                return 0;
+            case 1:
+                var id = ids.First();
+                return await db.Tasks.Where(p => p.Id == id)
+                    .ExecuteUpdateAsync(p => p.SetProperty(t => t.IsDeleted, true));
+            default:
+                return await db.Tasks.Where(p => ids.Any(id => id == p.Id))
+                    .ExecuteUpdateAsync(p => p.SetProperty(t => t.IsDeleted, true));
+        }
     }
 
     public Task<int> UpdateStatusAsync(ICollection<int> ids, TaskStatus status)
     {
-        return db.Tasks.Where(p => ids.Any(id => id == p.Id)).ExecuteUpdateAsync(p => p.SetProperty(t => t.Status, status));
+        return db.Tasks.Where(p => ids.Any(id => id == p.Id))
+            .ExecuteUpdateAsync(p => p.SetProperty(t => t.Status, status));
     }
 }

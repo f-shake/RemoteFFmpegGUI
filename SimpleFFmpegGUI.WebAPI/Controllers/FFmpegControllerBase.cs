@@ -21,36 +21,12 @@ public class FFmpegControllerBase : ControllerBase
     public FFmpegControllerBase(IConfiguration config)
     {
         this.config = config;
-        InputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ?? throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
-        OutputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ?? throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
+        InputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ??
+                   throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
+        OutputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ??
+                    throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
     }
 
-    protected async Task<string> CheckAndGetInputFilePathAsync(string name)
-    {
-        if (name.StartsWith(':'))
-        {
-            name = name[1..];
-            var files = Directory.EnumerateFiles(InputDir, name, SearchOption.AllDirectories);
-            if (!files.Any())
-            {
-                throw new HttpStatusCodeException("找不到文件" + name, System.Net.HttpStatusCode.NotFound);
-            }
-            if (files.Count() > 2)
-            {
-                throw new HttpStatusCodeException($"存在多个文件名为{name}的文件", System.Net.HttpStatusCode.Conflict);
-            }
-            return files.First();
-        }
-        else
-        {
-            string path = Path.Combine(InputDir, name);
-            if (!System.IO.File.Exists(path))
-            {
-                throw new HttpStatusCodeException($"不存在文件{path}", System.Net.HttpStatusCode.NotFound);
-            }
-            return path;
-        }
-    }
 
     protected void CheckFileNameNull(string path)
     {
@@ -67,17 +43,18 @@ public class FFmpegControllerBase : ControllerBase
             throw new HttpStatusCodeException($"{objName}为空", System.Net.HttpStatusCode.BadRequest);
         }
     }
+
     protected string GetInputRelativePath(string path)
     {
-        return path.StartsWith(InputDir) ?
-            path.Substring(InputDir.Length).Replace('\\', '/').TrimStart('/')
+        return path.StartsWith(InputDir)
+            ? path.Substring(InputDir.Length).Replace('\\', '/').TrimStart('/')
             : path;
     }
 
     protected string GetOutputRelativePath(string path)
     {
-        return path.StartsWith(OutputDir) ?
-            path.Substring(OutputDir.Length).Replace('\\', '/').TrimStart('/')
+        return path.StartsWith(OutputDir)
+            ? path.Substring(OutputDir.Length).Replace('\\', '/').TrimStart('/')
             : path;
     }
 
@@ -87,6 +64,7 @@ public class FFmpegControllerBase : ControllerBase
         {
             return null;
         }
+
         if (task.Inputs != null)
         {
             foreach (var input in task.Inputs)
@@ -94,10 +72,12 @@ public class FFmpegControllerBase : ControllerBase
                 input.FilePath = GetInputRelativePath(input.FilePath);
             }
         }
+
         if (task.Output != null)
         {
             task.Output = GetOutputRelativePath(task.Output);
         }
+
         return task;
     }
 }

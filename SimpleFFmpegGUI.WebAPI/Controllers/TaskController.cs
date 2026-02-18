@@ -26,141 +26,17 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         QueueService queue) : FFmpegControllerBase(config)
     {
         [HttpPost]
-        [Route("Add/Code")]
-        public async Task<List<int>> AddCodeTaskAsync([FromBody] TaskDto request)
+        [Route("Add/{type}")]
+        public async Task<ActionResult<List<int>>> AddTaskAsync(string type, [FromBody] TaskDto request)
         {
-            if (request.Inputs == null || request.Inputs.Count == 0
-                                       || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+            if (request == null)
             {
-                throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
+                return BadRequest("请求对象不能为空");
             }
+            CheckAndGetInputFilePathAsync()
 
-            List<int> ids = new List<int>();
-
-            for (int i = 0; i < request.Inputs.Count; i++)
-            {
-                var file = request.Inputs[i];
-                //检查输入文件存在
-
-
-                file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-                var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i),
-                    request.Argument);
-                ids.Add(task.Id);
-            }
-
-            if (request.Start)
-            {
-                queue.StartQueue();
-            }
-
-            return ids;
         }
 
-        [HttpPost]
-        [Route("Add/Combine")]
-        public async Task<int> AddCombineTaskAsync([FromBody] TaskDto request)
-        {
-            if (request.Inputs == null || request.Inputs.Count() == 0 ||
-                request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
-            {
-                throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
-            }
-
-            if (request.Inputs.Count() != 2)
-            {
-                throw new HttpStatusCodeException("输入文件必须为2个", System.Net.HttpStatusCode.BadRequest);
-            }
-
-            foreach (var file in request.Inputs)
-            {
-                file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-            }
-
-            request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
-            var task = await taskRepository.AddTaskAsync(TaskType.Combine, request.Inputs, GetOutput(request, 0),
-                request.Argument);
-
-            if (request.Start)
-            {
-                queue.StartQueue();
-            }
-
-            return task.Id;
-        }
-
-        [HttpPost]
-        [Route("Add/Compare")]
-        public async Task<int> AddCompareTaskAsync([FromBody] TaskDto request)
-        {
-            if (request.Inputs == null || request.Inputs.Count() == 0 ||
-                request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
-            {
-                throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
-            }
-
-            if (request.Inputs.Count != 2)
-            {
-                throw new HttpStatusCodeException("输入文件必须为2个", System.Net.HttpStatusCode.BadRequest);
-            }
-
-            foreach (var file in request.Inputs)
-            {
-                file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-            }
-
-            request.Inputs.ForEach(p => p.FilePath = Path.Combine(InputDir, p.FilePath));
-            var task = await taskRepository.AddTaskAsync(TaskType.Compare, request.Inputs, null, null);
-            if (request.Start)
-            {
-                queue.StartQueue();
-            }
-
-            return task.Id;
-        }
-
-        [HttpPost]
-        [Route("Add/Concat")]
-        public async Task<List<int>> AddConcatTaskAsync([FromBody] TaskDto request)
-        {
-            if (request.Inputs == null || request.Inputs.Count < 2
-                                       || request.Inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
-            {
-                throw new HttpStatusCodeException("输入文件为空或少于2个", System.Net.HttpStatusCode.BadRequest);
-            }
-
-            List<int> ids = new List<int>();
-
-            foreach (var file in request.Inputs)
-            {
-                file.FilePath = await CheckAndGetInputFilePathAsync(file.FilePath);
-            }
-
-            var task = await taskRepository.AddTaskAsync(TaskType.Concat, request.Inputs, GetOutput(request, 0),
-                request.Argument);
-            ids.Add(task.Id);
-            if (request.Start)
-            {
-                queue.StartQueue();
-            }
-
-            return ids;
-        }
-
-        [HttpPost]
-        [Route("Add/Custom")]
-        public async Task<int> AddCustomTaskAsync([FromBody] TaskDto request)
-        {
-            CheckNull(request.Argument, "参数");
-            CheckNull(request.Argument.Extra, "参数");
-            var task = await taskRepository.AddTaskAsync(TaskType.Custom, null, null, request.Argument);
-            if (request.Start)
-            {
-                queue.StartQueue();
-            }
-
-            return task.Id;
-        }
 
         [HttpPost]
         [Route("Cancel")]
@@ -176,22 +52,33 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return taskService.TryCancelTasksAsync(ids);
         }
 
+        [HttpDelete]
+        [Route("{id:int}")]
+        public async Task<IActionResult> DeleteTaskAsync(int id)
+        {
+            int rows = await taskService.DeleteTaskAsync(id);
+            if (rows == 0)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
         [HttpPost]
         [Route("Delete")]
-        public Task DeleteTaskAsync(int id)
+        public async Task<ActionResult<int>> DeleteTasksAsync([FromBody] ICollection<int> ids)
         {
-            return taskService.DeleteTaskAsync(id);
+            var rows = await taskService.DeleteTasksAsync(ids);
+            if (rows == 0)
+            {
+                return NotFound();
+            }
+
+            return rows;
         }
 
-        [HttpPost]
-        [Route("Delete/List")]
-        public Task DeleteTasksAsync(ICollection<int> ids)
-        {
-            return taskService.TryDeleteTasksAsync(ids);
-        }
-
-        [HttpGet]
-        [Route("Detail/{id:int}")]
+        [HttpGet("Detail/{id:int}")]
         public async Task<TaskInfo> GetTaskAsync(int id)
         {
             var task = await taskRepository.GetTaskAsync(id);
@@ -203,36 +90,12 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return HideAbsolutePath(task);
         }
 
-        [Obsolete("请使用 /Task/Detail/{id} 访问")]
-        [HttpGet]
-        [Route("")]
-        public Task<TaskInfo> GetTaskOld(int id)
-        {
-            return GetTaskAsync(id);
-        }
 
         /// <summary>
-        ///
+        /// 获取任务列表
         /// </summary>
-        /// <param name="status">1：队列中；2：进行中；3：完成；4：错误；5：取消</param>
-        /// <param name="skip"></param>
-        /// <param name="take"></param>
+        /// <param name="query"></param>
         /// <returns></returns>
-        [HttpGet]
-        [Route("ListOld")]
-        public async Task<PagedListDto<TaskInfo>> GetTasksOld(int status = 0, int skip = 0, int take = 0)
-        {
-            var tasks = await taskRepository.GetTasksAsync(status == 0 ? null : (Model.TaskStatus)status, skip, take);
-            tasks.List.ForEach(p => HideAbsolutePath(p));
-            return tasks;
-        }
-
-
-        /// <summary>
-        ///
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
         [HttpGet("List")]
         public async Task<PagedListDto<TaskInfo>> GetTasksAsync([FromQuery] TaskQueryDto query)
         {
@@ -263,30 +126,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public Task ResetTasksAsync(IEnumerable<int> ids)
         {
             return taskService.TryResetTasksAsync(ids);
-        }
-
-        private string GetOutput(TaskDto request, int inputIndex)
-        {
-            Debug.Assert(inputIndex >= 0 && inputIndex < request.Inputs.Count);
-            string output = request.Output;
-            if (output != null && output.StartsWith(':'))
-            {
-                output = output[1..];
-            }
-
-            if (string.IsNullOrWhiteSpace(output))
-            {
-                if (request.Inputs.Count > 0)
-                {
-                    output = Path.Combine(OutputDir, Path.GetFileName(request.Inputs[inputIndex].FilePath));
-                }
-            }
-            else
-            {
-                output = Path.Combine(OutputDir, request.Output);
-            }
-
-            return output;
         }
     }
 }
