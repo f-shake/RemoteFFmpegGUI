@@ -22,6 +22,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Log = Serilog.Log;
 
 WebApplication app = null;
@@ -69,6 +70,7 @@ void CreateWebApplication(string[] args)
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     MigrateDb();
     var builder = WebApplication.CreateBuilder(args);
+    ConfigureAppsettings(builder);
     ConfigureServices(builder);
     app = builder.Build();
     ConfigureMiddleware(app);
@@ -83,6 +85,14 @@ void InitializeDatabase(WebApplication app)
     var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
     using var context = contextFactory.CreateDbContext();
     context.Database.EnsureCreated();
+}
+
+void ConfigureAppsettings(WebApplicationBuilder builder)
+{
+    builder.Configuration.SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+        .AddEnvironmentVariables();
 }
 
 void ConfigureServices(WebApplicationBuilder builder)

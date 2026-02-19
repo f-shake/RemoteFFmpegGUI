@@ -11,7 +11,7 @@
         <Content Remove="obj\**" />
         <EmbeddedResource Remove="obj\**" />
         <None Remove="obj\**" />
-        <Content Update="appsettings.json">
+        <Content Update="appsettings.test.json">
           <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -34,6 +34,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SimpleFFmpegGUI.WebAPI\SimpleFFmpegGUI.WebAPI.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.test.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

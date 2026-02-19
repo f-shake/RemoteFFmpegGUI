@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,30 @@ using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
+public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
 {
     protected override string ControllerName => "Task";
 
+
+    [Fact]
+    public async Task TestTaskProcessAsync()
+    {
+        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
+        var id = ids[0];
+        var task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Queue);
+        await PostAsync("/Queue/Start");
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Processing);
+        var ffmpegCount = Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg");
+        ffmpegCount.Should().BeGreaterThan(0);
+        await PostAsync("/Queue/Cancel");
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Cancel);
+        Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg").Should().Be(ffmpegCount - 1);
+    }
 
     [Fact]
     public async Task TestTasksCurdAsync()
@@ -63,29 +84,7 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(11);
     }
-
-    [Fact]
-    public async Task TestTaskProcessAsync()
-    {
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
-        var id = ids[0];
-        var task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Queue);
-        await PostAsync("/Queue/Start");
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Processing);
-        await PostAsync("/Queue/Cancel");
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Cancel);
-    }
-
-    private Task<TaskInfo> GetTaskAsync(int id)
-    {
-        return GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");
-    }
-
+    
     private TaskDto GetCodeTask(int count)
     {
         var inputs = new List<InputArguments>();
@@ -116,5 +115,10 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
                 },
             },
         };
+    }
+
+    private Task<TaskInfo> GetTaskAsync(int id)
+    {
+        return GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");
     }
 }

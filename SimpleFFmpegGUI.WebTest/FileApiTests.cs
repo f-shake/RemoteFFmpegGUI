@@ -14,6 +14,14 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     protected override string ControllerName => "File";
 
     [Fact]
+    public async Task TestDownloadAsync()
+    {
+        var dirResponse =
+            await GetAsync(
+                $"Download?name={Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey))}");
+    }
+
+    [Fact]
     public async Task TestFtpAsync()
     {
         var inputOnResponse = await PostAsync("Ftp/Input/On");
@@ -37,13 +45,5 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         outputs.Count.Should().BeGreaterThanOrEqualTo(1);
         outputs.Should().Contain(p =>
             p.Name == Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
-    }
-
-    [Fact]
-    public async Task TestDownloadAsync()
-    {
-        var dirResponse =
-            await GetAsync(
-                $"Download?name={Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey))}");
     }
 }

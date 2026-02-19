@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using FzLib.Application;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,8 +12,7 @@ namespace SimpleFFmpegGUI.WebTest;
 
 public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
 {
-    public const string TestVideo = @"C:\Users\autod\Desktop\DJI_20251025145405_0831_D.MP4";
-
+    public const string TestAppsettingsJson = "appsettings.test.json";
     private static bool hasInitialized = false;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -38,12 +39,12 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
             $"DataSource={Path.Combine(tempDir, "db_test.sqlite")}");
         builder.ConfigureAppConfiguration((context, configBuilder) =>
         {
+            configBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), TestAppsettingsJson));
             configBuilder.AddInMemoryCollection(new Dictionary<string, string>
             {
                 [AppSettingsKeys.TokenKey] = "Test_Token_123",
                 [AppSettingsKeys.InputDirKey] = inputDir,
                 [AppSettingsKeys.OutputDirKey] = outputDir,
-                [AppTestSettingsKeys.TestVideoKey] = TestVideo,
                 [AppTestSettingsKeys.TestVideo10sKey] = testVideo10s,
                 [AppTestSettingsKeys.TestOutputVideo10sKey] = testOutputVideo10s,
             });
@@ -52,6 +53,8 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
 
     private static string PrepareTestVideos(string testDir)
     {
+        JsonObject testAppSettings = (JsonObject)JsonNode.Parse(File.ReadAllText(TestAppsettingsJson));
+        var testVideo = testAppSettings[AppTestSettingsKeys.TestVideoKey].GetValue<string>();
         var ffmpegPath = Path.GetFullPath(Path.Combine("ffmpeg", "ffmpeg.exe"));
         if (!File.Exists(ffmpegPath))
         {
@@ -59,13 +62,13 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
         }
 
         //给测试视频裁剪前10秒
-        var outputPath = Path.Combine(testDir, Path.GetFileNameWithoutExtension(TestVideo) + ".10s.mp4");
+        var outputPath = Path.Combine(testDir, Path.GetFileNameWithoutExtension(testVideo) + ".10s.mp4");
         if (File.Exists(outputPath))
         {
             return outputPath;
         }
 
-        var argument = $"-i \"{TestVideo}\" -t 10 -c copy \"{outputPath}\"";
+        var argument = $"-i \"{testVideo}\" -t 10 -c copy \"{outputPath}\"";
         var process = new Process()
         {
             StartInfo = new ProcessStartInfo()
