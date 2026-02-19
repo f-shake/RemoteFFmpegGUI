@@ -68,8 +68,6 @@ void CreateWebApplication(string[] args)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
     MigrateDb();
-    GlobalFFOptions.Configure(new FFOptions
-        { BinaryFolder = Path.Combine(FzLib.Application.ApplicationInfo.ProgramDirectoryPath, "ffmpeg") });
     var builder = WebApplication.CreateBuilder(args);
     ConfigureServices(builder);
     app = builder.Build();

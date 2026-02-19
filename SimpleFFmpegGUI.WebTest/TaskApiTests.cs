@@ -78,7 +78,7 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         await PostAsync("/Queue/Cancel");
         await Task.Delay(TimeSpan.FromSeconds(1));
         task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Done);
+        task.Status.Should().Be(TaskStatus.Cancel);
     }
 
     private Task<TaskInfo> GetTaskAsync(int id)

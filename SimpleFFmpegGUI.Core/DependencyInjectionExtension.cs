@@ -29,6 +29,7 @@ public static class DependencyInjectionExtension
             .AddTransient<IFFmpegProcessServiceFactory, FFmpegProcessServiceFactory>()
             .AddTransient<FilePathHelper>()
             .AddSingleton<DbLoggerService>()
-            .AddHostedService(provider => provider.GetRequiredService<DbLoggerService>());
+            .AddHostedService(provider => provider.GetRequiredService<DbLoggerService>())
+            .AddHostedService<AppLifetimeService>();
     }
 }

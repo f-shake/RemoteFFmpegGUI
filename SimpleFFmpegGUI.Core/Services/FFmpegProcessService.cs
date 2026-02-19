@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace SimpleFFmpegGUI.Services;
 
@@ -23,19 +24,32 @@ public class FFmpegProcessService
 
     private TaskCompletionSource<bool> tcs;
 
-    public FFmpegProcessService(DbConfigService config, string argument)
+    public FFmpegProcessService(IConfiguration config, string argument)
     {
-        Priority = config.DefaultProcessPriority;
-
-        string ffmpeg = "ffmpeg";
-        string fileFFmpeg = Path.Combine(ApplicationInfo.ProgramDirectoryPath, "ffmpeg", "ffmpeg.exe");
-        if (File.Exists(fileFFmpeg))
+        Priority = config.GetValue<int>(AppSettingsKeys.DefaultProcessPriorityKey);
+        string ffmpegProgram = "ffmpeg";
+        var ffmpegDir = config.GetValue<string>(AppSettingsKeys.FFmpegDirKey);
+        if (!string.IsNullOrEmpty(ffmpegDir))
         {
-            ffmpeg = fileFFmpeg;
+            var ffmpegProgram1 = Path.Combine(Path.GetFullPath(ffmpegDir), "ffmpeg");
+            var ffmpegProgram2 = Path.Combine(Path.GetFullPath(ffmpegDir), "ffmpeg.exe");
+            if (File.Exists(ffmpegProgram1))
+            {
+                ffmpegProgram = ffmpegProgram1;
+            }
+            else if (File.Exists(ffmpegProgram2))
+            {
+                ffmpegProgram = ffmpegProgram2;
+            }
+            else
+            {
+                throw new Exception($"ffmpeg程序不存在：{ffmpegDir}");
+            }
         }
+
         process.StartInfo = new ProcessStartInfo()
         {
-            FileName = ffmpeg,
+            FileName = ffmpegProgram,
             Arguments = argument,
             CreateNoWindow = true,
             UseShellExecute = false,
@@ -55,7 +69,9 @@ public class FFmpegProcessService
     /// <summary>
     /// CPU使用率
     /// </summary>
-    public double CpuUsage => process.HasExited ? process.TotalProcessorTime.TotalSeconds / Environment.ProcessorCount / RunningTime.TotalSeconds : throw new Exception("进程还未结束");
+    public double CpuUsage => process.HasExited
+        ? process.TotalProcessorTime.TotalSeconds / Environment.ProcessorCount / RunningTime.TotalSeconds
+        : throw new Exception("进程还未结束");
 
     /// <summary>
     /// 进程ID
@@ -88,6 +104,7 @@ public class FFmpegProcessService
             {
                 throw new Exception("进程已经退出");
             }
+
             priority = value switch
             {
                 5 => ProcessPriorityClass.RealTime,
@@ -104,10 +121,13 @@ public class FFmpegProcessService
             }
         }
     }
+
     /// <summary>
     /// 运行时间
     /// </summary>
-    public TimeSpan RunningTime => process.HasExited ? process.ExitTime - process.StartTime : throw new Exception("进程还未结束");
+    public TimeSpan RunningTime =>
+        process.HasExited ? process.ExitTime - process.StartTime : throw new Exception("进程还未结束");
+
     /// <summary>
     /// 启动进程
     /// </summary>
@@ -121,6 +141,7 @@ public class FFmpegProcessService
         {
             throw new Exception("已经开始运行，不可再次运行");
         }
+
         started = true;
 
         if (!string.IsNullOrEmpty(workingDir))
@@ -128,6 +149,7 @@ public class FFmpegProcessService
             //2Pass时会生成文件名相同的临时文件，如果多个FFmpeg一起运行会冲突，因此需要设置单独的工作目录
             process.StartInfo.WorkingDirectory = workingDir;
         }
+
         tcs = new TaskCompletionSource<bool>();
         bool exit = false;
         cancellationToken?.Register(() =>
@@ -143,31 +165,32 @@ public class FFmpegProcessService
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         process.Exited += async (s, e) =>
-         {
-             exit = true;
-             try
-             {
-                 await Task.Delay(1000);
-                 if (process.ExitCode == 0)
-                 {
-                     tcs.SetResult(true);
-                 }
-                 else if (exit)
-                 {
-                     tcs.SetException(new TaskCanceledException("进程被取消"));
-                 }
-                 else
-                 {
-                     tcs.SetException(new Exception($"进程退出：" + process.ExitCode));
-                 }
-                 await Task.Delay(10000);
-                 process.Dispose();
-             }
-             catch (Exception ex)
-             {
-                 tcs.SetException(new Exception($"进程处理程序发生错误：" + ex.Message, ex));
-             }
-         };
+        {
+            exit = true;
+            try
+            {
+                await Task.Delay(1000);
+                if (process.ExitCode == 0)
+                {
+                    tcs.SetResult(true);
+                }
+                else if (exit)
+                {
+                    tcs.SetException(new TaskCanceledException("进程被取消"));
+                }
+                else
+                {
+                    tcs.SetException(new Exception($"进程退出：" + process.ExitCode));
+                }
+
+                await Task.Delay(10000);
+                process.Dispose();
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(new Exception($"进程处理程序发生错误：" + ex.Message, ex));
+            }
+        };
         return tcs.Task;
     }
 
@@ -177,6 +200,7 @@ public class FFmpegProcessService
         {
             throw new Exception("进程还未开始");
         }
+
         return tcs.Task;
     }
 
@@ -191,6 +215,7 @@ public class FFmpegProcessService
         {
             return;
         }
+
         Output?.Invoke(this, new FFmpegOutputEventArgs(e.Data));
     }
 }
