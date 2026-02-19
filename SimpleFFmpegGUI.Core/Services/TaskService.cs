@@ -10,20 +10,14 @@ using System.Threading.Tasks;
 using FzLib.Net;
 using Microsoft.Extensions.Configuration;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Extensions;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class TaskService(TaskRepository taskRepository, QueueService queue, IConfiguration config)
+public class TaskService(TaskRepository taskRepository, QueueService queue, FilePathHelper filePathHelper)
 {
-    private readonly string inputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ??
-                                       throw new HttpStatusCodeException("没有配置输入文件夹",
-                                           System.Net.HttpStatusCode.InternalServerError);
-
-    private readonly string outputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ??
-                                        throw new HttpStatusCodeException("没有配置输出文件夹",
-                                            System.Net.HttpStatusCode.InternalServerError);
-
     public async Task<List<int>> AddTasks(string type, TaskDto request)
     {
         List<int> ids = new List<int>();
@@ -38,8 +32,8 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, ICon
                 for (int i = 0; i < inputCount; i++)
                 {
                     var file = inputs[i];
-                    file.FilePath = GetInput(file.FilePath);
-                    var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutput(request, i),
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutputByInput(request, i),
                         request.Argument);
                     ids.Add(task.Id);
                 }
@@ -51,11 +45,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, ICon
                 ValidateInputs(request, exact: 2);
                 foreach (var file in inputs)
                 {
-                    file.FilePath = GetInput(file.FilePath);
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
                 }
 
                 var taskType = type.ToLower() == "combine" ? TaskType.Combine : TaskType.Compare;
-                var output = taskType == TaskType.Combine ? GetOutput(request, 0) : null;
+                var output = taskType == TaskType.Combine ? GetOutputByInput(request, 0) : null;
                 var arg = taskType == TaskType.Combine ? request.Argument : null;
 
                 var t = await taskRepository.AddTaskAsync(taskType, inputs, output, arg);
@@ -66,11 +60,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, ICon
                 ValidateInputs(request, min: 2);
                 foreach (var file in inputs)
                 {
-                    file.FilePath = GetInput(file.FilePath);
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
                 }
 
                 var concatTask = await taskRepository.AddTaskAsync(TaskType.Concat, inputs,
-                    GetOutput(request, 0), request.Argument);
+                    GetOutputByInput(request, 0), request.Argument);
                 ids.Add(concatTask.Id);
                 break;
 
@@ -152,36 +146,31 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, ICon
         return await taskRepository.UpdateStatusAsync(notQueueTaskIds, TaskStatus.Queue);
     }
 
-    private string GetInput(string subPath)
-    {
-        string path = Path.IsPathFullyQualified(subPath) ? subPath : Path.Combine(inputDir, subPath);
 
-        if (!File.Exists(path))
-        {
-            throw new HttpStatusCodeException($"不存在文件{subPath}", System.Net.HttpStatusCode.NotFound);
-        }
-
-        return path;
-    }
-    private string GetOutput(TaskDto request, int inputIndex)
+    private string GetOutputByInput(TaskDto request, int inputIndex)
     {
         Debug.Assert(inputIndex >= 0 && inputIndex < request.Inputs.Count);
         string output = request.Output;
-        if (output != null && output.StartsWith(':'))
-        {
-            output = output[1..];
-        }
 
         if (string.IsNullOrWhiteSpace(output))
         {
-            if (request.Inputs.Count > 0)
+            if (request.Inputs.Count <= 0)
             {
-                output = Path.Combine(outputDir, Path.GetFileName(request.Inputs[inputIndex].FilePath));
+                return output;
+            }
+
+            //如果没有输出文件名，则使用输入文件名
+            var input = request.Inputs[inputIndex];
+            if (input?.FilePath != null)
+            {
+                output = filePathHelper.GetFullPath(RootDirType.OutputDir, input.FilePath, false);
             }
         }
         else
         {
-            output = Path.Combine(outputDir, request.Output);
+            //如果是相对路径，补充为绝对路径
+            var outputDir = filePathHelper.GetFullPath(RootDirType.OutputDir, output, false);
+            output = Path.IsPathFullyQualified(output) ? output : Path.Combine(outputDir, output);
         }
 
         return output;
@@ -194,7 +183,7 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, ICon
         if (count == 0 || inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
             throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
 
-        if (min.HasValue && count < min.Value)
+        if (count < min)
             throw new HttpStatusCodeException($"输入文件至少需要 {min.Value} 个", System.Net.HttpStatusCode.BadRequest);
 
         if (exact.HasValue && count != exact.Value)

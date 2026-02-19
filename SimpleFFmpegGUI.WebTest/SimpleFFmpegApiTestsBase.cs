@@ -13,7 +13,8 @@ using SQLitePCL;
 
 namespace SimpleFFmpegGUI.WebTest;
 
-public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebApplicationFactory>
+[Collection("FFmpegWebCollection")]
+public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWebApplicationFactory>
 {
     private readonly WebApplicationFactory<Program> factory;
     private readonly HttpClient client;
@@ -87,6 +88,12 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
         return SendAsync(HttpMethod.Post, endpoint, body);
     }
 
+
+    protected Task<HttpResponseMessage> DeleteAsync(string endpoint)
+    {
+        return SendAsync(HttpMethod.Delete, endpoint);
+    }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
         var request = new HttpRequestMessage(method, $"/{ControllerName}/{endpoint}");
@@ -107,7 +114,7 @@ public abstract class SimpleFFmpegApiTestsBase : IClassFixture<SimpleFFmpegWebAp
 
     private async Task CheckResponseAsync(HttpResponseMessage response)
     {
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (!response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
             var reqMsg = response.RequestMessage;

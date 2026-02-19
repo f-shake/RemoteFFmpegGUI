@@ -36,7 +36,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public StatusDto GetMainQueueStatus()
         {
             var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
-            HideAbsolutePath(status.Task);
             return status;
         }
 

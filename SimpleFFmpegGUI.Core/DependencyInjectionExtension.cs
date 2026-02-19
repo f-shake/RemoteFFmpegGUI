@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
@@ -25,6 +27,7 @@ public static class DependencyInjectionExtension
             .AddTransient<MediaInfoService>()
             .AddTransient<IFFmpegTaskServiceFactory, FFmpegTaskServiceFactory>()
             .AddTransient<IFFmpegProcessServiceFactory, FFmpegProcessServiceFactory>()
+            .AddTransient<FilePathHelper>()
             .AddSingleton<DbLoggerService>()
             .AddHostedService(provider => provider.GetRequiredService<DbLoggerService>());
     }

@@ -53,10 +53,10 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         tasks = await GetTasksAsync(1, 100, TaskStatus.Processing);
         tasks.List.Count.Should().Be(0);
 
-        await PostAsync("Delete", ids[0]);
+        await DeleteAsync($"{ids[0]}");
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(14);
-        await PostAsync("Delete/List", ids[1..4]);
+        await PostAsync("Delete", ids[1..4]);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(11);
     }

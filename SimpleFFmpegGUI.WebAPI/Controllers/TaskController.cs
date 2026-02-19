@@ -33,23 +33,35 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 return BadRequest("请求对象不能为空");
             }
-            CheckAndGetInputFilePathAsync()
 
+            return await taskService.AddTasks(type, request);
         }
 
 
         [HttpPost]
         [Route("Cancel")]
-        public Task CancelTaskAsync(int id)
+        public async Task<IActionResult> CancelTaskAsync(int id)
         {
-            return taskService.CancelTaskAsync(id);
+            var rows = await taskService.CancelTaskAsync(id);
+            if (rows == 0)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
         }
 
         [HttpPost]
         [Route("Cancel/List")]
-        public Task CancelTasksAsync(ICollection<int> ids)
+        public async Task<ActionResult<int>> CancelTasksAsync(ICollection<int> ids)
         {
-            return taskService.TryCancelTasksAsync(ids);
+            var rows = await taskService.CancelTasksAsync(ids);
+            if (rows == 0)
+            {
+                return NotFound();
+            }
+
+            return rows;
         }
 
         [HttpDelete]
@@ -79,7 +91,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpGet("Detail/{id:int}")]
-        public async Task<TaskInfo> GetTaskAsync(int id)
+        public async Task<ActionResult<TaskInfo>> GetTaskAsync(int id)
         {
             var task = await taskRepository.GetTaskAsync(id);
             if (task == null)
@@ -87,7 +99,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 throw new HttpStatusCodeException($"任务{id}不存在", System.Net.HttpStatusCode.NotFound);
             }
 
-            return HideAbsolutePath(task);
+            return task;
         }
 
 
@@ -102,7 +114,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             int skip = (query.Page - 1) * query.PageSize;
             var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;
             var tasks = await taskRepository.GetTasksAsync(statusEnum, skip, query.PageSize);
-            tasks.List.ForEach(p => HideAbsolutePath(p));
 
             return tasks;
         }

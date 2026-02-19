@@ -57,27 +57,4 @@ public class FFmpegControllerBase : ControllerBase
             ? path.Substring(OutputDir.Length).Replace('\\', '/').TrimStart('/')
             : path;
     }
-
-    protected TaskInfo HideAbsolutePath(TaskInfo task)
-    {
-        if (task == null)
-        {
-            return null;
-        }
-
-        if (task.Inputs != null)
-        {
-            foreach (var input in task.Inputs)
-            {
-                input.FilePath = GetInputRelativePath(input.FilePath);
-            }
-        }
-
-        if (task.Output != null)
-        {
-            task.Output = GetOutputRelativePath(task.Output);
-        }
-
-        return task;
-    }
 }
