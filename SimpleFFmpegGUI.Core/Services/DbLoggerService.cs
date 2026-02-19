@@ -124,6 +124,7 @@ public class DbLoggerService : BackgroundService
         Log?.Invoke(null, new LogEventArgs(log));
         AddLog(log);
         Debug.WriteLine($"[{type}] {message}");
+        Console.WriteLine($"[{type}] {message}");
     }
 
     private void AddLog(Log log)

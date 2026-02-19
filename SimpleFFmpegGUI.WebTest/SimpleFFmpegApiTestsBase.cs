@@ -96,7 +96,8 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
-        var request = new HttpRequestMessage(method, $"/{ControllerName}/{endpoint}");
+        var request = new HttpRequestMessage(method,
+            endpoint.StartsWith('/') ? endpoint : $"/{ControllerName}/{endpoint}");
         if (token != null)
         {
             request.Headers.Add("Authorization", $"Bearer {token}");

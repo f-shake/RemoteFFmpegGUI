@@ -16,16 +16,6 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
 {
     protected override string ControllerName => "Task";
 
-    [Fact]
-    public async Task TestTasksAsync()
-    {
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
-        ids.Count.Should().Be(1);
-        var id = ids[0];
-        var task = await GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");
-        task.Id.Should().Be(id);
-        task.Status.Should().Be(Model.TaskStatus.Queue);
-    }
 
     [Fact]
     public async Task TestTasksCurdAsync()
@@ -40,10 +30,22 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         var tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(0);
         int count = 15;
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(15));
+        var inputArguments = GetCodeTask(15);
+        inputArguments.Inputs[0].FilePath =
+            Path.GetRelativePath(config.GetValue<string>(AppSettingsKeys.InputDirKey),
+                inputArguments.Inputs[0].FilePath);
+        //测试Add
+        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", inputArguments);
         ids.Count.Should().Be(15);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(15);
+        //检查是否可以自动识别相对和绝对路径
+        tasks.List[0].Inputs[0].FilePath.Should().Be(inputArguments.Inputs[1].FilePath);
+        for (int i = 1; i < count; i++)
+        {
+            tasks.List[i].Inputs[0].FilePath.Should().Be(tasks.List[i - 1].Inputs[0].FilePath);
+        }
+
         tasks = await GetTasksAsync(1, 5, null);
         tasks.List.Count.Should().Be(5);
         tasks = await GetTasksAsync(2, 9, null);
@@ -53,12 +55,35 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         tasks = await GetTasksAsync(1, 100, TaskStatus.Processing);
         tasks.List.Count.Should().Be(0);
 
+        //测试删除
         await DeleteAsync($"{ids[0]}");
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(14);
         await PostAsync("Delete", ids[1..4]);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(11);
+    }
+
+    [Fact]
+    public async Task TestTaskProcessAsync()
+    {
+        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
+        var id = ids[0];
+        var task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Queue);
+        await PostAsync("/Queue/Start");
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Processing);
+        await PostAsync("/Queue/Cancel");
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Done);
+    }
+
+    private Task<TaskInfo> GetTaskAsync(int id)
+    {
+        return GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");
     }
 
     private TaskDto GetCodeTask(int count)
@@ -68,7 +93,7 @@ public class TaskApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         {
             inputs.Add(new InputArguments
             {
-                FilePath = config.GetValue<string>(AppTestSettingsKeys.TestVideoKey),
+                FilePath = config.GetValue<string>(AppTestSettingsKeys.TestVideo10sKey),
             });
         }
 
