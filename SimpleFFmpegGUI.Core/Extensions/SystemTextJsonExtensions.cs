@@ -4,46 +4,79 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using SimpleFFmpegGUI.Converter;
 
 namespace SimpleFFmpegGUI.Extensions;
 
 public static class SystemTextJsonExtensions
 {
-    private static JsonSerializerOptions defaultOptions = new JsonSerializerOptions
+    static SystemTextJsonExtensions()
     {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = false,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-        //NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
-    };
+        defaultOptions = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = false,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            //NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+        };
 
-    private static JsonSerializerOptions friendlyOptions = new JsonSerializerOptions
-    {
-        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-        //PropertyNamingPolicy = null,
-        WriteIndented = true,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
+        webOptions = new JsonSerializerOptions(defaultOptions)
+        {
+            Converters =
+            {
+                new TimeSpanConverter(),
+                new DoubleConverter()
+            }
+        };
 
-
-    public static T DeserializeWithDefaultSettings<T>(this string json)
-    {
-        return JsonSerializer.Deserialize<T>(json, defaultOptions);
+        friendlyOptions = new JsonSerializerOptions(defaultOptions)
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            WriteIndented = true
+        };
     }
 
-    public static T DeserializeWithFriendlySettings<T>(this string json)
+    private static JsonSerializerOptions defaultOptions;
+
+    private static JsonSerializerOptions webOptions;
+
+    private static JsonSerializerOptions friendlyOptions;
+
+
+    extension(string json)
     {
-        return JsonSerializer.Deserialize<T>(json, friendlyOptions);
+        public T DeserializeWithDefaultSettings<T>()
+        {
+            return JsonSerializer.Deserialize<T>(json, defaultOptions);
+        }
+
+        public T DeserializeWithFriendlySettings<T>()
+        {
+            return JsonSerializer.Deserialize<T>(json, friendlyOptions);
+        }
+
+        public T DeserializeWithWebSettings<T>()
+        {
+            return JsonSerializer.Deserialize<T>(json, webOptions);
+        }
     }
 
-    public static string SerializeWithDefaultSettings<T>(this T obj)
+    extension<T>(T obj)
     {
-        return JsonSerializer.Serialize(obj, defaultOptions);
-    }
+        public string SerializeWithDefaultSettings()
+        {
+            return JsonSerializer.Serialize(obj, defaultOptions);
+        }
 
-    public static string SerializeWithFriendlySettings<T>(this T obj)
-    {
-        return JsonSerializer.Serialize(obj, friendlyOptions);
+        public string SerializeWithFriendlySettings()
+        {
+            return JsonSerializer.Serialize(obj, friendlyOptions);
+        }
+
+        public string SerializeWithWebSettings()
+        {
+            return JsonSerializer.Serialize(obj, webOptions);
+        }
     }
 }

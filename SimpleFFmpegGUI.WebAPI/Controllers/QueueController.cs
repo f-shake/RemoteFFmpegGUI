@@ -5,70 +5,70 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.WebAPI.Dto;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
     public class QueueController(IConfiguration config, QueueService queue) : FFmpegControllerBase(config)
     {
-        [HttpPost]
-        [Route("Cancel")]
-        public async Task CancelAsync()
+        [HttpPost("Cancel")]
+        public async Task<IActionResult> CancelAsync()
         {
             await queue.CancelAsync();
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("CancelSchedule")]
-        public void CancelSchedule()
+        [HttpPost("CancelSchedule")]
+        public IActionResult CancelSchedule()
         {
             queue.CancelQueueSchedule();
+            return NoContent();
         }
 
-        [HttpGet]
-        [Route("QueueScheduleTime")]
-        public DateTime? GetQueueScheduleTime()
+        [HttpGet("QueueScheduleTime")]
+        public ActionResult<DateTime?> GetQueueScheduleTime()
         {
             return queue.GetQueueScheduleTime();
         }
 
-        [HttpGet]
-        [Route("Status")]
-        public StatusDto GetMainQueueStatus()
+        [HttpGet("Status")]
+        public ActionResult<StatusDto> GetMainQueueStatus()
         {
             var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
             return status;
         }
 
-        [HttpPost]
-        [Route("Pause")]
-        public void PauseMainQueue()
+        [HttpPost("Pause")]
+        public IActionResult PauseMainQueue()
         {
             queue.SuspendMainQueue();
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("Resume")]
-        public void Resume()
+        [HttpPost("Resume")]
+        public IActionResult Resume()
         {
             queue.ResumeMainQueue();
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("Schedule")]
-        public void Schedule(DateTime time)
+        [HttpPost("Schedule")]
+        public IActionResult Schedule(ScheduleRequest req)
         {
-            if (time <= DateTime.Now)
+            if (req.Time <= DateTime.Now)
             {
-                throw new ArgumentException("计划的时间早于当前时间");
+                return BadRequest("计划的时间早于当前时间");
             }
-            queue.ScheduleQueue(time);
+
+            queue.ScheduleQueue(req.Time);
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("Start")]
-        public void Start()
+        [HttpPost("Start")]
+        public IActionResult Start()
         {
-          queue.StartQueue();
+            queue.StartQueue();
+            return NoContent();
         }
     }
 }

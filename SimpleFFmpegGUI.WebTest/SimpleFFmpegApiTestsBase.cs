@@ -20,6 +20,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
     private readonly HttpClient client;
     private readonly WebApplicationFactory<Program> factory;
     private readonly string token;
+
     protected SimpleFFmpegApiTestsBase(SimpleFFmpegWebApplicationFactory factory)
     {
         this.factory = factory;
@@ -30,6 +31,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
     }
 
     protected abstract string ControllerName { get; }
+
     protected Task<HttpResponseMessage> DeleteAsync(string endpoint)
     {
         return SendAsync(HttpMethod.Delete, endpoint);
@@ -88,11 +90,17 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         context.Logs.ExecuteDelete();
         context.Presets.ExecuteDelete();
     }
+
     private T ParseJson<T>(string content)
     {
+        if (string.IsNullOrEmpty(content))
+        {
+            return default;
+        }
+
         try
         {
-            return content.DeserializeWithDefaultSettings<T>();
+            return content.DeserializeWithWebSettings<T>();
         }
         catch (Exception ex)
         {
@@ -100,6 +108,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
             throw new Exception($"反序列为{typeof(T).Name}失败：{exceptionContent}", ex);
         }
     }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
         var request = new HttpRequestMessage(method,

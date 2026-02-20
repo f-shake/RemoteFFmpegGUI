@@ -13,7 +13,6 @@ using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
 using SimpleFFmpegGUI.WebAPI.Controllers;
-using SimpleFFmpegGUI.WebAPI.Converter;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -23,6 +22,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using SimpleFFmpegGUI.Converter;
 using Log = Serilog.Log;
 
 WebApplication app = null;

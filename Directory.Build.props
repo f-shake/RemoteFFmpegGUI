@@ -8,7 +8,7 @@
     --><!--FzLib版本-->
     <!--<FzLibVersion>3.3.2</FzLibVersion>-->
     <!--是否使用本地最新的FzLib。非开发者本人应当设置为T。-->
-    <!--<UseLocalFzLib>true</UseLocalFzLib>-->
+    <UseLocalFzLib>true</UseLocalFzLib>
     <!--是否指定调试时的输出目录，以及指定目录位置-->
     <SpecialOutputDir>true</SpecialOutputDir>
     <OutputDir>..\Generation</OutputDir>

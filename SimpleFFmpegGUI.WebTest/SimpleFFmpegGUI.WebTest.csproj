@@ -18,8 +18,13 @@
         </Content>
     </ItemGroup>
 
-
+    <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true'">
+        <Reference Include="FzLib">
+            <HintPath>C:\Users\autod\OneDrive\开发\FzLib\Publish\libs\FzLib.dll</HintPath>
+        </Reference>
+    </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="FzLib" Condition="! ('$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true')" />
         <PackageReference Include="coverlet.collector" />
         <PackageReference Include="FluentAssertions" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />

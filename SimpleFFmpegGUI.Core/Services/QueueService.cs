@@ -18,27 +18,34 @@ using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services
 {
-
     public class QueueService
     {
         private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
         private readonly DbLoggerService logger;
         private readonly IServiceScopeFactory scopeFactory;
         private volatile bool cancelQueue = false;
-        private Timer queueTimer;  // 定时器
+        private Timer queueTimer; // 定时器
         private int runningFlag = 0;
         private DateTime? scheduleTime = null;
         private List<FFmpegTaskService> taskProcessManagers = new List<FFmpegTaskService>();
+
         public QueueService(IDbContextFactory<FFmpegDbContext> dbFactory,
-                            DbLoggerService logger,
-                           IServiceScopeFactory scopeFactory
-                      )
+            DbLoggerService logger,
+            IServiceScopeFactory scopeFactory
+        )
         {
             this.dbFactory = dbFactory;
             this.logger = logger;
             this.scopeFactory = scopeFactory;
-            queueTimer = new Timer(QueueTimerCallback, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+            queueTimer = new Timer(QueueTimerCallback, null,
+#if DEBUG
+                TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)
+#else
+                TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60)
+#endif
+            );
         }
+
         /// <summary>
         /// 任务发生改变
         /// </summary>
@@ -62,7 +69,8 @@ namespace SimpleFFmpegGUI.Services
         /// <summary>
         /// 独立任务
         /// </summary>
-        public IEnumerable<TaskInfo> StandaloneTasks => Managers.Where(p => p.Task != MainQueueTask).Select(p => p.Task);
+        public IEnumerable<TaskInfo> StandaloneTasks =>
+            Managers.Where(p => p.Task != MainQueueTask).Select(p => p.Task);
 
         /// <summary>
         /// 所有任务
@@ -117,6 +125,7 @@ namespace SimpleFFmpegGUI.Services
                 logger.Warn("队列正在运行，开始队列失败");
                 return;
             }
+
             try
             {
                 scheduleTime = null;
@@ -130,8 +139,11 @@ namespace SimpleFFmpegGUI.Services
                         {
                             break;
                         }
-                        task = await db.Tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue).OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
+
+                        task = await db.Tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue)
+                            .OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
                     }
+
                     Debug.Assert(task != null, "task != null");
                     await ProcessTaskAsync(task, true);
                 }
@@ -140,6 +152,7 @@ namespace SimpleFFmpegGUI.Services
             {
                 Interlocked.Exchange(ref runningFlag, 0);
             }
+
             bool cancelManually = cancelQueue;
             cancelQueue = false;
             logger.Info("队列完成");
@@ -164,14 +177,17 @@ namespace SimpleFFmpegGUI.Services
             {
                 task = await db.Tasks.FindAsync(id) ?? throw new Exception("找不到ID为" + id + "的任务");
             }
+
             if (task.Status != TaskStatus.Queue)
             {
                 throw new Exception("任务的状态不正确，不可开始任务");
             }
+
             if (Tasks.Any(p => p.Id == task.Id))
             {
                 throw new Exception("任务正在进行中，但状态不是正在处理中");
             }
+
             logger.Info(task, "开始独立任务");
             await ProcessTaskAsync(task, false);
             logger.Info(task, "独立任务完成");
@@ -193,25 +209,27 @@ namespace SimpleFFmpegGUI.Services
         public void StartQueue()
         {
             RunQueueAsync()
-            .ContinueWith(t =>
-            {
-                if (t.Exception != null)
+                .ContinueWith(t =>
                 {
-                    logger.Error($"队列运行错误：{t.Exception}");
-                }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+                    if (t.Exception != null)
+                    {
+                        logger.Error($"队列运行错误：{t.Exception}");
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
+
         public void StartStandalone(int id)
         {
             RunStandaloneAsync(id)
-            .ContinueWith(t =>
-            {
-                if (t.Exception != null)
+                .ContinueWith(t =>
                 {
-                    logger.Error($"独立运行{id}错误：{t.Exception}");
-                }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+                    if (t.Exception != null)
+                    {
+                        logger.Error($"独立运行{id}错误：{t.Exception}");
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
+
         /// <summary>
         /// 暂停主任务
         /// </summary>
@@ -228,7 +246,9 @@ namespace SimpleFFmpegGUI.Services
             {
                 MainQueueTask = task;
             }
-            TaskManagersChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, ffmpegManager));
+
+            TaskManagersChanged?.Invoke(this,
+                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, ffmpegManager));
         }
 
         private void CheckMainQueueProcessingTaskManager()
@@ -243,7 +263,8 @@ namespace SimpleFFmpegGUI.Services
         {
             using var scope = scopeFactory.CreateScope();
 
-            FFmpegTaskService ffmpegManager = scope.ServiceProvider.GetRequiredService<IFFmpegTaskServiceFactory>().Create(task);
+            FFmpegTaskService ffmpegManager =
+                scope.ServiceProvider.GetRequiredService<IFFmpegTaskServiceFactory>().Create(task);
             using (var db = dbFactory.CreateDbContext())
             {
                 var rows = await db.Tasks
@@ -261,6 +282,7 @@ namespace SimpleFFmpegGUI.Services
                     return;
                 }
             }
+
             AddManager(task, ffmpegManager, main);
             try
             {
@@ -273,14 +295,16 @@ namespace SimpleFFmpegGUI.Services
                 {
                     logger.Error(task, "运行错误：" + ex.ToString());
                     task.Status = TaskStatus.Error;
-                    task.Message = ex is FFmpegArgumentException ?
-                        ex.Message : await ffmpegManager.GetErrorMessageAsync() ?? ex.Message;
+                    task.Message = ex is FFmpegArgumentException
+                        ? ex.Message
+                        : await ffmpegManager.GetErrorMessageAsync() ?? ex.Message;
                 }
                 else
                 {
                     logger.Warn(task, "任务被取消");
                 }
             }
+
             using (var db = dbFactory.CreateDbContext())
             {
                 var thisDbTask = await db.Tasks.FindAsync(task.Id);
@@ -289,12 +313,14 @@ namespace SimpleFFmpegGUI.Services
                     logger.Warn($"找不到数据库中ID为{task.Id}的任务");
                     return;
                 }
+
                 thisDbTask.Status = task.Status;
                 thisDbTask.Message = task.Message;
                 thisDbTask.FinishTime = DateTime.Now;
                 db.Update(thisDbTask);
                 await db.SaveChangesAsync();
             }
+
             RemoveManager(task, ffmpegManager, main);
         }
 
@@ -306,17 +332,21 @@ namespace SimpleFFmpegGUI.Services
                 StartQueue();
             }
         }
+
         private void RemoveManager(TaskInfo task, FFmpegTaskService ffmpegManager, bool main)
         {
             if (!taskProcessManagers.Remove(ffmpegManager))
             {
                 throw new Exception("管理器未在管理器集合中");
             }
+
             if (main)
             {
                 MainQueueTask = null;
             }
-            TaskManagersChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, ffmpegManager));
+
+            TaskManagersChanged?.Invoke(this,
+                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, ffmpegManager));
         }
     }
 }
