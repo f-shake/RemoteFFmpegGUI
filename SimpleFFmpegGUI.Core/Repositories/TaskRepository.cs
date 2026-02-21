@@ -120,7 +120,6 @@ public class TaskRepository
         return db.Tasks.AnyAsync(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
     }
 
-
     public async Task<int> SoftDeleteAsync(ICollection<int> ids)
     {
         switch (ids.Count)
@@ -141,5 +140,10 @@ public class TaskRepository
     {
         return db.Tasks.Where(p => ids.Any(id => id == p.Id))
             .ExecuteUpdateAsync(p => p.SetProperty(t => t.Status, status));
+    }
+
+    internal async Task<ISet<int>> GetTaskIdsAsync()
+    {
+        return await db.Tasks.Select(p => p.Id).ToHashSetAsync();
     }
 }

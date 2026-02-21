@@ -87,63 +87,87 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         return ids;
     }
 
-    public Task<int> CancelTaskAsync(int id)
+    public async Task<TaskStatusChangeResult> CancelTasksAsync(ICollection<int> ids)
     {
-        return CancelTasksAsync([id]);
-    }
-
-    public async Task<int> CancelTasksAsync(ICollection<int> ids)
-    {
-        var tasks = (await taskRepository.GetTasksAsync(ids))
-            .Where(p => p.Status is not (TaskStatus.Cancel or TaskStatus.Done or TaskStatus.Error))
-            .ToList();
-        foreach (var task in tasks)
-        {
-            if (queue.Tasks.Any(p => p.Id == task.Id))
-            {
-                queue.Managers.First(p => p.Task.Id == task.Id).Cancel();
-            }
-        }
-
-        return await taskRepository.UpdateStatusAsync([.. tasks.Select(p => p.Id)], TaskStatus.Cancel);
-    }
-
-    public Task<int> DeleteTaskAsync(int id)
-    {
-        return DeleteTasksAsync([id]);
-    }
-
-    public async Task<int> DeleteTasksAsync(ICollection<int> ids)
-    {
+        TaskStatusChangeResult result = new TaskStatusChangeResult();
+        var allIds = await taskRepository.GetTaskIdsAsync();
+        var requestIdToTask = (await taskRepository.GetTasksAsync(ids)).ToDictionary(p => p.Id);
+        List<int> processingIds = new List<int>();
         foreach (var id in ids)
         {
-            if (queue.Tasks.Any(p => p.Id == id))
+            if (!allIds.Contains(id))
+            {
+                result.NotFoundIds.Add(id);
+            }
+            else if (requestIdToTask[id].Status is (TaskStatus.Cancel or TaskStatus.Done or TaskStatus.Error))
+            {
+                result.FailedIds.Add(id, "任务已结束或已取消");
+            }
+            else if (queue.Tasks.Any(p => p.Id == id))
             {
                 queue.Managers.First(p => p.Task.Id == id).Cancel();
+                processingIds.Add(id);
+            }
+            else
+            {
+                processingIds.Add(id);
             }
         }
 
-        return await taskRepository.SoftDeleteAsync(ids);
+        result.AffectedRows = await taskRepository.UpdateStatusAsync(processingIds, TaskStatus.Cancel);
+        return result;
     }
 
-    public async Task ResetTaskAsync(int id)
+
+    public async Task<TaskStatusChangeResult> DeleteTasksAsync(ICollection<int> ids)
     {
-        if (queue.Tasks.Any(p => p.Id == id))
+        TaskStatusChangeResult result = new TaskStatusChangeResult();
+        var allIds = await taskRepository.GetTaskIdsAsync();
+        List<int> processingIds = new List<int>();
+        foreach (var id in ids)
         {
-            throw new Exception($"ID为{id}的任务正在进行中");
+            if (!allIds.Contains(id))
+            {
+                result.NotFoundIds.Add(id);
+            }
+            else if (queue.Tasks.Any(p => p.Id == id))
+            {
+                result.FailedIds.Add(id, "任务正在执行中，无法删除");
+            }
+            else
+            {
+                processingIds.Add(id);
+            }
         }
 
-        var result = await taskRepository.UpdateStatusAsync([id], TaskStatus.Queue);
-        if (result == 0)
-        {
-            throw new ArgumentException($"找不到ID为{id}的任务");
-        }
+        result.AffectedRows = await taskRepository.SoftDeleteAsync(processingIds);
+        return result;
     }
 
-    public async Task<int> TryResetTasksAsync(IEnumerable<int> ids)
+
+    public async Task<TaskStatusChangeResult> ResetTasksAsync(IEnumerable<int> ids)
     {
-        var notQueueTaskIds = ids.Where(id => !queue.Tasks.Any(p => p.Id == id)).ToList();
-        return await taskRepository.UpdateStatusAsync(notQueueTaskIds, TaskStatus.Queue);
+        TaskStatusChangeResult result = new TaskStatusChangeResult();
+        var allIds = await taskRepository.GetTaskIdsAsync();
+        List<int> processingIds = new List<int>();
+        foreach (var id in ids)
+        {
+            if (!allIds.Contains(id))
+            {
+                result.NotFoundIds.Add(id);
+            }
+            else if (queue.Tasks.Any(p => p.Id == id))
+            {
+                result.FailedIds.Add(id, "任务正在执行中，无法重置");
+            }
+            else
+            {
+                processingIds.Add(id);
+            }
+        }
+
+        result.AffectedRows = await taskRepository.UpdateStatusAsync(processingIds, TaskStatus.Queue);
+        return result;
     }
 
 
@@ -181,12 +205,18 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         var inputs = request.Inputs ?? [];
         var count = inputs?.Count ?? 0;
         if (count == 0 || inputs.Any(p => string.IsNullOrEmpty(p.FilePath)))
+        {
             throw new HttpStatusCodeException("输入文件为空", System.Net.HttpStatusCode.BadRequest);
+        }
 
         if (count < min)
+        {
             throw new HttpStatusCodeException($"输入文件至少需要 {min.Value} 个", System.Net.HttpStatusCode.BadRequest);
+        }
 
         if (exact.HasValue && count != exact.Value)
+        {
             throw new HttpStatusCodeException($"输入文件必须为 {exact.Value} 个", System.Net.HttpStatusCode.BadRequest);
+        }
     }
 }

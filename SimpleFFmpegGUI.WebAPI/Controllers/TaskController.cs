@@ -42,10 +42,15 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Cancel")]
         public async Task<IActionResult> CancelTaskAsync(int id)
         {
-            var rows = await taskService.CancelTaskAsync(id);
-            if (rows == 0)
+            var result = await taskService.CancelTasksAsync([id]);
+            if (result.NotFoundIds.Count != 0)
             {
                 return NotFound();
+            }
+
+            if (result.FailedIds.Count != 0)
+            {
+                return BadRequest(result.FailedIds.First().Value);
             }
 
             return NoContent();
@@ -53,25 +58,24 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
         [HttpPost]
         [Route("Cancel/List")]
-        public async Task<ActionResult<int>> CancelTasksAsync(ICollection<int> ids)
+        public async Task<ActionResult<TaskStatusChangeResult>> CancelTasksAsync(ICollection<int> ids)
         {
-            var rows = await taskService.CancelTasksAsync(ids);
-            if (rows == 0)
-            {
-                return NotFound();
-            }
-
-            return rows;
+            return await taskService.CancelTasksAsync(ids);
         }
 
         [HttpDelete]
         [Route("{id:int}")]
         public async Task<IActionResult> DeleteTaskAsync(int id)
         {
-            int rows = await taskService.DeleteTaskAsync(id);
-            if (rows == 0)
+            var result = await taskService.DeleteTasksAsync([id]);
+            if (result.NotFoundIds.Count != 0)
             {
                 return NotFound();
+            }
+
+            if (result.FailedIds.Count != 0)
+            {
+                return BadRequest(result.FailedIds.First().Value);
             }
 
             return NoContent();
@@ -79,15 +83,9 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
         [HttpPost]
         [Route("Delete")]
-        public async Task<ActionResult<int>> DeleteTasksAsync([FromBody] ICollection<int> ids)
+        public async Task<ActionResult<TaskStatusChangeResult>> DeleteTasksAsync([FromBody] ICollection<int> ids)
         {
-            var rows = await taskService.DeleteTasksAsync(ids);
-            if (rows == 0)
-            {
-                return NotFound();
-            }
-
-            return rows;
+            return await taskService.DeleteTasksAsync(ids);
         }
 
         [HttpGet("Detail/{id:int}")]
@@ -96,7 +94,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             var task = await taskRepository.GetTaskAsync(id);
             if (task == null)
             {
-                throw new HttpStatusCodeException($"任务{id}不存在", System.Net.HttpStatusCode.NotFound);
+                return NotFound($"任务{id}不存在");
             }
 
             return task;
@@ -126,17 +124,28 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpPost]
-        [Route("Reset")]
-        public Task ResetTaskAsync(int id)
+        [Route("Reset/{id:int}")]
+        public async Task<IActionResult> ResetTaskAsync(int id)
         {
-            return taskService.ResetTaskAsync(id);
+            var result = await taskService.ResetTasksAsync([id]);
+            if (result.NotFoundIds.Count != 0)
+            {
+                return NotFound();
+            }
+
+            if (result.FailedIds.Count != 0)
+            {
+                return BadRequest(result.FailedIds.First().Value);
+            }
+
+            return NoContent();
         }
 
         [HttpPost]
         [Route("Reset/List")]
-        public Task ResetTasksAsync(IEnumerable<int> ids)
+        public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync(IEnumerable<int> ids)
         {
-            return taskService.TryResetTasksAsync(ids);
+            return await taskService.ResetTasksAsync(ids);
         }
     }
 }
