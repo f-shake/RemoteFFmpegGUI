@@ -17,8 +17,11 @@ namespace SimpleFFmpegGUI.WebTest;
 public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWebApplicationFactory>
 {
     protected readonly IConfiguration config;
+
     private readonly HttpClient client;
+
     private readonly WebApplicationFactory<Program> factory;
+
     private readonly string token;
 
     protected SimpleFFmpegApiTestsBase(SimpleFFmpegWebApplicationFactory factory)
@@ -29,8 +32,6 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         client = this.factory.CreateClient();
         ClearDatabase();
     }
-
-    protected abstract string ControllerName { get; }
 
     protected Task<HttpResponseMessage> DeleteAsync(string endpoint)
     {
@@ -111,8 +112,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
-        var request = new HttpRequestMessage(method,
-            endpoint.StartsWith('/') ? endpoint : $"/{ControllerName}/{endpoint}");
+        var request = new HttpRequestMessage(method, endpoint);
         if (token != null)
         {
             request.Headers.Add("Authorization", $"Bearer {token}");

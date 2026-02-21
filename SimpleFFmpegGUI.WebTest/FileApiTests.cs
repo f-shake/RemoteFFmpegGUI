@@ -11,39 +11,51 @@ namespace SimpleFFmpegGUI.WebTest;
 
 public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
 {
-    protected override string ControllerName => "File";
-
     [Fact]
     public async Task TestDownloadAsync()
     {
-        var dirResponse =
-            await GetAsync(
-                $"Download?name={Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey))}");
+        await DownloadAsync(Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
     }
 
     [Fact]
     public async Task TestFtpAsync()
     {
-        var inputOnResponse = await PostAsync("Ftp/Input/On");
-        var inputOffResponse = await PostAsync("Ftp/Input/Off");
-        var outputOnResponse = await PostAsync("Ftp/Output/On");
-        var outputOffResponse = await PostAsync("Ftp/Output/Off");
+        await FtpInputOnAsync();
+        await FtpInputOffAsync();
+        await FtpOutputOnAsync();
+        await FtpOutputOffAsync();
     }
-
 
     [Fact]
     public async Task TestListAsync()
     {
-        var dir = await GetStringAsync("Dir");
+        // var dir = await GetStringAsync("Dir");
+        var dir = await GetDirAsync();
         dir.Should().NotBeNullOrEmpty();
 
-        var inputs = await GetObjectFromJsonAsync<List<string>>("List/Input");
+        var inputs = await GetInputListAsync();
         inputs.Count.Should().BeGreaterThanOrEqualTo(1);
         inputs.Should().Contain(Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestVideo10sKey)));
 
-        var outputs = await GetObjectFromJsonAsync<List<FileInfoDto>>("List/Output");
+        var outputs = await GetOutputListAsync();
         outputs.Count.Should().BeGreaterThanOrEqualTo(1);
         outputs.Should().Contain(p =>
             p.Name == Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
     }
+
+    private Task<string> DownloadAsync(string name) => GetStringAsync($"/File/Download?name={name}");
+
+    private Task FtpInputOffAsync() => PostAsync("/File/Ftp/Input/Off");
+
+    private Task FtpInputOnAsync() => PostAsync("/File/Ftp/Input/On");
+
+    private Task FtpOutputOffAsync() => PostAsync("/File/Ftp/Output/Off");
+
+    private Task FtpOutputOnAsync() => PostAsync("/File/Ftp/Output/On");
+
+    private Task<string> GetDirAsync() => GetStringAsync("/File/Dir");
+
+    private Task<List<string>> GetInputListAsync() => GetObjectFromJsonAsync<List<string>>("/File/List/Input");
+    
+    private Task<List<FileInfoDto>> GetOutputListAsync() => GetObjectFromJsonAsync<List<FileInfoDto>>("/File/List/Output");
 }

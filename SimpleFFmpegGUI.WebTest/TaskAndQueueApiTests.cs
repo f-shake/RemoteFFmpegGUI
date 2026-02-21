@@ -9,81 +9,75 @@ using SimpleFFmpegGUI.WebAPI;
 using SimpleFFmpegGUI.WebAPI.Dto;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
-// 建议安装这个包，断言更丝滑
 
 namespace SimpleFFmpegGUI.WebTest;
 
 public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmpegApiTestsBase(factory)
 {
-    protected override string ControllerName => "Task";
-
-
-    [Fact]
-    public async Task TestQueueStartAndCancelAsync()
-    {
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
-        var id = ids[0];
-        var task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Queue);
-        await PostAsync("/Queue/Start");
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Processing);
-        var ffmpegCount = Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg");
-        ffmpegCount.Should().BeGreaterThan(0);
-        await PostAsync("/Queue/Cancel");
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Cancel);
-        Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg").Should().Be(ffmpegCount - 1);
-    }
-
     [Fact]
     public async Task TestQueueScheduleAsync()
     {
         //新增一个任务
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", GetCodeTask(1));
+        var ids = await AddCodeTaskAsync(1);
         var id = ids[0];
         var task = await GetTaskAsync(id);
         task.Status.Should().Be(TaskStatus.Queue);
 
         //测试计划和取消计划
         var time = DateTime.Now.AddSeconds(100);
-        await PostAsync("/Queue/Schedule", new ScheduleRequest() { Time = time });
-        var scheduleTime = await GetObjectFromJsonAsync<DateTime?>("/Queue/QueueScheduleTime");
+        await ScheduleAsync(time);
+        var scheduleTime = await GetScheduleTimeAsync();
         scheduleTime.Should().Be(time);
-        await PostAsync("/Queue/CancelSchedule");
-        scheduleTime = await GetObjectFromJsonAsync<DateTime?>("/Queue/QueueScheduleTime");
+        await CancelScheduleAsync();
+        scheduleTime = await GetScheduleTimeAsync();
         scheduleTime.Should().BeNull();
 
         //测试计划执行
         time = DateTime.Now.AddSeconds(5);
-        await PostAsync("/Queue/Schedule", new ScheduleRequest() { Time = time });
+        await ScheduleAsync(time);
         await Task.Delay(TimeSpan.FromSeconds(8));
         task = await GetTaskAsync(id);
         task.Status.Should().Be(TaskStatus.Processing);
-        var status = await GetObjectFromJsonAsync<StatusDto>("/Queue/Status");
+        var status = await GetStatusAsync();
         status.IsProcessing.Should().BeTrue();
 
         //取消任务
-        await PostAsync("/Queue/Cancel");
+        await CancelQueueAsync();
         await Task.Delay(TimeSpan.FromSeconds(2));
         task = await GetTaskAsync(id);
         task.Status.Should().Be(TaskStatus.Cancel);
-        status = await GetObjectFromJsonAsync<StatusDto>("/Queue/Status");
+        status = await GetStatusAsync();
         status.IsProcessing.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TestQueueStartAndCancelAsync()
+    {
+        //创建任务
+        var ids = await AddCodeTaskAsync(1);
+        var id = ids[0];
+        var task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Queue);
+
+        //开始队列
+        await StartQueueAsync();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Processing);
+        var ffmpegCount = GetProcessCount();
+        ffmpegCount.Should().BeGreaterThan(0);
+
+        //取消队列
+        await CancelQueueAsync();
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        task = await GetTaskAsync(id);
+        task.Status.Should().Be(TaskStatus.Cancel);
+        GetProcessCount().Should().Be(ffmpegCount - 1);
     }
 
     [Fact]
     public async Task TestTasksCurdAsync()
     {
-        async Task<PagedListDto<TaskInfo>> GetTasksAsync(int page = 1, int pageSize = 1000, TaskStatus? status = null)
-        {
-            var statusStr = status != null ? $"&status={(int)status}" : "";
-            return await GetObjectFromJsonAsync<PagedListDto<TaskInfo>>(
-                $"List?page={page}&pageSize={pageSize}{statusStr}");
-        }
-
         var tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(0);
         int count = 15;
@@ -92,7 +86,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
             Path.GetRelativePath(config.GetValue<string>(AppSettingsKeys.InputDirKey),
                 inputArguments.Inputs[0].FilePath);
         //测试Add
-        var ids = await PostObjectFromJsonAsync<List<int>>("Add/Code", inputArguments);
+        var ids = await AddCodeTaskAsync(inputArguments);
         ids.Count.Should().Be(15);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(15);
@@ -113,13 +107,26 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         tasks.List.Count.Should().Be(0);
 
         //测试删除
-        await DeleteAsync($"{ids[0]}");
+        await DeleteTaskAsync(ids[0]);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(14);
-        await PostAsync("Delete", ids[1..4]);
+        await DeleteTaskAsync(ids[1..4]);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(11);
     }
+
+    private Task<List<int>> AddCodeTaskAsync(TaskDto task) =>
+                    PostObjectFromJsonAsync<List<int>>("/Task/Add/Code", task);
+
+    private Task<List<int>> AddCodeTaskAsync(int count) => AddCodeTaskAsync(GetCodeTask(count));
+
+    private Task CancelQueueAsync() => PostAsync("/Queue/Cancel");
+
+    private Task CancelScheduleAsync() => PostAsync("/Queue/CancelSchedule");
+
+    private Task DeleteTaskAsync(int id) => DeleteAsync($"/Task/{id}");
+
+    private Task DeleteTaskAsync(ICollection<int> ids) => PostAsync("/Task/Delete", ids);
 
     private TaskDto GetCodeTask(int count)
     {
@@ -153,8 +160,23 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         };
     }
 
-    private Task<TaskInfo> GetTaskAsync(int id)
+    private int GetProcessCount() => Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg");
+
+    private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/Queue/QueueScheduleTime");
+
+    private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/Queue/Status");
+
+    private Task<TaskInfo> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskInfo>($"/Task/Detail/{id}");
+
+    private async Task<PagedListDto<TaskInfo>> GetTasksAsync(int page = 1, int pageSize = 1000,
+        TaskStatus? status = null)
     {
-        return GetObjectFromJsonAsync<TaskInfo>($"Detail/{id}");
+        var statusStr = status != null ? $"&status={(int)status}" : "";
+        return await GetObjectFromJsonAsync<PagedListDto<TaskInfo>>(
+            $"/Task/List?page={page}&pageSize={pageSize}{statusStr}");
     }
+
+    private Task ScheduleAsync(DateTime time) => PostAsync("/Queue/Schedule", new ScheduleRequest { Time = time });
+
+    private Task StartQueueAsync() => PostAsync("/Queue/Start");
 }
