@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Models;
@@ -13,7 +14,9 @@ namespace SimpleFFmpegGUI.WebTest;
 public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWebApplicationFactory>
 {
     protected readonly AppSettings appSettings;
+
     protected readonly AppTestSettings appTestSettings;
+
     private readonly HttpClient client;
 
     private readonly WebApplicationFactory<Program> factory;
@@ -40,6 +43,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         return SendAsync(HttpMethod.Get, endpoint);
     }
 
+    protected Task<AppDirDto> GetDirsAsync() => GetObjectFromJsonAsync<AppDirDto>("/File/Dirs");
     protected async Task<T> GetObjectFromJsonAsync<T>(string endpoint)
     {
         var response = await SendAsync(HttpMethod.Get, endpoint);

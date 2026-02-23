@@ -5,6 +5,7 @@ using FzLib.Application;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
@@ -50,12 +51,18 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
                 [nameof(AppTestSettings.TestOutputVideo10s)] = testOutputVideo10s,
             });
         });
+
+        builder.ConfigureServices((context, services) =>
+        {
+            services.Configure<AppSettings>(context.Configuration);
+            services.Configure<AppTestSettings>(context.Configuration);
+        });
     }
 
     private static string PrepareTestVideos(string testDir)
     {
         JsonObject testAppSettings = (JsonObject)JsonNode.Parse(File.ReadAllText(TestAppsettingsJson));
-        var testVideo = testAppSettings[nameof(AppTestSettings.TestVideo10s)].GetValue<string>();
+        var testVideo = testAppSettings[nameof(AppTestSettings.TestVideo)].GetValue<string>();
         var ffmpegPath = Path.GetFullPath(Path.Combine("ffmpeg", "ffmpeg.exe"));
         if (!File.Exists(ffmpegPath))
         {

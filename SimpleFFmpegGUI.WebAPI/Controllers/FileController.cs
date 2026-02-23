@@ -30,7 +30,7 @@ public class FileController(
 
     [HttpPost]
     [Route("Ftp/Input/Off")]
-    public async Task<IActionResult> CloseInput()
+    public async Task<IActionResult> CloseInputFtp()
     {
         await ftpInput.StopAsync();
         return NoContent();
@@ -38,7 +38,7 @@ public class FileController(
 
     [HttpPost]
     [Route("Ftp/Output/Off")]
-    public async Task<IActionResult> CloseOutput()
+    public async Task<IActionResult> CloseOutputFtp()
     {
         await ftpOutput.StopAsync();
         return NoContent();
@@ -59,10 +59,32 @@ public class FileController(
     }
 
     [HttpGet]
-    [Route("Dir")]
-    public ActionResult<string> GetCurrentDir()
+    [Route("Dirs")]
+    public ActionResult<AppDirDto> GetDirs()
     {
-        return hostingEnvironment.ContentRootPath;
+        return new AppDirDto
+        {
+            InputDir = appSettings.Value.InputDir,
+            OutputDir = appSettings.Value.OutputDir
+        };
+    }
+
+    /// <summary>
+    /// 获取FTP状态
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("Ftp/Status")]
+    public ActionResult<FtpStatusDto> GetFtpStatus()
+    {
+        var status = new FtpStatusDto
+        {
+            InputOn = ftpInput.IsRunning,
+            OutputOn = ftpOutput.IsRunning,
+            InputPort = ftpInput.Port,
+            OutputPort = ftpOutput.Port
+        };
+        return status;
     }
 
     [HttpGet]
@@ -80,28 +102,9 @@ public class FileController(
         return Directory.EnumerateFiles(appSettings.Value.OutputDir, "*", SearchOption.AllDirectories)
             .Select(p => new FileInfoDto(p, filePathHelper.OutputDir)).ToList();
     }
-
-    /// <summary>
-    /// 获取FTP状态
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet]
-    [Route("Ftp/Status")]
-    public ActionResult<FtpStatusDto> GetStatus()
-    {
-        var status = new FtpStatusDto
-        {
-            InputOn = ftpInput.IsRunning,
-            OutputOn = ftpOutput.IsRunning,
-            InputPort = ftpInput.Port,
-            OutputPort = ftpOutput.Port
-        };
-        return status;
-    }
-
     [HttpPost]
     [Route("Ftp/Input/On")]
-    public async Task<IActionResult> OpenInput()
+    public async Task<IActionResult> StartInputFtp()
     {
         await ftpInput.StartAsync(appSettings.Value.InputDir, appSettings.Value.InputFtpPort);
         return NoContent();
@@ -109,7 +112,7 @@ public class FileController(
 
     [HttpPost]
     [Route("Ftp/Output/On")]
-    public async Task<IActionResult> OpenOutput()
+    public async Task<IActionResult> StartOutputFtp()
     {
         await ftpOutput.StartAsync(appSettings.Value.OutputDir, appSettings.Value.OutputFtpPort);
         return NoContent();
