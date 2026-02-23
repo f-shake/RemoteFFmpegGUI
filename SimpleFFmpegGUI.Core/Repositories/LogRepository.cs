@@ -10,43 +10,46 @@ namespace SimpleFFmpegGUI.Repositories
 {
     public class LogRepository(FFmpegDbContext db, DbLoggerService logger)
     {
-        public async Task<PagedListDto<Log>> GetLogsAsync(char? type = null,
-            int taskId = 0,
-            DateTime? from = null,
-            DateTime? to = null,
-            int skip = 0,
-            int take = 0)
+        public async Task<PagedListResponse<Log>> GetLogsAsync(LogQueryRequest request)
         {
             await logger.SaveAllAsync();
 
             IQueryable<Log> logs = db.Logs;
-            if (type.HasValue)
+            if (request.Type.HasValue)
             {
-                logs = logs.Where(p => p.Type == type.Value);
+                logs = logs.Where(p => p.Type == request.Type.Value);
             }
-            if (from.HasValue)
+
+            if (request.From.HasValue)
             {
-                logs = logs.Where(p => p.Time > from.Value);
+                logs = logs.Where(p => p.Time > request.From.Value);
             }
-            if (to.HasValue)
+
+            if (request.To.HasValue)
             {
-                logs = logs.Where(p => p.Time < to.Value);
+                logs = logs.Where(p => p.Time < request.To.Value);
             }
-            if (taskId != 0)
+
+            if (request.TaskId.HasValue)
             {
-                logs = logs.Where(p => p.TaskId == taskId);
+                logs = logs.Where(p => p.TaskId == request.TaskId.Value);
             }
+
             logs = logs.OrderByDescending(p => p.Time);
             int count = await logs.CountAsync();
+            var skip = (request.Page - 1) * request.PageSize;
+            var take = request.PageSize;
             if (skip > 0)
             {
                 logs = logs.Skip(skip);
             }
+
             if (take > 0)
             {
                 logs = logs.Take(take);
             }
-            return new PagedListDto<Log>(await logs.ToListAsync(), count);
+
+            return new PagedListResponse<Log>(await logs.ToListAsync(), count, request.Page, request.PageSize);
         }
     }
 }

@@ -1,7 +1,4 @@
-﻿using FFMpegCore;
-using FubarDev.FtpServer.FileSystem.DotNet;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,14 +13,10 @@ using SimpleFFmpegGUI.WebAPI.Controllers;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Converter;
+using SimpleFFmpegGUI.Models;
 using Log = Serilog.Log;
 
 WebApplication app = null;
@@ -99,7 +92,6 @@ void ConfigureAppsettings(WebApplicationBuilder builder)
 void ConfigureServices(WebApplicationBuilder builder)
 {
     builder.Services.Configure<AppSettings>(builder.Configuration);
-    builder.Services.Configure<FFmpegSettings>(builder.Configuration);
     builder.Services.AddFFmpegServices();
     builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);

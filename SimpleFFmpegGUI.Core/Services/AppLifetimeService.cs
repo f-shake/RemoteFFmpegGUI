@@ -2,10 +2,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using FFMpegCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Services;
 

@@ -1,12 +1,7 @@
 ﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.WebAPI;
-using SimpleFFmpegGUI.WebAPI.Dto;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 
@@ -83,8 +78,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         int count = 15;
         var inputArguments = GetCodeTask(15);
         inputArguments.Inputs[0].FilePath =
-            Path.GetRelativePath(config.GetValue<string>(AppSettingsKeys.InputDirKey),
-                inputArguments.Inputs[0].FilePath);
+            Path.GetRelativePath(appSettings.InputDir, inputArguments.Inputs[0].FilePath);
         //测试Add
         var ids = await AddCodeTaskAsync(inputArguments);
         ids.Count.Should().Be(15);
@@ -116,7 +110,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     }
 
     private Task<List<int>> AddCodeTaskAsync(TaskDto task) =>
-                    PostObjectFromJsonAsync<List<int>>("/Task/Add/Code", task);
+        PostObjectFromJsonAsync<List<int>>("/Task/Add/Code", task);
 
     private Task<List<int>> AddCodeTaskAsync(int count) => AddCodeTaskAsync(GetCodeTask(count));
 
@@ -135,7 +129,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         {
             inputs.Add(new InputArguments
             {
-                FilePath = config.GetValue<string>(AppTestSettingsKeys.TestVideo10sKey),
+                FilePath =appTestSettings.TestVideo10s
             });
         }
 
@@ -168,11 +162,11 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
     private Task<TaskInfo> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskInfo>($"/Task/Detail/{id}");
 
-    private async Task<PagedListDto<TaskInfo>> GetTasksAsync(int page = 1, int pageSize = 1000,
+    private async Task<PagedListResponse<TaskInfo>> GetTasksAsync(int page = 1, int pageSize = 1000,
         TaskStatus? status = null)
     {
         var statusStr = status != null ? $"&status={(int)status}" : "";
-        return await GetObjectFromJsonAsync<PagedListDto<TaskInfo>>(
+        return await GetObjectFromJsonAsync<PagedListResponse<TaskInfo>>(
             $"/Task/List?page={page}&pageSize={pageSize}{statusStr}");
     }
 

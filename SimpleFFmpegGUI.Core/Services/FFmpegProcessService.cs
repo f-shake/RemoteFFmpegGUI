@@ -1,15 +1,12 @@
-﻿using FzLib.Application;
-using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Model;
+﻿using SimpleFFmpegGUI.Events;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Services;
 

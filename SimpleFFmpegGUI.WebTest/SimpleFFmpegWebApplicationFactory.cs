@@ -5,6 +5,7 @@ using FzLib.Application;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
 
@@ -35,18 +36,18 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
         var testOutputVideo10s = PrepareTestVideos(outputDir);
 
 
-        builder.UseSetting($"ConnectionStrings:{AppSettingsKeys.LocalDbKey}",
+        builder.UseSetting($"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}",
             $"DataSource={Path.Combine(tempDir, "db_test.sqlite")}");
         builder.ConfigureAppConfiguration((context, configBuilder) =>
         {
             configBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), TestAppsettingsJson));
             configBuilder.AddInMemoryCollection(new Dictionary<string, string>
             {
-                [AppSettingsKeys.TokenKey] = "Test_Token_123",
-                [AppSettingsKeys.InputDirKey] = inputDir,
-                [AppSettingsKeys.OutputDirKey] = outputDir,
-                [AppTestSettingsKeys.TestVideo10sKey] = testVideo10s,
-                [AppTestSettingsKeys.TestOutputVideo10sKey] = testOutputVideo10s,
+                [nameof(AppSettings.Token)] = "Test_Token_123",
+                [nameof(AppSettings.InputDir)] = inputDir,
+                [nameof(AppSettings.OutputDir)] = outputDir,
+                [nameof(AppTestSettings.TestVideo10s)] = testVideo10s,
+                [nameof(AppTestSettings.TestOutputVideo10s)] = testOutputVideo10s,
             });
         });
     }
@@ -54,7 +55,7 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
     private static string PrepareTestVideos(string testDir)
     {
         JsonObject testAppSettings = (JsonObject)JsonNode.Parse(File.ReadAllText(TestAppsettingsJson));
-        var testVideo = testAppSettings[AppTestSettingsKeys.TestVideoKey].GetValue<string>();
+        var testVideo = testAppSettings[nameof(AppTestSettings.TestVideo10s)].GetValue<string>();
         var ffmpegPath = Path.GetFullPath(Path.Combine("ffmpeg", "ffmpeg.exe"));
         if (!File.Exists(ffmpegPath))
         {

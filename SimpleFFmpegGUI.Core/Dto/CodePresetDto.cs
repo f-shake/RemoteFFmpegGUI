@@ -1,6 +1,6 @@
 ﻿using SimpleFFmpegGUI.Model;
 
-namespace SimpleFFmpegGUI.WebAPI.Dto
+namespace SimpleFFmpegGUI.Dto
 {
     public class CodePresetDto
     {

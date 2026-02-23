@@ -1,23 +1,19 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
+﻿using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.WebAPI;
-using SQLitePCL;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.WebTest;
 
 [Collection("FFmpegWebCollection")]
 public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWebApplicationFactory>
 {
-    protected readonly IConfiguration config;
-
+    protected readonly AppSettings appSettings;
+    protected readonly AppTestSettings appTestSettings;
     private readonly HttpClient client;
 
     private readonly WebApplicationFactory<Program> factory;
@@ -27,8 +23,9 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
     protected SimpleFFmpegApiTestsBase(SimpleFFmpegWebApplicationFactory factory)
     {
         this.factory = factory;
-        config = this.factory.Services.GetRequiredService<IConfiguration>();
-        token = config.GetValue<string>(AppSettingsKeys.TokenKey);
+        appSettings = this.factory.Services.GetRequiredService<IOptions<AppSettings>>().Value;
+        appTestSettings = this.factory.Services.GetRequiredService<IOptions<AppTestSettings>>().Value;
+        token = appSettings.Token;
         client = this.factory.CreateClient();
         ClearDatabase();
     }

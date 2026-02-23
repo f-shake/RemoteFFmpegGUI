@@ -1,22 +1,36 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
-public class TokenController(IConfiguration config) : FFmpegControllerBase(config)
+public class TokenController(IOptionsSnapshot<AppSettings> appSettings) : FFmpegControllerBase
 {
-    [HttpGet]
-    [Route("Check")]
-    public bool CheckToken(string token)
+    [HttpGet("Check/{tokenWithSha256}")]
+    public ActionResult<bool> CheckToken(string token)
     {
-        return config.GetValue<string>(AppSettingsKeys.TokenKey) == token;
+        var realToken = appSettings.Value.Token;
+        if (string.IsNullOrEmpty(realToken))
+        {
+            return true;
+        }
+
+        if (token == realToken)
+        {
+            return true;
+        }
+
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(realToken));
+        var hashString = BitConverter.ToString(hash).Replace("-", "");
+        return hashString == token;
     }
 
-    [HttpGet]
-    [Route("Need")]
-    public bool NeedToken()
+    [HttpGet("Need")]
+    public ActionResult<bool> NeedToken()
     {
-        return config.GetValue<string>(AppSettingsKeys.TokenKey) != null;
+        return !string.IsNullOrEmpty(appSettings.Value.Token);
     }
 }

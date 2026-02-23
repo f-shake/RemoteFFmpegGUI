@@ -2,8 +2,8 @@
 using System.Net;
 using FzLib.Net;
 using Microsoft.Extensions.Options;
-using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Helpers;
 
@@ -16,6 +16,10 @@ public class FilePathHelper(IOptionsSnapshot<AppSettings> appSettings)
     private readonly string outputDir = appSettings.Value.OutputDir ??
                                         throw new HttpStatusCodeException("没有配置输出文件夹",
                                             HttpStatusCode.InternalServerError);
+
+    public string InputDir => inputDir;
+
+    public string OutputDir => outputDir;
 
     public string GetFullPath(RootDirType type, string relPathOrFullPath, bool checkExists = true)
     {

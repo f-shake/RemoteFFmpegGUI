@@ -1,4 +1,4 @@
-﻿namespace SimpleFFmpegGUI.WebAPI.Dto
+﻿namespace SimpleFFmpegGUI.Dto
 {
     public class FtpStatusDto
     {

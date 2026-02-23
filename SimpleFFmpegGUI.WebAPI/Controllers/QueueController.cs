@@ -5,11 +5,10 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
-using SimpleFFmpegGUI.WebAPI.Dto;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class QueueController(IConfiguration config, QueueService queue) : FFmpegControllerBase(config)
+    public class QueueController(QueueService queue) : FFmpegControllerBase()
     {
         [HttpPost("Cancel")]
         public async Task<IActionResult> CancelAsync()

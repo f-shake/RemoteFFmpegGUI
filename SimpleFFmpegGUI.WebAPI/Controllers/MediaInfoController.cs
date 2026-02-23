@@ -14,15 +14,23 @@ using SimpleFFmpegGUI.Helpers;
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
     public class MediaInfoController(
-        IConfiguration config,
         DbConfigService dbConfig,
         MediaInfoService mediaInfoService,
-        FilePathHelper filePathHelper) : FFmpegControllerBase(config)
+        FilePathHelper filePathHelper) : FFmpegControllerBase()
     {
         [HttpGet("{name}")]
-        public async Task<MediaInfoGeneral> GetAsync(string name)
+        public async Task<ActionResult<MediaInfoGeneral>> GetAsync(string name)
         {
-            CheckNull(name, "文件");
+            if (string.IsNullOrEmpty(name))
+            {
+                return BadRequest("文件名不能为空");
+            }
+
+            if (!System.IO.File.Exists(name))
+            {
+                return NotFound();
+            }
+            
             var path = filePathHelper.GetFullPath(RootDirType.InputDir, name);
             var result = await mediaInfoService.GetMediaInfoAsync(path);
             return result;
@@ -42,8 +50,9 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                throw new HttpStatusCodeException($"获取截图失败：{ex.Message}",
-                    System.Net.HttpStatusCode.InternalServerError);
+                // throw new HttpStatusCodeException($"获取截图失败：{ex.Message}",
+                //     System.Net.HttpStatusCode.InternalServerError);
+                return Problem(ex.Message);
             }
         }
     }

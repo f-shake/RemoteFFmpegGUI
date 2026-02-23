@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using SimpleFFmpegGUI.Configurations;
+﻿using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Services;
 

@@ -75,14 +75,15 @@ public class TaskRepository
         return task;
     }
 
-    public async Task<PagedListDto<TaskInfo>> GetTasksAsync(TaskStatus? status = null, int skip = 0, int take = 0)
+    public async Task<PagedListResponse<TaskInfo>> GetTasksAsync(TaskQueryDto query)
     {
         IQueryable<TaskInfo> tasks = db.Tasks
             .Where(p => p.IsDeleted == false);
-        if (status.HasValue)
+        if (query.Status.HasValue)
         {
+            var status = (TaskStatus)query.Status.Value;
             tasks = tasks.Where(p => p.Status == status);
-            tasks = status.Value switch
+            tasks = status switch
             {
                 TaskStatus.Queue => tasks.OrderBy(p => p.CreateTime),
                 TaskStatus.Processing or TaskStatus.Done => tasks.OrderByDescending(p => p.StartTime),
@@ -95,6 +96,8 @@ public class TaskRepository
         }
 
         int count = await tasks.CountAsync();
+        var skip = (query.Page - 1) * query.PageSize;
+        var take = query.PageSize;
         if (skip > 0)
         {
             tasks = tasks.Skip(skip);
@@ -105,7 +108,7 @@ public class TaskRepository
             tasks = tasks.Take(take);
         }
 
-        return new PagedListDto<TaskInfo>(await tasks.ToListAsync(), count);
+        return new PagedListResponse<TaskInfo>(await tasks.ToListAsync(), count, query.Page, query.PageSize);
     }
 
     public async Task<List<TaskInfo>> GetTasksAsync(ICollection<int> ids)

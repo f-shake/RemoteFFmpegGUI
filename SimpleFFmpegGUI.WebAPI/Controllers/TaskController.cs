@@ -10,7 +10,6 @@ using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
-using SimpleFFmpegGUI.WebAPI.Dto;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -20,10 +19,8 @@ using System.Threading.Tasks;
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
     public class TaskController(
-        IConfiguration config,
         TaskService taskService,
-        TaskRepository taskRepository,
-        QueueService queue) : FFmpegControllerBase(config)
+        TaskRepository taskRepository) : FFmpegControllerBase()
     {
         [HttpPost]
         [Route("Add/{type}")]
@@ -107,12 +104,12 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         /// <param name="query"></param>
         /// <returns></returns>
         [HttpGet("List")]
-        public async Task<PagedListDto<TaskInfo>> GetTasksAsync([FromQuery] TaskQueryDto query)
+        public async Task<PagedListResponse<TaskInfo>> GetTasksAsync([FromQuery] TaskQueryDto query)
         {
-            int skip = (query.Page - 1) * query.PageSize;
-            var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;
-            var tasks = await taskRepository.GetTasksAsync(statusEnum, skip, query.PageSize);
-
+            // int skip = (query.Page - 1) * query.PageSize;
+            // var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;
+            // var tasks = await taskRepository.GetTasksAsync(statusEnum, skip, query.PageSize);
+            var tasks = await taskRepository.GetTasksAsync(query);
             return tasks;
         }
 

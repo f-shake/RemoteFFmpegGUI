@@ -1,21 +1,18 @@
-﻿using FzLib.IO;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Services;
-using SimpleFFmpegGUI.WebAPI.Dto;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FzLib.IO;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Helpers;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
@@ -30,8 +27,6 @@ public class FileController(
 {
     public const string InputFtpKey = "input";
     public const string OutputFtpKey = "output";
-
-    public static ConcurrentDictionary<string, string> Guid2File { get; } = new ConcurrentDictionary<string, string>();
 
     [HttpPost]
     [Route("Ftp/Input/Off")]
@@ -75,7 +70,7 @@ public class FileController(
     public ActionResult<List<FileInfoDto>> GetInputFiles()
     {
         return Directory.EnumerateFiles(appSettings.Value.InputDir, "*", SearchOption.AllDirectories)
-            .Select(p => new FileInfoDto(p)).ToList();
+            .Select(p => new FileInfoDto(p, filePathHelper.InputDir)).ToList();
     }
 
     [HttpGet]
@@ -83,7 +78,7 @@ public class FileController(
     public ActionResult<List<FileInfoDto>> GetOutputFiles()
     {
         return Directory.EnumerateFiles(appSettings.Value.OutputDir, "*", SearchOption.AllDirectories)
-            .Select(p => new FileInfoDto(p)).ToList();
+            .Select(p => new FileInfoDto(p, filePathHelper.OutputDir)).ToList();
     }
 
     /// <summary>
@@ -94,7 +89,7 @@ public class FileController(
     [Route("Ftp/Status")]
     public ActionResult<FtpStatusDto> GetStatus()
     {
-        var status = new FtpStatusDto()
+        var status = new FtpStatusDto
         {
             InputOn = ftpInput.IsRunning,
             OutputOn = ftpOutput.IsRunning,

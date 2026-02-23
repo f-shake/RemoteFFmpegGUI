@@ -12,15 +12,17 @@ namespace SimpleFFmpegGUI;
 
 public static class DependencyInjectionExtension
 {
+    public const string LocalSqliteConnectionStringKey = "LocalSqlite";
+
     public static void AddFFmpegServices(this IServiceCollection services)
     {
         // 1. 数据库配置
         // 注意：DbContext 的配置通常还是需要读取连接字符串。
         // 我们可以在 Program.cs 中配置，或者在这里通过一个临时 serviceProvider 读取。
-        services.AddDbContextFactory<FFmpegDbContext>((sp, o) => 
+        services.AddDbContextFactory<FFmpegDbContext>((sp, o) =>
         {
             var config = sp.GetRequiredService<IConfiguration>();
-            var connectionString = config.GetConnectionString("LocalSqlite"); // 直接用字符串 Key，不再需要常量类
+            var connectionString = config.GetConnectionString(LocalSqliteConnectionStringKey);
             o.UseSqlite(connectionString);
         });
 

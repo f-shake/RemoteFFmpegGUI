@@ -9,22 +9,25 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class LogController(IConfiguration config, LogRepository log) : FFmpegControllerBase(config)
+    public class LogController(LogRepository log) : FFmpegControllerBase
     {
         [HttpGet]
         [Route("List")]
-        public async Task<PagedListDto<Log>> GetLogs(char? type = null, int taskId = 0, DateTime? from = null, DateTime? to = null, int skip = 0, int take = 0)
+        public async Task<PagedListResponse<Log>> GetLogs([FromQuery] LogQueryRequest query)
         {
-            if (from.HasValue)
-            {
-                from = from.Value.ToLocalTime();
-            }
-            if (to.HasValue)
-            {
-                to = to.Value.ToLocalTime();
-            }
-
-            var result = await log.GetLogsAsync(type, taskId, from, to, skip, take);
+            // if (query.From.HasValue)
+            // {
+            //     query.From = query.From.Value.ToLocalTime();
+            // }
+            //
+            // if (query.To.HasValue)
+            // {
+            //     query.To = query.To.Value.ToLocalTime();
+            // }
+            //
+            // int skip = (query.Page - 1) * query.PageSize;
+            // var result = await log.GetLogsAsync(query.Type, query.TaskId ?? 0, query.From, query.To, skip, query.PageSize);
+            var result = await log.GetLogsAsync(query);
             return result;
         }
     }

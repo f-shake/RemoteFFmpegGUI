@@ -14,7 +14,7 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     [Fact]
     public async Task TestDownloadAsync()
     {
-        await DownloadAsync(Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
+        var content = await DownloadAsync(Path.GetFileName(appTestSettings.TestOutputVideo10s));
     }
 
     [Fact]
@@ -35,12 +35,11 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
 
         var inputs = await GetInputListAsync();
         inputs.Count.Should().BeGreaterThanOrEqualTo(1);
-        inputs.Should().Contain(Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestVideo10sKey)));
+        inputs.Should().Contain(p => p == Path.GetFileName(appTestSettings.TestVideo10s));
 
         var outputs = await GetOutputListAsync();
         outputs.Count.Should().BeGreaterThanOrEqualTo(1);
-        outputs.Should().Contain(p =>
-            p.Name == Path.GetFileName(config.GetValue<string>(AppTestSettingsKeys.TestOutputVideo10sKey)));
+        outputs.Should().Contain(p => p.Name == Path.GetFileName(appTestSettings.TestOutputVideo10s));
     }
 
     private Task<string> DownloadAsync(string name) => GetStringAsync($"/File/Download?name={name}");
@@ -56,6 +55,7 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     private Task<string> GetDirAsync() => GetStringAsync("/File/Dir");
 
     private Task<List<string>> GetInputListAsync() => GetObjectFromJsonAsync<List<string>>("/File/List/Input");
-    
-    private Task<List<FileInfoDto>> GetOutputListAsync() => GetObjectFromJsonAsync<List<FileInfoDto>>("/File/List/Output");
+
+    private Task<List<FileInfoDto>> GetOutputListAsync() =>
+        GetObjectFromJsonAsync<List<FileInfoDto>>("/File/List/Output");
 }

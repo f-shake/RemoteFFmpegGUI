@@ -184,7 +184,13 @@ public class FFmpegTaskService(TaskInfo task,
     /// <returns></returns>
     public async Task<string> GetErrorMessageAsync()
     {
-        var logs = await logRepository.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
+        // var logs = await logRepository.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
+        var logs = await logRepository.GetLogsAsync(new LogQueryRequest
+        {
+            Type = 'O',
+            TaskId = Task.Id,
+            From = DateTime.Now.AddSeconds(-5)
+        });
         var log = logs.List
             .Where(p => ErrorMessageRegexs.Any(q => q.IsMatch(p.Message)))
             .OrderByDescending(p => p.Time).FirstOrDefault();

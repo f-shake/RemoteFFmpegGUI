@@ -8,55 +8,53 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class PowerController(IConfiguration config, DbConfigService dbConfig, PowerService power) : FFmpegControllerBase(config)
+    public class PowerController(DbConfigService dbConfig, PowerService power)
+        : FFmpegControllerBase
     {
-        [HttpPost]
-        [Route("AbortShutdown")]
-        public void AbortShutdown()
+        [HttpPost("AbortShutdown")]
+        public IActionResult AbortShutdown()
         {
             power.AbortShutdown();
+            return NoContent();
         }
 
-        [HttpGet]
-        [Route("CpuCoreUsage")]
-        public Task<CpuCoreUsageDto[]> GetCpuCoreUsage()
+        [HttpGet("CpuCoreUsage")]
+        public async Task<ActionResult<CpuCoreUsageDto[]>> GetCpuCoreUsage()
         {
-            return PowerService.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
+            return await PowerService.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
         }
 
-        [HttpGet]
-        [Route("DefaultProcessPriority")]
-        public int GetDefaultProcessPriority()
+        [HttpGet("DefaultProcessPriority")]
+        public ActionResult<int> GetDefaultProcessPriority()
         {
             return dbConfig.DefaultProcessPriority;
         }
 
-        [HttpGet]
-        [Route("ShutdownQueue")]
-        public bool IsShutdownAfterQueueFinished()
+        [HttpGet("ShutdownQueue")]
+        public ActionResult<bool> IsShutdownAfterQueueFinished()
         {
             return power.ShutdownAfterQueueFinished;
         }
 
-        [HttpPost]
-        [Route("DefaultProcessPriority")]
-        public void SetDefaultProcessPriority(int priority)
+        [HttpPost("DefaultProcessPriority")]
+        public IActionResult SetDefaultProcessPriority(int priority)
         {
             dbConfig.DefaultProcessPriority = priority;
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("ShutdownQueue")]
-        public void SetShutdownAfterQueueFinished([FromForm] bool on)
+        [HttpPost("ShutdownQueue")]
+        public IActionResult SetShutdownAfterQueueFinished([FromForm] bool on)
         {
             power.ShutdownAfterQueueFinished = true;
+            return NoContent();
         }
 
-        [HttpPost]
-        [Route("Shutdown")]
-        public async Task Shutdown()
+        [HttpPost("Shutdown")]
+        public IActionResult Shutdown()
         {
             power.Shutdown();
+            return NoContent();
         }
     }
 }
