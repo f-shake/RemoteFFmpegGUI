@@ -4,14 +4,16 @@ using System.Threading.Tasks;
 using FFMpegCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class AppLifetimeService(IConfiguration config) : IHostedService
+public class AppLifetimeService(IOptions<AppSettings> appSettings) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        var ffmpegDir = config.GetValue<string>(AppSettingsKeys.FFmpegDirKey);
+        var ffmpegDir = appSettings.Value.FFmpegDir;
         if (string.IsNullOrEmpty(ffmpegDir))
         {
         }

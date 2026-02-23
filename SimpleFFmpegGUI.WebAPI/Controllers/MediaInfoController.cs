@@ -9,6 +9,7 @@ using System;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Extensions;
+using SimpleFFmpegGUI.Helpers;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {

@@ -22,6 +22,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Converter;
 using Log = Serilog.Log;
 
@@ -97,7 +98,9 @@ void ConfigureAppsettings(WebApplicationBuilder builder)
 
 void ConfigureServices(WebApplicationBuilder builder)
 {
-    builder.Services.AddFFmpegServices(builder.Configuration);
+    builder.Services.Configure<AppSettings>(builder.Configuration);
+    builder.Services.Configure<FFmpegSettings>(builder.Configuration);
+    builder.Services.AddFFmpegServices();
     builder.Services.AddKeyedSingleton<FtpService>(FileController.InputFtpKey);
     builder.Services.AddKeyedSingleton<FtpService>(FileController.OutputFtpKey);
     builder.Services.AddHealthChecks();

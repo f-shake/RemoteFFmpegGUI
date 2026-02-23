@@ -6,17 +6,13 @@ using Microsoft.Extensions.Primitives;
 using NGettext.Plural.Ast;
 using SimpleFFmpegGUI.WebAPI.Controllers;
 using System.Linq;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 
 namespace SimpleFFmpegGUI.WebAPI
 {
-    public class AppActionFilter : IActionFilter
+    public class AppActionFilter(IOptionsSnapshot<AppSettings> appSettings) : IActionFilter
     {
-        private readonly string token;
-
-        public AppActionFilter(IConfiguration config)
-        {
-            token ??= config.GetValue<string>(AppSettingsKeys.TokenKey) ?? "";
-        }
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
@@ -52,7 +48,7 @@ namespace SimpleFFmpegGUI.WebAPI
             {
                 return;
             }
-
+            var token = appSettings.Value.Token;
             if (token != "")
             {
                 if (!context.HttpContext.Request.Headers.TryGetValue("Authorization", out StringValues value)

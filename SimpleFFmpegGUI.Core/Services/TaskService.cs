@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Extensions;
+using SimpleFFmpegGUI.Helpers;
 using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;

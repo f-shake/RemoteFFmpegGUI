@@ -8,6 +8,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 
 namespace SimpleFFmpegGUI.Services;
 
@@ -24,11 +26,11 @@ public class FFmpegProcessService
 
     private TaskCompletionSource<bool> tcs;
 
-    public FFmpegProcessService(IConfiguration config, string argument)
+    public FFmpegProcessService(IOptionsSnapshot<AppSettings> appSettings, string argument)
     {
-        Priority = config.GetValue<int>(AppSettingsKeys.DefaultProcessPriorityKey);
+        Priority = appSettings.Value.DefaultProcessPriority;
         string ffmpegProgram = "ffmpeg";
-        var ffmpegDir = config.GetValue<string>(AppSettingsKeys.FFmpegDirKey);
+        var ffmpegDir = appSettings.Value.FFmpegDir;
         if (!string.IsNullOrEmpty(ffmpegDir))
         {
             var ffmpegProgram1 = Path.Combine(Path.GetFullPath(ffmpegDir), "ffmpeg");

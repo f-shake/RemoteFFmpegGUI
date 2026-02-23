@@ -1,19 +1,21 @@
 ﻿using System.IO;
+using System.Net;
 using FzLib.Net;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Enums;
 
-namespace SimpleFFmpegGUI.Extensions;
+namespace SimpleFFmpegGUI.Helpers;
 
-public class FilePathHelper(IConfiguration config)
+public class FilePathHelper(IOptionsSnapshot<AppSettings> appSettings)
 {
-    private readonly string inputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ??
+    private readonly string inputDir = appSettings.Value.InputDir ??
                                        throw new HttpStatusCodeException("没有配置输入文件夹",
-                                           System.Net.HttpStatusCode.InternalServerError);
+                                           HttpStatusCode.InternalServerError);
 
-    private readonly string outputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ??
+    private readonly string outputDir = appSettings.Value.OutputDir ??
                                         throw new HttpStatusCodeException("没有配置输出文件夹",
-                                            System.Net.HttpStatusCode.InternalServerError);
+                                            HttpStatusCode.InternalServerError);
 
     public string GetFullPath(RootDirType type, string relPathOrFullPath, bool checkExists = true)
     {

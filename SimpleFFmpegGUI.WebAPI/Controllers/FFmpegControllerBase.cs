@@ -6,7 +6,10 @@ using SimpleFFmpegGUI.Model;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
@@ -14,47 +17,4 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers;
 [Route("[controller]")]
 public class FFmpegControllerBase : ControllerBase
 {
-    public readonly string InputDir = null;
-    public readonly string OutputDir = null;
-    protected readonly IConfiguration config;
-
-    public FFmpegControllerBase(IConfiguration config)
-    {
-        this.config = config;
-        InputDir = config.GetValue<string>(AppSettingsKeys.InputDirKey) ??
-                   throw new HttpStatusCodeException("没有配置输入文件夹", System.Net.HttpStatusCode.InternalServerError);
-        OutputDir = config.GetValue<string>(AppSettingsKeys.OutputDirKey) ??
-                    throw new HttpStatusCodeException("没有配置输出文件夹", System.Net.HttpStatusCode.InternalServerError);
-    }
-
-
-    protected void CheckFileNameNull(string path)
-    {
-        if (path == null || path is string s && s == "")
-        {
-            throw new HttpStatusCodeException("文件名为空", System.Net.HttpStatusCode.BadRequest);
-        }
-    }
-
-    protected void CheckNull(object obj, string objName)
-    {
-        if (obj == null || obj is string s && s == "")
-        {
-            throw new HttpStatusCodeException($"{objName}为空", System.Net.HttpStatusCode.BadRequest);
-        }
-    }
-
-    protected string GetInputRelativePath(string path)
-    {
-        return path.StartsWith(InputDir)
-            ? path.Substring(InputDir.Length).Replace('\\', '/').TrimStart('/')
-            : path;
-    }
-
-    protected string GetOutputRelativePath(string path)
-    {
-        return path.StartsWith(OutputDir)
-            ? path.Substring(OutputDir.Length).Replace('\\', '/').TrimStart('/')
-            : path;
-    }
 }

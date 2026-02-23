@@ -12,13 +12,21 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Helpers;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
-public class FileController(IConfiguration config,
-    [FromKeyedServices(FileController.InputFtpKey)] FtpService ftpInput,
-    [FromKeyedServices(FileController.OutputFtpKey)] FtpService ftpOutput,
-    IWebHostEnvironment hostingEnvironment) : FFmpegControllerBase(config)
+public class FileController(
+    IOptionsSnapshot<AppSettings> appSettings,
+    [FromKeyedServices(FileController.InputFtpKey)]
+    FtpService ftpInput,
+    [FromKeyedServices(FileController.OutputFtpKey)]
+    FtpService ftpOutput,
+    IWebHostEnvironment hostingEnvironment,
+    FilePathHelper filePathHelper) : FFmpegControllerBase()
 {
     public const string InputFtpKey = "input";
     public const string OutputFtpKey = "output";
@@ -27,60 +35,64 @@ public class FileController(IConfiguration config,
 
     [HttpPost]
     [Route("Ftp/Input/Off")]
-    public async Task CloseInput()
+    public async Task<IActionResult> CloseInput()
     {
         await ftpInput.StopAsync();
+        return NoContent();
     }
 
     [HttpPost]
     [Route("Ftp/Output/Off")]
-    public async Task CloseOutput()
+    public async Task<IActionResult> CloseOutput()
     {
         await ftpOutput.StopAsync();
+        return NoContent();
     }
 
     [HttpGet]
-    [Route("Download")]
+    [Route("Download/{name}")]
     public IActionResult Download(string name)
     {
-        string path = Path.Combine(OutputDir, name);
+        string path = filePathHelper.GetFullPath(RootDirType.OutputDir, name);
         if (!System.IO.File.Exists(path))
         {
             return NotFound();
         }
+
         var stream = System.IO.File.OpenRead(path);
         return File(stream, "application/octet-stream", Path.GetFileName(path));
     }
 
     [HttpGet]
     [Route("Dir")]
-    public string GetCurrentDir()
+    public ActionResult<string> GetCurrentDir()
     {
         return hostingEnvironment.ContentRootPath;
     }
 
     [HttpGet]
     [Route("List/Input")]
-    public async Task<List<string>> GetInputFiles()
+    public ActionResult<List<FileInfoDto>> GetInputFiles()
     {
-        return [.. Directory.EnumerateFiles(InputDir, "*", SearchOption.AllDirectories).Select(GetInputRelativePath)];
+        return Directory.EnumerateFiles(appSettings.Value.InputDir, "*", SearchOption.AllDirectories)
+            .Select(p => new FileInfoDto(p)).ToList();
     }
 
     [HttpGet]
     [Route("List/Output")]
-    public async Task<List<FileInfoDto>> GetOutputFiles()
+    public ActionResult<List<FileInfoDto>> GetOutputFiles()
     {
-        return [.. Directory.EnumerateFiles(OutputDir).Select(p => new FileInfoDto(p))];
+        return Directory.EnumerateFiles(appSettings.Value.OutputDir, "*", SearchOption.AllDirectories)
+            .Select(p => new FileInfoDto(p)).ToList();
     }
 
     /// <summary>
     /// 获取FTP状态
     /// </summary>
-    /// <param name="id"></param>
     /// <returns></returns>
     [HttpGet]
     [Route("Ftp/Status")]
-    public async Task<FtpStatusDto> GetStatus()
+    public ActionResult<FtpStatusDto> GetStatus()
     {
         var status = new FtpStatusDto()
         {
@@ -94,29 +106,34 @@ public class FileController(IConfiguration config,
 
     [HttpPost]
     [Route("Ftp/Input/On")]
-    public Task OpenInput()
+    public async Task<IActionResult> OpenInput()
     {
-        return ftpInput.StartAsync(InputDir, config.GetValue(AppSettingsKeys.InputFtpPortKey, 0));
+        await ftpInput.StartAsync(appSettings.Value.InputDir, appSettings.Value.InputFtpPort);
+        return NoContent();
     }
 
     [HttpPost]
     [Route("Ftp/Output/On")]
-    public Task OpenOutput()
+    public async Task<IActionResult> OpenOutput()
     {
-        return ftpOutput.StartAsync(OutputDir, config.GetValue(AppSettingsKeys.OutputFtpPortKey, 0));
+        await ftpOutput.StartAsync(appSettings.Value.OutputDir, appSettings.Value.OutputFtpPort);
+        return NoContent();
     }
 
     [HttpPost, HttpOptions]
     [Route("Upload")]
     [DisableRequestSizeLimit]
-    public async Task UploadFile([FromQuery] IFormFile file)
+    public async Task<IActionResult> UploadFile([FromQuery] IFormFile file)
     {
         if (file.Length > 0)
         {
-            string name = Path.Combine(InputDir, file.FileName);
+            string name = filePathHelper.GetFullPath(RootDirType.InputDir, file.FileName);
             name = FileNameHelper.GenerateUniquePath(name, new HashSet<string>());
-            using var stream = System.IO.File.Create(name);
+            await using var stream = System.IO.File.Create(name);
             await file.CopyToAsync(stream);
+            return Ok(name);
         }
+
+        return BadRequest("文件大小为0");
     }
 }
