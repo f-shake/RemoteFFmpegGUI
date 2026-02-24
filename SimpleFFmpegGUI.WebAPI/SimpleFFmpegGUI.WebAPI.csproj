@@ -30,8 +30,4 @@
         <ProjectReference Include="..\SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Dto\" />
-    </ItemGroup>
-
 </Project>

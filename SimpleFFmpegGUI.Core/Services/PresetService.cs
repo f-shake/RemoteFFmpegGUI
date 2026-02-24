@@ -11,57 +11,74 @@ using System.Threading.Tasks;
 
 public class PresetService(PresetRepository repository)
 {
-    public async Task<int> AddOrUpdatePresetAsync(string name, TaskType type, OutputArguments arguments)
+    public async Task<bool> ExistsAsync(string name, TaskType type)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        return await repository.ExistsAsync(name, type);
+    }
+    public async Task<int> AddPresetAsync(CodePreset preset)
+    {
+        if (string.IsNullOrWhiteSpace(preset.Name))
         {
             throw new ArgumentException("名称为空");
         }
-
+    
+        // 检查是否已存在
         var existing = (await repository.GetByTypeAsync(type))
             .FirstOrDefault(p => p.Name == name);
-
+        
         if (existing != null)
         {
-            existing.Arguments = arguments;
-            await repository.UpdateAsync(existing);
-            return existing.Id;
+            // 可考虑抛出异常，避免重复添加
+            throw new InvalidOperationException($"已存在同类型同名称的预设: {name}");
         }
-        else
-        {
-            // 新增
-            var preset = new CodePreset
-            {
-                Name = name,
-                Type = type,
-                Arguments = arguments
-            };
-            var result = await repository.AddAsync(preset);
-            return result.Id;
-        }
-    }
-
-    public async Task<CodePreset> AddPresetAsync(string name, TaskType type, OutputArguments arguments)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("名称为空");
-        }
-
-        if (await repository.ExistsAsync(name, type))
-        {
-            throw new InvalidOperationException($"名为{name}的预设已存在");
-        }
-
+    
+        // 新增
         var preset = new CodePreset
         {
             Name = name,
             Type = type,
             Arguments = arguments
         };
-
-        return await repository.AddAsync(preset);
+        var result = await repository.AddAsync(preset);
+        return result.Id;
     }
+
+
+    public async Task<int> UpdatePresetAsync(int id, string name, TaskType type, OutputArguments arguments)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("名称为空");
+        }
+    
+        // 先获取要更新的实体
+        var existing = await repository.GetByIdAsync(id);
+        if (existing == null)
+        {
+            // 可考虑抛出异常
+            throw new KeyNotFoundException($"未找到ID为 {id} 的预设");
+        }
+    
+        // 检查名称在相同类型下是否重复（排除自己）
+        var duplicate = (await repository.GetByTypeAsync(type))
+            .FirstOrDefault(p => p.Name == name && p.Id != id);
+        
+        if (duplicate != null)
+        {
+            // 可考虑抛出异常
+            throw new InvalidOperationException($"同类型下已存在名称为 {name} 的预设");
+        }
+    
+        // 更新
+        existing.Name = name;
+        existing.Type = type;
+        existing.Arguments = arguments;
+    
+        await repository.UpdateAsync(existing);
+        return existing.Id;
+    }
+
+ 
 
     public async Task<bool> DeletePresetAsync(int id)
     {

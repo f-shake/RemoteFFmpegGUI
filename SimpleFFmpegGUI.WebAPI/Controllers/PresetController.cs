@@ -14,7 +14,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         PresetService presetsService,
         PresetRepository presetRepository) : FFmpegControllerBase()
     {
-        [HttpPost("Add")]
+        [HttpPost("AddOrUpdate")]
         public async Task<ActionResult<int>> AddAsync([FromBody] CodePresetDto request)
         {
             if (request == null)
