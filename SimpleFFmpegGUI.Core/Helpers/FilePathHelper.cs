@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Net;
-using FzLib.Net;
+using FzLib.Web;
 using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models;

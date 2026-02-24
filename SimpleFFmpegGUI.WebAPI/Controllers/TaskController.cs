@@ -1,6 +1,6 @@
 ﻿using System;
 using FzLib;
-using FzLib.Net;
+using FzLib.Web;
 using FzLib.Programming;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;

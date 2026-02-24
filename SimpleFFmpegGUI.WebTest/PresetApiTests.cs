@@ -18,7 +18,10 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         
     }
 
-    private Task<int> AddPresetAsync(CodePresetDto request) =>
+    private Task<int> AddPresetAsync(PresetDto request) =>
+        PostObjectFromJsonAsync<int>("/Preset/Add", request);
+
+    private Task<int> AddPresetAsync(PresetDto request) =>
         PostObjectFromJsonAsync<int>("/Preset/Add", request);
 
     private Task DeletePresetAsync(int id) => DeleteAsync($"/Preset/{id}");

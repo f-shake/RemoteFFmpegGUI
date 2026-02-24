@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FzLib.Net;
+using FzLib.Web;
 using Microsoft.Extensions.Configuration;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;

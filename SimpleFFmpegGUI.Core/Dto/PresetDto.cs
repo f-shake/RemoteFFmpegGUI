@@ -2,7 +2,7 @@
 
 namespace SimpleFFmpegGUI.Dto
 {
-    public class CodePresetDto
+    public class PresetDto
     {
         public string Name { get; set; }
         public OutputArguments Arguments { get; set; }

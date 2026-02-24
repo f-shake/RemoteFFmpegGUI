@@ -1,4 +1,4 @@
-﻿using FzLib.Net;
+﻿using FzLib.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

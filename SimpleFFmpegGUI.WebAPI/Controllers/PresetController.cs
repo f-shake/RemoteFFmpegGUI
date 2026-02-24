@@ -14,8 +14,8 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         PresetService presetsService,
         PresetRepository presetRepository) : FFmpegControllerBase()
     {
-        [HttpPost("AddOrUpdate")]
-        public async Task<ActionResult<int>> AddAsync([FromBody] CodePresetDto request)
+        [HttpPost("Add")]
+        public async Task<ActionResult<int>> AddAsync([FromBody] PresetDto request)
         {
             if (request == null)
             {
@@ -32,7 +32,40 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("名称不能为空");
             }
 
-            return await presetsService.AddOrUpdatePresetAsync(request.Name, request.Type, request.Arguments);
+            var result = await presetsService.AddPresetAsync(new CodePreset()
+            {
+                Name = request.Name,
+                Type = request.Type,
+                Arguments = request.Arguments
+            });
+            return result.ToActionResult();
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> AddAsync(int id, [FromBody] PresetDto request)
+        {
+            if (request == null)
+            {
+                return BadRequest("请求对象不能为空");
+            }
+
+            if (request.Arguments == null)
+            {
+                return BadRequest("参数不能为空");
+            }
+
+            if (request.Name == null)
+            {
+                return BadRequest("名称不能为空");
+            }
+
+            var result = await presetsService.UpdatePresetAsync(id, new CodePreset()
+            {
+                Name = request.Name,
+                Type = request.Type,
+                Arguments = request.Arguments
+            });
+            return result.ToActionResult();
         }
 
         [HttpDelete("{id:int}")]

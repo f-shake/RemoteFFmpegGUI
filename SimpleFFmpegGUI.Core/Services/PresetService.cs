@@ -1,13 +1,14 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using FzLib.Web;
 
 public class PresetService(PresetRepository repository)
 {
@@ -15,83 +16,61 @@ public class PresetService(PresetRepository repository)
     {
         return await repository.ExistsAsync(name, type);
     }
-    public async Task<int> AddPresetAsync(CodePreset preset)
+
+
+    public async Task<ServiceResult<int>> AddPresetAsync(CodePreset preset)
     {
         if (string.IsNullOrWhiteSpace(preset.Name))
         {
-            throw new ArgumentException("名称为空");
+            return ServiceResult<int>.Failure("名称为空", HttpStatusCode.BadRequest);
         }
-    
-        // 检查是否已存在
-        var existing = (await repository.GetByTypeAsync(type))
-            .FirstOrDefault(p => p.Name == name);
-        
-        if (existing != null)
+
+        if (await ExistsAsync(preset.Name, preset.Type))
         {
-            // 可考虑抛出异常，避免重复添加
-            throw new InvalidOperationException($"已存在同类型同名称的预设: {name}");
+            return ServiceResult<int>.Failure($"已存在同类型同名称的预设: {preset.Name}", HttpStatusCode.Conflict);
         }
-    
-        // 新增
-        var preset = new CodePreset
-        {
-            Name = name,
-            Type = type,
-            Arguments = arguments
-        };
+
         var result = await repository.AddAsync(preset);
         return result.Id;
     }
 
 
-    public async Task<int> UpdatePresetAsync(int id, string name, TaskType type, OutputArguments arguments)
+    public async Task<ServiceResult> UpdatePresetAsync(int id, CodePreset preset)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(preset.Name))
         {
-            throw new ArgumentException("名称为空");
+            return ServiceResult.Failure("名称为空", HttpStatusCode.BadRequest);
         }
-    
-        // 先获取要更新的实体
+
         var existing = await repository.GetByIdAsync(id);
         if (existing == null)
         {
-            // 可考虑抛出异常
-            throw new KeyNotFoundException($"未找到ID为 {id} 的预设");
+            return ServiceResult.Failure($"找不到ID为{id}的预设", HttpStatusCode.NotFound);
         }
-    
-        // 检查名称在相同类型下是否重复（排除自己）
-        var duplicate = (await repository.GetByTypeAsync(type))
-            .FirstOrDefault(p => p.Name == name && p.Id != id);
-        
-        if (duplicate != null)
-        {
-            // 可考虑抛出异常
-            throw new InvalidOperationException($"同类型下已存在名称为 {name} 的预设");
-        }
-    
-        // 更新
-        existing.Name = name;
-        existing.Type = type;
-        existing.Arguments = arguments;
-    
+
+        existing.Name = preset.Name;
+        existing.Type = preset.Type;
+        existing.Arguments = preset.Arguments;
+
         await repository.UpdateAsync(existing);
-        return existing.Id;
+        return ServiceResult.Success();
     }
 
- 
 
-    public async Task<bool> DeletePresetAsync(int id)
+    public async Task<ServiceResult<bool>> DeletePresetAsync(int id)
     {
         if (id <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(id), "ID必须大于0");
+            return ServiceResult<bool>.Failure("ID必须大于0", HttpStatusCode.BadRequest);
+            // throw new ArgumentOutOfRangeException(nameof(id), "ID必须大于0");
         }
 
         var affected = await repository.SoftDeleteAsync(id);
 
         if (affected == 0)
         {
-            throw new KeyNotFoundException($"找不到ID为{id}的预设");
+            return ServiceResult<bool>.Failure($"找不到ID为{id}的预设", HttpStatusCode.NotFound);
+            // throw new KeyNotFoundException($"找不到ID为{id}的预设");
         }
 
         return affected > 0;
@@ -103,19 +82,24 @@ public class PresetService(PresetRepository repository)
         return presets.SerializeWithFriendlySettings();
     }
 
-    public async Task ImportAsync(string json, bool overwrite = false)
+    public async Task<ServiceResult> ImportAsync(string json, bool overwrite = false)
     {
-        var presets = json.DeserializeWithFriendlySettings<List<CodePreset>>() ?? throw new ArgumentException("无效的JSON数据");
+        var presets = json.DeserializeWithFriendlySettings<List<CodePreset>>();
+        if (presets == null)
+        {
+            return ServiceResult.Failure("JSON反序列化失败", HttpStatusCode.BadRequest);
+        }
 
 
         foreach (var preset in presets)
         {
             if (string.IsNullOrWhiteSpace(preset.Name))
             {
-                throw new ArgumentException("预设名称不能为空");
+                // throw new ArgumentException("预设名称不能为空");
+                return ServiceResult.Failure("预设名称不能为空", HttpStatusCode.BadRequest);
             }
 
-            preset.Id = 0; // 确保是新记录
+            preset.Id = 0;
 
             if (overwrite && await repository.ExistsAsync(preset.Name, preset.Type))
             {
@@ -130,24 +114,30 @@ public class PresetService(PresetRepository repository)
 
             await repository.AddAsync(preset);
         }
+
+        return ServiceResult.Success();
     }
 
-    public async Task SetDefaultPresetAsync(int id)
+    public async Task<ServiceResult> SetDefaultPresetAsync(int id)
     {
-        var preset = await repository.GetByIdAsync(id) ?? throw new ArgumentException($"找不到ID为{id}的预设");
+        var preset = await repository.GetByIdAsync(id); // ?? throw new ArgumentException($"找不到ID为{id}的预设");
+        if (preset == null)
+        {
+            return ServiceResult.Failure($"找不到ID为{id}的预设", HttpStatusCode.NotFound);
+        }
 
         if (preset.IsDeleted)
         {
-            throw new InvalidOperationException($"预设已被删除");
+            // throw new InvalidOperationException($"预设已被删除");
+            return ServiceResult.Failure($"预设已被删除", HttpStatusCode.BadRequest);
         }
 
-        // 先清除同类型的默认预设
         await repository.ClearAllDefaultsAsync(preset.Type);
-
-        // 设置新的默认预设
         await repository.SetAsDefaultAsync(id);
+        return ServiceResult.Success();
     }
-    public async Task<int> TryDeletePresetsAsync(IEnumerable<int> ids)
+
+    public async Task<int> DeletePresetsAsync(IEnumerable<int> ids)
     {
         var idList = ids.Where(id => id > 0).Distinct().ToList();
         if (idList.Count == 0)
