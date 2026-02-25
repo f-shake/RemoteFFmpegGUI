@@ -15,7 +15,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         PresetRepository presetRepository) : FFmpegControllerBase()
     {
         [HttpPost("Add")]
-        public async Task<ActionResult<int>> AddAsync([FromBody] PresetDto request)
+        public async Task<ActionResult<int>> AddAsync(AddPresetRequest request)
         {
             if (request == null)
             {
@@ -32,17 +32,12 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("名称不能为空");
             }
 
-            var result = await presetsService.AddPresetAsync(new CodePreset()
-            {
-                Name = request.Name,
-                Type = request.Type,
-                Arguments = request.Arguments
-            });
+            var result = await presetsService.AddPresetAsync(request);
             return result.ToActionResult();
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> AddAsync(int id, [FromBody] PresetDto request)
+        public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdatePresetRequest request)
         {
             if (request == null)
             {
@@ -59,12 +54,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("名称不能为空");
             }
 
-            var result = await presetsService.UpdatePresetAsync(id, new CodePreset()
-            {
-                Name = request.Name,
-                Type = request.Type,
-                Arguments = request.Arguments
-            });
+            var result = await presetsService.UpdatePresetAsync(id, request);
             return result.ToActionResult();
         }
 
@@ -90,8 +80,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 : await presetRepository.GetAllAsync();
         }
 
-        [HttpPost, HttpOptions]
-        [Route("Import")]
+        [HttpPost("Import")]
         public async Task<IActionResult> ImportAsync([FromQuery] IFormFile file)
         {
             await using var s = file.OpenReadStream();

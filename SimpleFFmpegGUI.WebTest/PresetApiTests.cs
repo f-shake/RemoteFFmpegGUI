@@ -15,14 +15,31 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestPresetsAsync()
     {
+        //测试新增
+        var id = await AddPresetAsync(new AddPresetRequest("test", new OutputArguments(), TaskType.Code));
+        id.Should().BeGreaterThan(0);
+        var presets = await GetPresetsAsync(TaskType.Code);
+        presets.Count.Should().Be(1);
+        presets.Should().Contain(p => p.Id == id);
+
+        //测试更新
+        await UpdatePresetAsync(id,
+            new UpdatePresetRequest("test2", new OutputArguments() { DisableVideo = true }, TaskType.Code));
+        presets = await GetPresetsAsync(TaskType.Code);
+        presets.Should().Contain(p => p.Id == id && p.Name == "test2");
+        presets.First(p => p.Id == id).Arguments.DisableVideo.Should().BeTrue();
         
+        //测试删除
+        await DeletePresetAsync(id);
+        presets = await GetPresetsAsync(TaskType.Code);
+        presets.Count.Should().Be(0);
     }
 
-    private Task<int> AddPresetAsync(PresetDto request) =>
+    private Task<int> AddPresetAsync(AddPresetRequest request) =>
         PostObjectFromJsonAsync<int>("/Preset/Add", request);
 
-    private Task<int> AddPresetAsync(PresetDto request) =>
-        PostObjectFromJsonAsync<int>("/Preset/Add", request);
+    private Task UpdatePresetAsync(int id, UpdatePresetRequest request) =>
+        PutAsync($"/Preset/{id}", request);
 
     private Task DeletePresetAsync(int id) => DeleteAsync($"/Preset/{id}");
 

@@ -38,12 +38,18 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         return SendAsync(HttpMethod.Delete, endpoint);
     }
 
+    protected Task<HttpResponseMessage> PutAsync(string endpoint, object body)
+    {
+        return SendAsync(HttpMethod.Put, endpoint, body);
+    }
+
     protected Task<HttpResponseMessage> GetAsync(string endpoint)
     {
         return SendAsync(HttpMethod.Get, endpoint);
     }
 
     protected Task<AppDirDto> GetDirsAsync() => GetObjectFromJsonAsync<AppDirDto>("/File/Dirs");
+
     protected async Task<T> GetObjectFromJsonAsync<T>(string endpoint)
     {
         var response = await SendAsync(HttpMethod.Get, endpoint);
@@ -119,7 +125,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
             request.Headers.Add("Authorization", $"Bearer {token}");
         }
 
-        if (method == HttpMethod.Post && body != null)
+        if ((method == HttpMethod.Post || method == HttpMethod.Put || method == HttpMethod.Patch) && body != null)
         {
             request.Content = JsonContent.Create(body);
         }

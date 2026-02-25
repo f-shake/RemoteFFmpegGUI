@@ -10,7 +10,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true'">
     <Reference Include="FzLib">
-      <HintPath>C:\Users\autod\OneDrive\开发\FzLib\Publish\libs\FzLib.dll</HintPath>
+      <HintPath>$(LocalFzLibPath)</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

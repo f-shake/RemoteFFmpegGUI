@@ -9,6 +9,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FzLib.Web;
+using SimpleFFmpegGUI.Dto;
 
 public class PresetService(PresetRepository repository)
 {
@@ -18,7 +19,7 @@ public class PresetService(PresetRepository repository)
     }
 
 
-    public async Task<ServiceResult<int>> AddPresetAsync(CodePreset preset)
+    public async Task<ServiceResult<int>> AddPresetAsync(AddPresetRequest preset)
     {
         if (string.IsNullOrWhiteSpace(preset.Name))
         {
@@ -30,12 +31,17 @@ public class PresetService(PresetRepository repository)
             return ServiceResult<int>.Failure($"已存在同类型同名称的预设: {preset.Name}", HttpStatusCode.Conflict);
         }
 
-        var result = await repository.AddAsync(preset);
+        var result = await repository.AddAsync(new CodePreset()
+        {
+            Name = preset.Name,
+            Type = preset.Type,
+            Arguments = preset.Arguments
+        });
         return result.Id;
     }
 
 
-    public async Task<ServiceResult> UpdatePresetAsync(int id, CodePreset preset)
+    public async Task<ServiceResult> UpdatePresetAsync(int id, UpdatePresetRequest preset)
     {
         if (string.IsNullOrWhiteSpace(preset.Name))
         {
@@ -57,12 +63,11 @@ public class PresetService(PresetRepository repository)
     }
 
 
-    public async Task<ServiceResult<bool>> DeletePresetAsync(int id)
+    public async Task<ServiceResult> DeletePresetAsync(int id)
     {
         if (id <= 0)
         {
             return ServiceResult<bool>.Failure("ID必须大于0", HttpStatusCode.BadRequest);
-            // throw new ArgumentOutOfRangeException(nameof(id), "ID必须大于0");
         }
 
         var affected = await repository.SoftDeleteAsync(id);
@@ -70,10 +75,9 @@ public class PresetService(PresetRepository repository)
         if (affected == 0)
         {
             return ServiceResult<bool>.Failure($"找不到ID为{id}的预设", HttpStatusCode.NotFound);
-            // throw new KeyNotFoundException($"找不到ID为{id}的预设");
         }
 
-        return affected > 0;
+        return ServiceResult.Success();
     }
 
     public async Task<string> ExportAsync()
