@@ -16,7 +16,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     public class MediaInfoController(
         DbConfigService dbConfig,
         MediaInfoService mediaInfoService,
-        FilePathHelper filePathHelper) : FFmpegControllerBase()
+        FilePathHelper filePathHelper) : FFmpegControllerBase
     {
         [HttpGet("{name}")]
         public async Task<ActionResult<MediaInfoGeneral>> GetAsync(string name)
@@ -26,13 +26,13 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("文件名不能为空");
             }
 
+            name = filePathHelper.GetFullPath(RootDirType.InputDir, name);
             if (!System.IO.File.Exists(name))
             {
                 return NotFound();
             }
-            
-            var path = filePathHelper.GetFullPath(RootDirType.InputDir, name);
-            var result = await mediaInfoService.GetMediaInfoAsync(path);
+
+            var result = await mediaInfoService.GetMediaInfoAsync(name);
             return result;
         }
 
@@ -42,7 +42,11 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         {
             try
             {
-                videoPath =  filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
+                videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
+                if (!System.IO.File.Exists(videoPath))
+                {
+                    return NotFound();
+                }
                 string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds),
                     dbConfig.SnapshotSize);
 

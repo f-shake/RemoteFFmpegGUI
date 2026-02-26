@@ -31,7 +31,8 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("请求对象不能为空");
             }
 
-            return await taskService.AddTasks(type, request);
+            var result= await taskService.AddTasks(type, request);
+            return result.ToActionResult();
         }
 
 

@@ -21,17 +21,12 @@ public class FilePathHelper(IOptionsSnapshot<AppSettings> appSettings)
 
     public string OutputDir => outputDir;
 
-    public string GetFullPath(RootDirType type, string relPathOrFullPath, bool checkExists = true)
+    public string GetFullPath(RootDirType type, string relPathOrFullPath)
     {
         var rootDir = type == RootDirType.InputDir ? inputDir : outputDir;
         string path = Path.IsPathFullyQualified(relPathOrFullPath)
             ? relPathOrFullPath
             : Path.Combine(rootDir, relPathOrFullPath);
-
-        if (checkExists && !File.Exists(path))
-        {
-            throw new HttpStatusCodeException($"不存在文件{relPathOrFullPath}", System.Net.HttpStatusCode.NotFound);
-        }
 
         return path;
     }

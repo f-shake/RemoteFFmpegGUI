@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Unicode;
 using SimpleFFmpegGUI.Converter;
 
@@ -18,7 +19,7 @@ public static class SystemTextJsonExtensions
             PropertyNameCaseInsensitive = true,
             WriteIndented = false,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-            //NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
+            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
         };
 
         webOptions = new JsonSerializerOptions(defaultOptions)
@@ -77,6 +78,14 @@ public static class SystemTextJsonExtensions
         public string SerializeWithWebSettings()
         {
             return JsonSerializer.Serialize(obj, webOptions);
+        }
+    }
+
+    extension(JsonNode node)
+    {
+        public T DeserializeWithDefaultSettings<T>()
+        {
+            return node.Deserialize<T>(defaultOptions);
         }
     }
 }

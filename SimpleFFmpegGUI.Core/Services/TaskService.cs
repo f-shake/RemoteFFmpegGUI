@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using FzLib.Web;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +20,7 @@ namespace SimpleFFmpegGUI.Services;
 
 public class TaskService(TaskRepository taskRepository, QueueService queue, FilePathHelper filePathHelper)
 {
-    public async Task<List<int>> AddTasks(string type, TaskDto request)
+    public async Task<ServiceResult<List<int>>> AddTasks(string type, TaskDto request)
     {
         List<int> ids = new List<int>();
         var inputs = request.Inputs ?? [];
@@ -34,6 +35,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 {
                     var file = inputs[i];
                     file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    if (!File.Exists(file.FilePath))
+                    {
+                        return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
+                    }
+
                     var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutputByInput(request, i),
                         request.Argument);
                     ids.Add(task.Id);
@@ -47,6 +53,10 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 foreach (var file in inputs)
                 {
                     file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    if (!File.Exists(file.FilePath))
+                    {
+                        return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
+                    }
                 }
 
                 var taskType = type.ToLower() == "combine" ? TaskType.Combine : TaskType.Compare;
@@ -62,6 +72,10 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 foreach (var file in inputs)
                 {
                     file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    if (!File.Exists(file.FilePath))
+                    {
+                        return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
+                    }
                 }
 
                 var concatTask = await taskRepository.AddTaskAsync(TaskType.Concat, inputs,
@@ -72,7 +86,7 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
             case "custom":
                 if (request.Argument?.Extra == null)
                 {
-                    throw new HttpStatusCodeException("自定义任务需要额外参数", System.Net.HttpStatusCode.BadRequest);
+                    return ServiceResult<List<int>>.Failure("自定义任务需要额外参数", HttpStatusCode.BadRequest);
                 }
 
                 var customTask =
@@ -81,7 +95,8 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 break;
 
             default:
-                throw new HttpStatusCodeException($"不支持的任务类型: {type}", System.Net.HttpStatusCode.BadRequest);
+                return ServiceResult<List<int>>.Failure($"不支持的任务类型: {type}", HttpStatusCode.BadRequest);
+            // throw new HttpStatusCodeException($"不支持的任务类型: {type}", System.Net.HttpStatusCode.BadRequest);
         }
 
 
@@ -188,13 +203,13 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
             var input = request.Inputs[inputIndex];
             if (input?.FilePath != null)
             {
-                output = filePathHelper.GetFullPath(RootDirType.OutputDir, input.FilePath, false);
+                output = filePathHelper.GetFullPath(RootDirType.OutputDir, input.FilePath);
             }
         }
         else
         {
             //如果是相对路径，补充为绝对路径
-            var outputDir = filePathHelper.GetFullPath(RootDirType.OutputDir, output, false);
+            var outputDir = filePathHelper.GetFullPath(RootDirType.OutputDir, output);
             output = Path.IsPathFullyQualified(output) ? output : Path.Combine(outputDir, output);
         }
 

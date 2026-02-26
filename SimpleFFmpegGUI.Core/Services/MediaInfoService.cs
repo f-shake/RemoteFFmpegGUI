@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Extensions;
 
 namespace SimpleFFmpegGUI.Services
 {
@@ -262,24 +263,24 @@ namespace SimpleFFmpegGUI.Services
             {
                 if (track["@type"].GetValue<string>() == "General")
                 {
-                    info = track.Deserialize<MediaInfoGeneral>();
+                    info = track.DeserializeWithDefaultSettings<MediaInfoGeneral>();
                 }
                 else if (track["@type"].GetValue<string>() == "Video")
                 {
                     Debug.Assert(info != null);
-                    info.Videos.Add(track.Deserialize<MediaInfoVideo>());
+                    info.Videos.Add(track.DeserializeWithDefaultSettings<MediaInfoVideo>());
                     info.Videos[^1].Index = info.Videos.Count;
                 }
                 else if (track["@type"].GetValue<string>() == "Audio")
                 {
                     Debug.Assert(info != null);
-                    info.Audios.Add(track.Deserialize<MediaInfoAudio>());
+                    info.Audios.Add(track.DeserializeWithDefaultSettings<MediaInfoAudio>());
                     info.Audios[^1].Index = info.Audios.Count;
                 }
                 else if (track["@type"].GetValue<string>() == "Text")
                 {
                     Debug.Assert(info != null);
-                    info.Texts.Add(track.Deserialize<MediaInfoText>());
+                    info.Texts.Add(track.DeserializeWithDefaultSettings<MediaInfoText>());
                     info.Texts[^1].Index = info.Texts.Count;
                 }
             }
