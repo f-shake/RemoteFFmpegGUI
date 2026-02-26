@@ -3,7 +3,9 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.WebAPI;
 
 // 建议安装这个包，断言更丝滑
@@ -16,22 +18,22 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     public async Task TestPresetsAsync()
     {
         //测试新增
-        var id = await AddPresetAsync(new AddPresetRequest("test", new OutputArguments(), TaskType.Code));
+        var id = await AddPresetAsync(new AddPresetRequest("test", new OutputParameters(), TaskType.Transcode));
         id.Should().BeGreaterThan(0);
-        var presets = await GetPresetsAsync(TaskType.Code);
+        var presets = await GetPresetsAsync(TaskType.Transcode);
         presets.Count.Should().Be(1);
         presets.Should().Contain(p => p.Id == id);
 
         //测试更新
         await UpdatePresetAsync(id,
-            new UpdatePresetRequest("test2", new OutputArguments() { DisableVideo = true }, TaskType.Code));
-        presets = await GetPresetsAsync(TaskType.Code);
+            new UpdatePresetRequest("test2", new OutputParameters() { DisableVideo = true }, TaskType.Transcode));
+        presets = await GetPresetsAsync(TaskType.Transcode);
         presets.Should().Contain(p => p.Id == id && p.Name == "test2");
-        presets.First(p => p.Id == id).Arguments.DisableVideo.Should().BeTrue();
+        presets.First(p => p.Id == id).Parameters.DisableVideo.Should().BeTrue();
         
         //测试删除
         await DeletePresetAsync(id);
-        presets = await GetPresetsAsync(TaskType.Code);
+        presets = await GetPresetsAsync(TaskType.Transcode);
         presets.Count.Should().Be(0);
     }
 
@@ -43,6 +45,6 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
 
     private Task DeletePresetAsync(int id) => DeleteAsync($"/Preset/{id}");
 
-    private Task<List<CodePreset>> GetPresetsAsync(TaskType? type) =>
-        GetObjectFromJsonAsync<List<CodePreset>>(type == null ? "/Preset/List" : $"/Preset/List?type={type}");
+    private Task<List<PresetEntity>> GetPresetsAsync(TaskType? type) =>
+        GetObjectFromJsonAsync<List<PresetEntity>>(type == null ? "/Preset/List" : $"/Preset/List?type={type}");
 }

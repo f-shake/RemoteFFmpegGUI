@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections;
@@ -8,7 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Repositories;
 
@@ -40,22 +43,22 @@ public class TaskRepository
         }
     }
 
-    public async Task<TaskInfo> AddTaskAsync(TaskType type, List<InputArguments> path, string outputPath,
-        OutputArguments arg)
+    public async Task<TaskEntity> AddTaskAsync(TaskType type, List<InputParameters> path, string outputPath,
+        OutputParameters arg)
     {
-        var task = new TaskInfo()
+        var task = new TaskEntity()
         {
             Type = type,
             Inputs = path,
             Output = outputPath,
-            Arguments = arg
+            Parameters = arg
         };
         db.Tasks.Add(task);
         await db.SaveChangesAsync();
         return task;
     }
 
-    public async Task<List<TaskInfo>> GetCurrentTasksAsync(DateTime startTime)
+    public async Task<List<TaskEntity>> GetCurrentTasksAsync(DateTime startTime)
     {
         var tasks = db.Tasks.Where(p => p.IsDeleted == false);
         var runningTasks = await tasks.Where(p => p.Status == TaskStatus.Processing).ToListAsync();
@@ -69,15 +72,15 @@ public class TaskRepository
         return [.. runningTasks, .. queueTasks, .. doneTasks, .. errorTasks, .. cancelTasks];
     }
 
-    public async Task<TaskInfo> GetTaskAsync(int id)
+    public async Task<TaskEntity> GetTaskAsync(int id)
     {
         var task = await db.Tasks.FindAsync(id);
         return task;
     }
 
-    public async Task<PagedListResponse<TaskInfo>> GetTasksAsync(TaskQueryDto query)
+    public async Task<PagedListResponse<TaskEntity>> GetTasksAsync(TaskQueryDto query)
     {
-        IQueryable<TaskInfo> tasks = db.Tasks
+        IQueryable<TaskEntity> tasks = db.Tasks
             .Where(p => p.IsDeleted == false);
         if (query.Status.HasValue)
         {
@@ -108,10 +111,10 @@ public class TaskRepository
             tasks = tasks.Take(take);
         }
 
-        return new PagedListResponse<TaskInfo>(await tasks.ToListAsync(), count, query.Page, query.PageSize);
+        return new PagedListResponse<TaskEntity>(await tasks.ToListAsync(), count, query.Page, query.PageSize);
     }
 
-    public async Task<List<TaskInfo>> GetTasksAsync(ICollection<int> ids)
+    public async Task<List<TaskEntity>> GetTasksAsync(ICollection<int> ids)
     {
         return await db.Tasks
             .Where(e => ids.Any(id => id == e.Id))

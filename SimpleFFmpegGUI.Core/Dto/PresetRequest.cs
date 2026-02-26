@@ -1,14 +1,15 @@
-﻿using SimpleFFmpegGUI.Model;
+﻿using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Dto;
 
 public record AddPresetRequest(
     string Name,
-    OutputArguments Arguments,
+    OutputParameters Parameters,
     TaskType Type
 );
 public record UpdatePresetRequest(
     string Name,
-    OutputArguments Arguments,
+    OutputParameters Parameters,
     TaskType Type
 );

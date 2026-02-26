@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
@@ -22,7 +24,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("请求对象不能为空");
             }
 
-            if (request.Arguments == null)
+            if (request.Parameters == null)
             {
                 return BadRequest("参数不能为空");
             }
@@ -44,7 +46,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("请求对象不能为空");
             }
 
-            if (request.Arguments == null)
+            if (request.Parameters == null)
             {
                 return BadRequest("参数不能为空");
             }
@@ -73,7 +75,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpGet("List")]
-        public async Task<ActionResult<List<CodePreset>>> GetPresets(TaskType? type)
+        public async Task<ActionResult<List<PresetEntity>>> GetPresets(TaskType? type)
         {
             return type.HasValue
                 ? await presetRepository.GetByTypeAsync(type.Value)

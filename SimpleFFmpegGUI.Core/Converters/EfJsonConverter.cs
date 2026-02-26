@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SimpleFFmpegGUI.Extensions;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Unicode;
 
-namespace SimpleFFmpegGUI.Model;
+namespace SimpleFFmpegGUI.Converters;
 
 public class EFJsonConverter<T> : ValueConverter<T, string>
 {

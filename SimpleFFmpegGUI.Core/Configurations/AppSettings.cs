@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SimpleFFmpegGUI.Models;
+namespace SimpleFFmpegGUI.Configurations;
 
 public class AppSettings
 {

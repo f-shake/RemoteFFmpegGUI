@@ -3,8 +3,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.MediaInfo;
 using SimpleFFmpegGUI.WebAPI;
 
 // 建议安装这个包，断言更丝滑
@@ -19,8 +19,18 @@ public class MediaInfoApiTests(SimpleFFmpegWebApplicationFactory factory) : Simp
         var result = await GetMediaInfoAsync(Path.GetFileName(appTestSettings.TestVideo10s));
         result.Should().NotBeNull();
     }
+    
+    // [Fact]
+    // public async Task TestSnapshotAsync()
+    // {
+    //     var result = await GetSnapshotAsync(Path.GetFileName(appTestSettings.TestVideo10s), 10);
+    //     result.Should().NotBeNull();
+    // }
 
     private Task<MediaInfoGeneral> GetMediaInfoAsync(string name) =>
         GetObjectFromJsonAsync<MediaInfoGeneral>($"/MediaInfo/{name}");
+    
+    // private Task<string> GetSnapshotAsync(string name, double seconds) =>
+    //     GetObjectFromJsonAsync<>($"/MediaInfo/Snapshot?videoPath={name}&seconds={seconds}");
 
 }

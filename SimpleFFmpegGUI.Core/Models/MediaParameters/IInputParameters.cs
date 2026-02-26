@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public interface IInputArguments
+    public interface IInputParameters
     {
         TimeSpan? Duration { get; set; }
         string Extra { get; set; }

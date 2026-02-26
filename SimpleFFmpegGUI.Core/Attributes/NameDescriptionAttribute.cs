@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Attributes
 {
     [AttributeUsage(AttributeTargets.All)]
     public class NameDescriptionAttribute : Attribute

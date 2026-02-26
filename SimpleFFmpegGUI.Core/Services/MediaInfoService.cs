@@ -3,8 +3,8 @@ using Mapster;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Helpers;
-using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.MediaInfo;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,15 +19,16 @@ namespace SimpleFFmpegGUI.Services
 {
     public class MediaInfoService(IFFmpegProcessServiceFactory ffmpegProcessServiceFactory)
     {
-        public VideoCodeArguments ConvertToVideoArguments(MediaInfoGeneral mediaInfo)
+        public VideoCodecParameters ConvertToVideoArguments(MediaInfoGeneral mediaInfo)
         {
-            VideoCodeArguments arguments = new VideoCodeArguments();
+            VideoCodecParameters arguments = new VideoCodecParameters();
 
             var tracks = JsonNode.Parse(mediaInfo.Raw)["media"]["track"] as JsonArray;
             if (mediaInfo.Videos.Count == 0)
             {
                 throw new Exception("源文件不含视频");
             }
+
             var video = mediaInfo.Videos[0];
 
             arguments.Code = video.Format switch
@@ -57,10 +58,12 @@ namespace SimpleFFmpegGUI.Services
                             arguments.TwoPass = true;
                         }
                     }
+
                     if (settings.ContainsKey("vbv-maxrate"))
                     {
                         arguments.MaxBitrate = Convert.ToDouble(settings["vbv-maxrate"]) / 1000;
-                        arguments.MaxBitrateBuffer = Convert.ToDouble(settings["vbv-bufsize"]) / 1000 / arguments.MaxBitrate;
+                        arguments.MaxBitrateBuffer =
+                            Convert.ToDouble(settings["vbv-bufsize"]) / 1000 / arguments.MaxBitrate;
                     }
                 }
                 catch (Exception ex)
@@ -140,6 +143,7 @@ namespace SimpleFFmpegGUI.Services
                         preset = 1;
                     }
                 }
+
                 arguments.Preset = preset;
             }
             else
@@ -160,29 +164,29 @@ namespace SimpleFFmpegGUI.Services
                 mediaInfo.Raw = mediaInfoJSON.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
                 foreach (var video in mediaInfo.Videos)
                 {
-                    if (!string.IsNullOrEmpty(video.Encoded_Library_Settings))
+                    if (!string.IsNullOrEmpty(video.EncodedLibrarySettings))
                     {
-                        video.EncodingSettings = ParseEncodingSettings(video.Encoded_Library_Settings);
+                        video.EncodingSettings = ParseEncodingSettings(video.EncodedLibrarySettings);
                     }
                 }
-
             });
             return mediaInfo;
         }
 
-        public async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale, string format = "jpg")
+        public async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale = "-1:1080",
+            string format = "jpg")
         {
             Debug.WriteLine("正在采集截图");
             string tempPath = $"{FileSystemHelper.GetTempFileName("snapshot")}.{format}";
 
             string args =
-                $"-ss {time.TotalSeconds:0.000} " +        // 快速 seek（在 -i 前）
-                $"-skip_frame nokey " +            //只截取关键帧，提升速度，降低内存
+                $"-ss {time.TotalSeconds:0.000} " + // 快速 seek（在 -i 前）
+                $"-skip_frame nokey " + //只截取关键帧，提升速度，降低内存
                 $"-i \"{path}\" " +
                 "-vframes 1 " +
                 $"-vf scale={scale}:flags=fast_bilinear " + // 低内存 scale
-                "-threads 1 " +                              // 限制线程
-                "-max_muxing_queue_size 2 " +                // 限制缓存
+                "-threads 1 " + // 限制线程
+                "-max_muxing_queue_size 2 " + // 限制缓存
                 $"\"{tempPath}\"";
 
             FFmpegProcessService process = ffmpegProcessServiceFactory.Create(args);
@@ -250,8 +254,10 @@ namespace SimpleFFmpegGUI.Services
                     setting.Name = part; // 把整个字符串赋值给编码设置项的名称属性
                     setting.Value = true; // 把true赋值给编码设置项的值属性
                 }
+
                 settings.Add(setting); // 把编码设置项对象添加到列表中
             }
+
             return settings; // 返回编码设置项列表
         }
 
@@ -284,6 +290,7 @@ namespace SimpleFFmpegGUI.Services
                     info.Texts[^1].Index = info.Texts.Count;
                 }
             }
+
             return info;
         }
     }

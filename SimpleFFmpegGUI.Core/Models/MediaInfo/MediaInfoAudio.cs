@@ -1,23 +1,30 @@
 ﻿using System;
+using System.Text.Json.Serialization;
 
-namespace SimpleFFmpegGUI.Model.MediaInfo
+namespace SimpleFFmpegGUI.Models.MediaInfo
 {
     public class MediaInfoAudio : MediaInfoTrackBase
     {
         public int AlternateGroup { get; set; }
-        public string BitRate_Mode { get; set; }
+        [JsonPropertyName("BitRate_Mode")]
+        public string BitRateMode { get; set; }
         public string ChannelLayout { get; set; }
         public string ChannelPositions { get; set; }
         public int Channels { get; set; }
-        public string Compression_Mode { get; set; }
+        [JsonPropertyName("Compression_Mode")]
+        public string CompressionMode { get; set; }
         public double Delay { get; set; }
-        public string Delay_DropFrame { get; set; }
-        public string Delay_Source { get; set; }
-        public string Format_AdditionalFeatures { get; set; }
+        [JsonPropertyName("Delay_DropFrame")]
+        public string DelayDropFrame { get; set; }
+        [JsonPropertyName("Delay_Source")]
+        public string DelaySource { get; set; }
+        [JsonPropertyName("Format_AdditionalFeatures")]
+        public string FormatAdditionalFeatures { get; set; }
         public int FrameCount { get; set; }
         public int SamplesPerFrame { get; set; }
         public long SamplingCount { get; set; }
         public int SamplingRate { get; set; }
-        public double Video_Delay { get; set; }
+        [JsonPropertyName("Video_Delay")]
+        public double VideoDelay { get; set; }
     }
 }

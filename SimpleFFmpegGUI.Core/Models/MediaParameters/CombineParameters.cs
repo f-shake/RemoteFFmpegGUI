@@ -2,9 +2,9 @@
 using FzLib.Programming;
 using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public class CombineArguments : INotifyPropertyChanged
+    public class CombineParameters : INotifyPropertyChanged
     {
         private bool shortest;
 

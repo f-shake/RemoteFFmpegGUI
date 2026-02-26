@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
@@ -13,7 +14,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     {
         [HttpGet]
         [Route("List")]
-        public async Task<PagedListResponse<Log>> GetLogs([FromQuery] LogQueryRequest query)
+        public async Task<PagedListResponse<LogEntity>> GetLogs([FromQuery] LogQueryRequest query)
         {
             var result = await log.GetLogsAsync(query);
             return result;

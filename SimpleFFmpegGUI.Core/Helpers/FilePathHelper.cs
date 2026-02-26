@@ -2,6 +2,7 @@
 using System.Net;
 using FzLib.Web;
 using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models;
 

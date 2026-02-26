@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;

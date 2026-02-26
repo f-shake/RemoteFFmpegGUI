@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.FFmpegArgument;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -12,9 +12,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Models.Entities;
 using Task = System.Threading.Tasks.Task;
 using Tasks = System.Threading.Tasks;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services
 {
@@ -59,7 +61,7 @@ namespace SimpleFFmpegGUI.Services
         /// <summary>
         /// 主队列的Task
         /// </summary>
-        public TaskInfo MainQueueTask { get; private set; }
+        public TaskEntity MainQueueTask { get; private set; }
 
         /// <summary>
         /// 所有任务
@@ -69,13 +71,13 @@ namespace SimpleFFmpegGUI.Services
         /// <summary>
         /// 独立任务
         /// </summary>
-        public IEnumerable<TaskInfo> StandaloneTasks =>
+        public IEnumerable<TaskEntity> StandaloneTasks =>
             Managers.Where(p => p.Task != MainQueueTask).Select(p => p.Task);
 
         /// <summary>
         /// 所有任务
         /// </summary>
-        public IEnumerable<TaskInfo> Tasks => Managers.Select(p => p.Task);
+        public IEnumerable<TaskEntity> Tasks => Managers.Select(p => p.Task);
 
         /// <summary>
         /// 取消主队列
@@ -132,8 +134,8 @@ namespace SimpleFFmpegGUI.Services
                 logger.Info("开始队列");
                 while (!cancelQueue)
                 {
-                    TaskInfo task;
-                    using (var db = dbFactory.CreateDbContext())
+                    TaskEntity task;
+                    await using (var db = await dbFactory.CreateDbContextAsync())
                     {
                         if (!await db.Tasks.Where(p => p.IsDeleted == false && p.Status == TaskStatus.Queue).AnyAsync())
                         {
@@ -171,7 +173,7 @@ namespace SimpleFFmpegGUI.Services
         /// <exception cref="Exception"></exception>
         public async Task RunStandaloneAsync(int id)
         {
-            TaskInfo task = null;
+            TaskEntity task = null;
 
             using (var db = dbFactory.CreateDbContext())
             {
@@ -239,7 +241,7 @@ namespace SimpleFFmpegGUI.Services
             MainQueueManager.Suspend();
         }
 
-        private void AddManager(TaskInfo task, FFmpegTaskService ffmpegManager, bool main)
+        private void AddManager(TaskEntity task, FFmpegTaskService ffmpegManager, bool main)
         {
             taskProcessManagers.Add(ffmpegManager);
             if (main)
@@ -259,7 +261,7 @@ namespace SimpleFFmpegGUI.Services
             }
         }
 
-        private async Task ProcessTaskAsync(TaskInfo task, bool main)
+        private async Task ProcessTaskAsync(TaskEntity task, bool main)
         {
             using var scope = scopeFactory.CreateScope();
 
@@ -333,7 +335,7 @@ namespace SimpleFFmpegGUI.Services
             }
         }
 
-        private void RemoveManager(TaskInfo task, FFmpegTaskService ffmpegManager, bool main)
+        private void RemoveManager(TaskEntity task, FFmpegTaskService ffmpegManager, bool main)
         {
             if (!taskProcessManagers.Remove(ffmpegManager))
             {

@@ -1,9 +1,9 @@
 ﻿using FzLib;
 using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public class AudioCodeArguments : IAudioCodeArguments
+    public class AudioCodecParameters : IAudioCodecParameters
     {
         /// <summary>
         /// 码率

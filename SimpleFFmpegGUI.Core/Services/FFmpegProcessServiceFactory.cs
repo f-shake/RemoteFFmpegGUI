@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Services;

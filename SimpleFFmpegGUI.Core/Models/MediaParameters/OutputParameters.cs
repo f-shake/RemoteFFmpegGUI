@@ -2,25 +2,25 @@
 using FzLib.Programming;
 using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public class OutputArguments : INotifyPropertyChanged
+    public class OutputParameters : INotifyPropertyChanged
     {
-        private AudioCodeArguments audio;
-        private CombineArguments combine;
+        private AudioCodecParameters audio;
+        private CombineParameters combine;
         private bool disableAudio;
         private bool disableVideo;
         private string extra;
         private string format;
-        private StreamArguments stream;
-        private VideoCodeArguments video;
+        private StreamParameters stream;
+        private VideoCodecParameters video;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// 音频参数
         /// </summary>
-        public AudioCodeArguments Audio
+        public AudioCodecParameters Audio
         {
             get => audio;
             set => this.SetValueAndNotify(ref audio, value, nameof(Audio));
@@ -29,7 +29,7 @@ namespace SimpleFFmpegGUI.Model
         /// <summary>
         /// 音视频合并参数
         /// </summary>
-        public CombineArguments Combine
+        public CombineParameters Combine
         {
             get => combine;
             set => this.SetValueAndNotify(ref combine, value, nameof(Combine));
@@ -74,7 +74,7 @@ namespace SimpleFFmpegGUI.Model
         /// <summary>
         /// 流参数
         /// </summary>
-        public StreamArguments Stream
+        public StreamParameters Stream
         {
             get => stream;
             set => this.SetValueAndNotify(ref stream, value, nameof(Stream));
@@ -83,12 +83,12 @@ namespace SimpleFFmpegGUI.Model
         /// <summary>
         /// 视频参数
         /// </summary>
-        public VideoCodeArguments Video
+        public VideoCodecParameters Video
         {
             get => video;
             set => this.SetValueAndNotify(ref video, value, nameof(Video));
         }
 
-        public ProcessedOptions ProcessedOptions { get; set; } = new ProcessedOptions();
+        public ProcessedOperationParameters ProcessedOperationParameters { get; set; } = new ProcessedOperationParameters();
     }
 }

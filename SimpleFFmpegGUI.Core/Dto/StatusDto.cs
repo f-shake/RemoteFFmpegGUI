@@ -1,11 +1,12 @@
 ﻿using FzLib;
 using FzLib.Programming;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Dto
 {
@@ -39,7 +40,7 @@ namespace SimpleFFmpegGUI.Dto
 
         private string speed;
 
-        private TaskInfo task;
+        private TaskEntity task;
 
         private TimeSpan time;
 
@@ -47,12 +48,12 @@ namespace SimpleFFmpegGUI.Dto
         {
         }
 
-        public StatusDto(TaskInfo task)
+        public StatusDto(TaskEntity task)
         {
             Task = task;
         }
 
-        public StatusDto(TaskInfo task, ProgressDto progress, string lastOutput, bool paused)
+        public StatusDto(TaskEntity task, ProgressDto progress, string lastOutput, bool paused)
         {
             Task = task;
             LastOutput = lastOutput;
@@ -195,7 +196,7 @@ namespace SimpleFFmpegGUI.Dto
         /// <summary>
         /// 任务
         /// </summary>
-        public TaskInfo Task
+        public TaskEntity Task
         {
             get => task;
             set => this.SetValueAndNotify(ref task, value, nameof(Task));

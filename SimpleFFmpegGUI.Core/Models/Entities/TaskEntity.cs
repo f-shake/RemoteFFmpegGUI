@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using SimpleFFmpegGUI.Enums;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models.Entities
 {
     /// <summary>
     /// FFmpeg任务
     /// </summary>
-    public class TaskInfo : ModelBase
+    public class TaskEntity : EntityBase
     {
-        public TaskInfo()
+        public TaskEntity()
         {
             CreateTime = DateTime.Now;
             Status = TaskStatus.Queue;
@@ -27,7 +28,7 @@ namespace SimpleFFmpegGUI.Model
         /// <summary>
         /// 输入文件和参数
         /// </summary>
-        public List<InputArguments> Inputs { get; set; }
+        public List<InputParameters> Inputs { get; set; }
 
         /// <summary>
         /// 指定的输出路径
@@ -42,7 +43,7 @@ namespace SimpleFFmpegGUI.Model
         /// <summary>
         /// 输出参数
         /// </summary>
-        public OutputArguments Arguments { get; set; }
+        public OutputParameters Parameters { get; set; }
 
         /// <summary>
         /// 任务创建时间

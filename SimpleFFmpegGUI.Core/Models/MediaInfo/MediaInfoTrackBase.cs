@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace SimpleFFmpegGUI.Model.MediaInfo
+namespace SimpleFFmpegGUI.Models.MediaInfo
 {
     public class MediaInfoTrackBase
     {
@@ -9,7 +9,8 @@ namespace SimpleFFmpegGUI.Model.MediaInfo
 
         public int BitRate { get; set; }
 
-        public string CodecID { get; set; }
+        [JsonPropertyName("CodecID")]
+        public string CodecId { get; set; }
 
         public string Default { get; set; }
 
@@ -18,10 +19,12 @@ namespace SimpleFFmpegGUI.Model.MediaInfo
 
         [JsonPropertyName("Duration")]
         public double DurationSeconds { get; set; }
+
         public string Format { get; set; }
         public double FrameRate { get; set; }
         public int Height { get; set; }
-        public int ID { get; set; }
+        [JsonPropertyName("ID")]
+        public int Id { get; set; }
         public int Index { get; set; }
         public int StreamOrder { get; set; }
         public long StreamSize { get; set; }

@@ -1,20 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Services;
 
 public class DbLoggerService : BackgroundService
 {
     private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
-    private ConcurrentBag<Log> queueLogs = new ConcurrentBag<Log>();
+    private ConcurrentBag<LogEntity> queueLogs = new ConcurrentBag<LogEntity>();
 
     private int saving = 0;
 
@@ -41,12 +43,12 @@ public class DbLoggerService : BackgroundService
         AddLog('E', message);
     }
 
-    public void Error(TaskInfo task, string message)
+    public void Error(TaskEntity task, string message)
     {
         AddLog('E', message, task);
     }
 
-    public void Info(TaskInfo task, string message)
+    public void Info(TaskEntity task, string message)
     {
         AddLog('I', message, task);
     }
@@ -56,7 +58,7 @@ public class DbLoggerService : BackgroundService
         AddLog('I', message);
     }
 
-    public void Output(TaskInfo task, string message)
+    public void Output(TaskEntity task, string message)
     {
         AddLog('O', message, task);
     }
@@ -70,7 +72,7 @@ public class DbLoggerService : BackgroundService
 
         try
         {
-            var oldBag = Interlocked.Exchange(ref queueLogs, new ConcurrentBag<Log>());
+            var oldBag = Interlocked.Exchange(ref queueLogs, new ConcurrentBag<LogEntity>());
             if (oldBag.IsEmpty)
             {
                 return;
@@ -98,7 +100,7 @@ public class DbLoggerService : BackgroundService
         AddLog('W', message);
     }
 
-    public void Warn(TaskInfo task, string message)
+    public void Warn(TaskEntity task, string message)
     {
         AddLog('W', message, task);
     }
@@ -112,9 +114,9 @@ public class DbLoggerService : BackgroundService
         }
     }
 
-    private void AddLog(char type, string message, TaskInfo task = null)
+    private void AddLog(char type, string message, TaskEntity task = null)
     {
-        Log log = new Log()
+        LogEntity log = new LogEntity()
         {
             Time = DateTime.Now,
             Type = type,
@@ -127,7 +129,7 @@ public class DbLoggerService : BackgroundService
         Console.WriteLine($"[{type}] {message}");
     }
 
-    private void AddLog(Log log)
+    private void AddLog(LogEntity log)
     {
         queueLogs.Add(log);
     }

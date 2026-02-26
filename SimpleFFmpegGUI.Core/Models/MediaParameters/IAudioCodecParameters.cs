@@ -1,6 +1,6 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Models
 {
-    public interface IAudioCodeArguments
+    public interface IAudioCodecParameters
     {
         int? Bitrate { get; set; }
         string Code { get; set; }

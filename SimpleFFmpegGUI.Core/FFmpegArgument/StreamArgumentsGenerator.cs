@@ -1,6 +1,7 @@
 ﻿using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using System.Text;
+using SimpleFFmpegGUI.Enums;
 
 namespace SimpleFFmpegGUI.FFmpegArgument
 {

@@ -1,4 +1,4 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Models
 {
     public class MediaInfoItem
     {

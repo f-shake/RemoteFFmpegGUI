@@ -7,7 +7,7 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.FFmpegArgument;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.ComponentModel;
@@ -18,9 +18,11 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
 using static SimpleFFmpegGUI.Helpers.FileSystemHelper;
 using Task = System.Threading.Tasks.Task;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
@@ -30,7 +32,7 @@ namespace SimpleFFmpegGUI.Services;
 /// <param name="task">
 /// 当前任务
 /// </param>
-public class FFmpegTaskService(TaskInfo task,
+public class FFmpegTaskService(TaskEntity task,
                                DbLoggerService logger,
                                LogRepository logRepository,
                                MediaInfoService mediaInfoService,
@@ -138,16 +140,16 @@ public class FFmpegTaskService(TaskInfo task,
     /// <summary>
     /// FFmpeg任务
     /// </summary>
-    public TaskInfo Task => task;
+    public TaskEntity Task => task;
 
     /// <summary>
     /// 测试输出参数是否合法
     /// </summary>
-    /// <param name="arguments"></param>
+    /// <param name="parameters"></param>
     /// <returns></returns>
-    public static string TestOutputArguments(OutputArguments arguments)
+    public static string TestOutputArguments(OutputParameters parameters)
     {
-        return ArgumentsGenerator.GetOutputArguments(arguments, arguments.Video?.TwoPass == true ? 2 : 0);
+        return ArgumentsGenerator.GetOutputArguments(parameters, parameters.Video?.TwoPass == true ? 2 : 0);
     }
 
     /// <summary>
@@ -250,9 +252,9 @@ public class FFmpegTaskService(TaskInfo task,
             logger.Info(task, "开始任务");
             await (task.Type switch
             {
-                TaskType.Code => RunCodeProcessAsync(cancel.Token),
-                TaskType.Combine => RunCombineProcessAsync(cancel.Token),
-                TaskType.Compare => RunCompareProcessAsync(cancel.Token),
+                TaskType.Transcode => RunCodeProcessAsync(cancel.Token),
+                TaskType.Mux => RunCombineProcessAsync(cancel.Token),
+                TaskType.QualityCheck => RunCompareProcessAsync(cancel.Token),
                 TaskType.Custom => RunCustomProcessAsync(cancel.Token),
                 TaskType.Concat => RunConcatProcessAsync(cancel.Token),
                 _ => throw new NotSupportedException("不支持的任务类型：" + task.Type),
@@ -263,7 +265,7 @@ public class FFmpegTaskService(TaskInfo task,
                 Debug.Assert(false);
             }
 
-            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Arguments.ProcessedOptions?.SyncModifiedTime == true)
+            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Parameters.ProcessedOperationParameters?.SyncModifiedTime == true)
             {
                 try
                 {
@@ -277,7 +279,7 @@ public class FFmpegTaskService(TaskInfo task,
                 }
             }
 
-            if (task.Inputs.Count > 0 && task.Arguments.ProcessedOptions?.DeleteInputFiles == true)
+            if (task.Inputs.Count > 0 && task.Parameters.ProcessedOperationParameters?.DeleteInputFiles == true)
             {
                 DriveInfo[] allDrives = DriveInfo.GetDrives();
                 foreach (var file in task.Inputs)
@@ -377,7 +379,7 @@ public class FFmpegTaskService(TaskInfo task,
     /// <param name="arg"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private TimeSpan? GetVideoDuration(InputArguments arg)
+    private TimeSpan? GetVideoDuration(InputParameters arg)
     {
         var path = arg.FilePath;
         TimeSpan realLength;
@@ -502,7 +504,7 @@ public class FFmpegTaskService(TaskInfo task,
         }
         GenerateOutputPath(task);
         string message;
-        if (task.Arguments.Video == null || !task.Arguments.Video.TwoPass)
+        if (task.Parameters.Video == null || !task.Parameters.Video.TwoPass)
         {
             Progress = GetProgress();
             message = $"正在转码：{Path.GetFileName(task.Inputs[0].FilePath)}";
@@ -515,7 +517,7 @@ public class FFmpegTaskService(TaskInfo task,
             Directory.CreateDirectory(tempDirectory);
 
             VideoArgumentsGenerator vag = new VideoArgumentsGenerator();
-            vag.Codec(task.Arguments.Video.Code);
+            vag.Codec(task.Parameters.Video.Code);
 
             Progress = GetProgress();
             Progress.VideoLength *= 2;
@@ -668,14 +670,14 @@ public class FFmpegTaskService(TaskInfo task,
         }
         Progress = GetProgress();
         GenerateOutputPath(task);
-        var input = new InputArguments()
+        var input = new InputParameters()
         {
             FilePath = tempPath,
             Format = "concat",
             Extra = "-safe 0"
         };
 
-        string arg = ArgumentsGenerator.GetArguments(new InputArguments[] { input }, "-c copy", task.RealOutput);
+        string arg = ArgumentsGenerator.GetArguments(new InputParameters[] { input }, "-c copy", task.RealOutput);
 
         await RunAsync(arg, message, cancellationToken);
     }
@@ -687,6 +689,6 @@ public class FFmpegTaskService(TaskInfo task,
     /// <returns></returns>
     private async Task RunCustomProcessAsync(CancellationToken cancellationToken)
     {
-        await RunAsync(task.Arguments.Extra, null, cancellationToken);
+        await RunAsync(task.Parameters.Extra, null, cancellationToken);
     }
 }

@@ -2,9 +2,9 @@
 using System;
 using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public class InputArguments : IInputArguments
+    public class InputParameters : IInputParameters
     {
         /// <summary>
         /// 持续时间

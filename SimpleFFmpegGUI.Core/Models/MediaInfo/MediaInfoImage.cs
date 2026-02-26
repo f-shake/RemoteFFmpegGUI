@@ -1,8 +1,11 @@
-﻿namespace SimpleFFmpegGUI.Model.MediaInfo
+﻿using System.Text.Json.Serialization;
+
+namespace SimpleFFmpegGUI.Models.MediaInfo
 {
     public class MediaInfoImage: MediaInfoTrackBase
     {
         public string ColorSpace { get; set; }
-        public string Compression_Mode { get; set; }
+        [JsonPropertyName("Compression_Mode")]
+        public string CompressionMode { get; set; }
     }
 }

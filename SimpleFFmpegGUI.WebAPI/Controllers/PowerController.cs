@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class PowerController(DbConfigService dbConfig, PowerService power)
-        : FFmpegControllerBase
+    public class PowerController(PowerService power) : FFmpegControllerBase
     {
         [HttpPost("AbortShutdown")]
         public IActionResult AbortShutdown()
@@ -24,11 +23,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return await PowerService.GetCpuUsageAsync(TimeSpan.FromSeconds(0.1));
         }
 
-        [HttpGet("DefaultProcessPriority")]
-        public ActionResult<int> GetDefaultProcessPriority()
-        {
-            return dbConfig.DefaultProcessPriority;
-        }
 
         [HttpGet("ShutdownQueue")]
         public ActionResult<bool> IsShutdownAfterQueueFinished()
@@ -36,12 +30,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return power.ShutdownAfterQueueFinished;
         }
 
-        [HttpPost("DefaultProcessPriority")]
-        public IActionResult SetDefaultProcessPriority(int priority)
-        {
-            dbConfig.DefaultProcessPriority = priority;
-            return NoContent();
-        }
 
         [HttpPost("ShutdownQueue")]
         public IActionResult SetShutdownAfterQueueFinished([FromForm] bool on)

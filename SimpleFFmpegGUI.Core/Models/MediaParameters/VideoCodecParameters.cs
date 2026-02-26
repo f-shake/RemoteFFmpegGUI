@@ -1,9 +1,9 @@
 ﻿using FzLib;
 using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models
 {
-    public class VideoCodeArguments :  IVideoCodeArguments
+    public class VideoCodecParameters :  IVideoCodecParameters
     {
 
         /// <summary>

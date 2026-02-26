@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SimpleFFmpegGUI.Converter
+namespace SimpleFFmpegGUI.Converters
 {
     public class DoubleConverter : JsonConverter<double>
     {

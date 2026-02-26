@@ -1,4 +1,4 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Enums
 {
     public enum StreamChannel
     {

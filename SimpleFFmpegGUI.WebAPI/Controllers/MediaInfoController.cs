@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.MediaInfo;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
@@ -14,7 +14,6 @@ using SimpleFFmpegGUI.Helpers;
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
     public class MediaInfoController(
-        DbConfigService dbConfig,
         MediaInfoService mediaInfoService,
         FilePathHelper filePathHelper) : FFmpegControllerBase
     {
@@ -47,8 +46,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 {
                     return NotFound();
                 }
-                string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds),
-                    dbConfig.SnapshotSize);
+                string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds));
 
                 return PhysicalFile(path, "image/jpeg");
             }

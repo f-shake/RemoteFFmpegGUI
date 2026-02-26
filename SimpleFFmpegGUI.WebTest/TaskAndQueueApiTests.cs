@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
 using FluentAssertions;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.Entities;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 
 namespace SimpleFFmpegGUI.WebTest;
@@ -13,7 +14,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     public async Task TestQueueScheduleAsync()
     {
         //新增一个任务
-        var ids = await AddCodeTaskAsync(1);
+        var ids = await AddCodecTaskAsync(1);
         var id = ids[0];
         var task = await GetTaskAsync(id);
         task.Status.Should().Be(TaskStatus.Queue);
@@ -49,7 +50,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     public async Task TestQueueStartAndCancelAsync()
     {
         //创建任务
-        var ids = await AddCodeTaskAsync(1);
+        var ids = await AddCodecTaskAsync(1);
         var id = ids[0];
         var task = await GetTaskAsync(id);
         task.Status.Should().Be(TaskStatus.Queue);
@@ -80,7 +81,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         inputArguments.Inputs[0].FilePath =
             Path.GetRelativePath(appSettings.InputDir, inputArguments.Inputs[0].FilePath);
         //测试Add
-        var ids = await AddCodeTaskAsync(inputArguments);
+        var ids = await AddCodecTaskAsync(inputArguments);
         ids.Count.Should().Be(15);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(15);
@@ -109,10 +110,10 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         tasks.List.Count.Should().Be(11);
     }
 
-    private Task<List<int>> AddCodeTaskAsync(TaskDto task) =>
-        PostObjectFromJsonAsync<List<int>>("/Task/Add/Code", task);
+    private Task<List<int>> AddCodecTaskAsync(TaskDto task) =>
+        PostObjectFromJsonAsync<List<int>>("/Task/Add/Transcode", task);
 
-    private Task<List<int>> AddCodeTaskAsync(int count) => AddCodeTaskAsync(GetCodeTask(count));
+    private Task<List<int>> AddCodecTaskAsync(int count) => AddCodecTaskAsync(GetCodeTask(count));
 
     private Task CancelQueueAsync() => PostAsync("/Queue/Cancel");
 
@@ -124,10 +125,10 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
     private TaskDto GetCodeTask(int count)
     {
-        var inputs = new List<InputArguments>();
+        var inputs = new List<InputParameters>();
         for (int i = 0; i < count; i++)
         {
-            inputs.Add(new InputArguments
+            inputs.Add(new InputParameters
             {
                 FilePath =appTestSettings.TestVideo10s
             });
@@ -137,15 +138,15 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         {
             Inputs = inputs,
             Output = "code_test_output.mp4",
-            Argument = new OutputArguments
+            Parameter = new OutputParameters
             {
-                Video = new VideoCodeArguments
+                Video = new VideoCodecParameters
                 {
                     Code = "H264",
                     AverageBitrate = 10d,
                     MaxBitrate = 20d,
                 },
-                Audio = new AudioCodeArguments
+                Audio = new AudioCodecParameters
                 {
                     Code = "AAC",
                     Bitrate = 128,
@@ -160,13 +161,13 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
     private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/Queue/Status");
 
-    private Task<TaskInfo> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskInfo>($"/Task/Detail/{id}");
+    private Task<TaskEntity> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskEntity>($"/Task/Detail/{id}");
 
-    private async Task<PagedListResponse<TaskInfo>> GetTasksAsync(int page = 1, int pageSize = 1000,
+    private async Task<PagedListResponse<TaskEntity>> GetTasksAsync(int page = 1, int pageSize = 1000,
         TaskStatus? status = null)
     {
         var statusStr = status != null ? $"&status={(int)status}" : "";
-        return await GetObjectFromJsonAsync<PagedListResponse<TaskInfo>>(
+        return await GetObjectFromJsonAsync<PagedListResponse<TaskEntity>>(
             $"/Task/List?page={page}&pageSize={pageSize}{statusStr}");
     }
 

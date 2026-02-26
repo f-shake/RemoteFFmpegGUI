@@ -1,11 +1,12 @@
 ﻿using FzLib.IO;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Helpers
 {
@@ -88,10 +89,10 @@ namespace SimpleFFmpegGUI.Helpers
         /// <param name="task"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static string GenerateOutputPath(TaskInfo task)
+        public static string GenerateOutputPath(TaskEntity task)
         {
             string output = task.Output.Trim();
-            var a = task.Arguments;
+            var a = task.Parameters;
             if (string.IsNullOrEmpty(output))
             {
                 if (task.Inputs.Count == 0)

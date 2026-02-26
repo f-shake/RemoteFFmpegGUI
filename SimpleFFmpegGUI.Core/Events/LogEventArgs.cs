@@ -1,15 +1,16 @@
-﻿using SimpleFFmpegGUI.Model;
+﻿using SimpleFFmpegGUI.Models;
 using System;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Events
 {
     public class LogEventArgs : EventArgs
     {
-        public LogEventArgs(Log log)
+        public LogEventArgs(LogEntity log)
         {
             Log = log;
         }
 
-        public Log Log { get; set; }
+        public LogEntity Log { get; set; }
     }
 }

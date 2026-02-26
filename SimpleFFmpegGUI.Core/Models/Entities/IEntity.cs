@@ -1,6 +1,6 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Models.Entities
 {
-    public interface IModel
+    public interface IEntity
     {
         int Id { get; set; }
 

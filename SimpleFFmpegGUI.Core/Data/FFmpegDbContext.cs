@@ -1,13 +1,12 @@
-﻿using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Migrations;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using SimpleFFmpegGUI.Converters;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.Entities;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Data
 {
     public class FFmpegDbContext : DbContext
     {
@@ -21,13 +20,12 @@ namespace SimpleFFmpegGUI.Model
         {
         }
 
-        public DbSet<Config> Configs { get; set; }
 
-        public DbSet<Log> Logs { get; set; }
+        public DbSet<LogEntity> Logs { get; set; }
 
-        public DbSet<CodePreset> Presets { get; set; }
+        public DbSet<PresetEntity> Presets { get; set; }
 
-        public DbSet<TaskInfo> Tasks { get; set; }
+        public DbSet<TaskEntity> Tasks { get; set; }
 
         public void Check()
         {
@@ -49,41 +47,38 @@ namespace SimpleFFmpegGUI.Model
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //对于非结构化数据，采用Json的方式进行存储
-            var listConverter = new EFJsonConverter<List<InputArguments>>();
-            var argConverter = new EFJsonConverter<OutputArguments>();
+            var listConverter = new EFJsonConverter<List<InputParameters>>();
+            var argConverter = new EFJsonConverter<OutputParameters>();
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<TaskInfo>()
+            modelBuilder.Entity<TaskEntity>()
                 .Property(p => p.Inputs)
                 .HasConversion(listConverter);
-            modelBuilder.Entity<TaskInfo>()
-                .Property(p => p.Arguments)
+            modelBuilder.Entity<TaskEntity>()
+                .Property(p => p.Parameters)
                 .HasConversion(argConverter);
-            modelBuilder.Entity<CodePreset>()
-                .Property(p => p.Arguments)
+            modelBuilder.Entity<PresetEntity>()
+                .Property(p => p.Parameters)
                 .HasConversion(argConverter);
 
             //添加索引
-            modelBuilder.Entity<Log>()
+            modelBuilder.Entity<LogEntity>()
                 .HasIndex(p => p.Time);
-            modelBuilder.Entity<Log>()
+            modelBuilder.Entity<LogEntity>()
                 .HasIndex(p => p.Type);
-            modelBuilder.Entity<Log>()
+            modelBuilder.Entity<LogEntity>()
                 .HasIndex(p => p.TaskId);
 
-            modelBuilder.Entity<TaskInfo>()
+            modelBuilder.Entity<TaskEntity>()
                 .HasIndex(p => p.Type);
-            modelBuilder.Entity<TaskInfo>()
+            modelBuilder.Entity<TaskEntity>()
                 .HasIndex(p => p.CreateTime);
-            modelBuilder.Entity<TaskInfo>()
+            modelBuilder.Entity<TaskEntity>()
                 .HasIndex(p => p.FinishTime);
-            modelBuilder.Entity<TaskInfo>()
+            modelBuilder.Entity<TaskEntity>()
                 .HasIndex(p => p.Status);
 
-            modelBuilder.Entity<CodePreset>()
+            modelBuilder.Entity<PresetEntity>()
                 .HasIndex(p => p.Type);
-
-            modelBuilder.Entity<Config>()
-                .HasIndex(p => p.Key);
         }
 
         // public static void Migrate()

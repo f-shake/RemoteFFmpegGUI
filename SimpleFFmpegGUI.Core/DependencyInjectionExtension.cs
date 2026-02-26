@@ -2,9 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Helpers;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
 
@@ -29,12 +30,12 @@ public static class DependencyInjectionExtension
         // 2. 注册仓储和业务服务
         services
             .AddTransient<LogRepository>()
-            .AddTransient<DbConfigService>()
             .AddTransient<PresetRepository>()
             .AddTransient<PresetService>()
             .AddTransient<TaskRepository>()
             .AddTransient<TaskService>()
             .AddSingleton<PowerService>()
+            .AddSingleton<ConfigService>(s => ConfigService.Create())
             .AddSingleton<QueueService>()
             .AddTransient<MediaInfoService>()
             .AddTransient<IFFmpegTaskServiceFactory, FFmpegTaskServiceFactory>()

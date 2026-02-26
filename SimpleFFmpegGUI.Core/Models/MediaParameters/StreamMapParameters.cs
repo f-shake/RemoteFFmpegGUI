@@ -1,6 +1,8 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿using SimpleFFmpegGUI.Enums;
+
+namespace SimpleFFmpegGUI.Models
 {
-    public class StreamMapInfo
+    public class StreamMapParameters
     {
         /// <summary>
         /// 输入文件的序号

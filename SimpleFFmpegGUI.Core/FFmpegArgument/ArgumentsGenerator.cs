@@ -1,7 +1,8 @@
-﻿using SimpleFFmpegGUI.Model;
+﻿using SimpleFFmpegGUI.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.FFmpegArgument
 {
@@ -17,7 +18,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// <param name="pass">二次编码时，指定是第几次编码</param>
         /// <param name="output">输出路径</param>
         /// <returns></returns>
-        public static string GetArguments(TaskInfo task, int pass, string output = null)
+        public static string GetArguments(TaskEntity task, int pass, string output = null)
         {
             StringBuilder str = new StringBuilder();
             str.Append("-hide_banner ");
@@ -26,7 +27,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
                 str.Append(GetInputArguments(input));
                 str.Append(' ');
             }
-            str.Append(GetOutputArguments(task.Arguments, pass));
+            str.Append(GetOutputArguments(task.Parameters, pass));
             str.Append(" \"");
             str.Append(output ?? task.RealOutput);
             str.Append("\" -y");
@@ -40,7 +41,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// <param name="outputArguments">输出参数</param>
         /// <param name="output">输出路径</param>
         /// <returns></returns>
-        public static string GetArguments(IEnumerable<InputArguments> inputs, string outputArguments, string output = null)
+        public static string GetArguments(IEnumerable<InputParameters> inputs, string outputArguments, string output = null)
         {
             StringBuilder str = new StringBuilder();
             foreach (var input in inputs)
@@ -60,7 +61,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// </summary>
         /// <param name="ia">输入文件</param>
         /// <returns></returns>
-        public static string GetInputArguments(InputArguments ia)
+        public static string GetInputArguments(InputParameters ia)
         {
             InputArgumentsGenerator ig = new InputArgumentsGenerator();
             ig.Seek(ia.From);
@@ -101,7 +102,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// <param name="pass">二次编码时，指定是第几次编码</param>
         /// <returns></returns>
         /// <exception cref="FFmpegArgumentException"></exception>
-        public static string GetOutputArguments(OutputArguments oa, int pass)
+        public static string GetOutputArguments(OutputParameters oa, int pass)
         {
             VideoArgumentsGenerator vg = new VideoArgumentsGenerator();
             AudioArgumentsGenerator ag = new AudioArgumentsGenerator();
@@ -174,7 +175,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
             return string.Join(' ', vg.GetArguments(), ag.GetArguments(), sg.GetArguments(), extra);
         }
 
-        private static void CheckOutputArguments(OutputArguments oa)
+        private static void CheckOutputArguments(OutputParameters oa)
         {
             if (oa.DisableVideo && oa.DisableAudio)
             {

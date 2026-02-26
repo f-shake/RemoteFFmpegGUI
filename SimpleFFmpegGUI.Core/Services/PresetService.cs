@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Extensions;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FzLib.Web;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
 
 public class PresetService(PresetRepository repository)
 {
@@ -31,11 +33,11 @@ public class PresetService(PresetRepository repository)
             return ServiceResult<int>.Failure($"已存在同类型同名称的预设: {preset.Name}", HttpStatusCode.Conflict);
         }
 
-        var result = await repository.AddAsync(new CodePreset()
+        var result = await repository.AddAsync(new PresetEntity()
         {
             Name = preset.Name,
             Type = preset.Type,
-            Arguments = preset.Arguments
+            Parameters = preset.Parameters
         });
         return result.Id;
     }
@@ -56,7 +58,7 @@ public class PresetService(PresetRepository repository)
 
         existing.Name = preset.Name;
         existing.Type = preset.Type;
-        existing.Arguments = preset.Arguments;
+        existing.Parameters = preset.Parameters;
 
         await repository.UpdateAsync(existing);
         return ServiceResult.Success();
@@ -88,7 +90,7 @@ public class PresetService(PresetRepository repository)
 
     public async Task<ServiceResult> ImportAsync(string json, bool overwrite = false)
     {
-        var presets = json.DeserializeWithFriendlySettings<List<CodePreset>>();
+        var presets = json.DeserializeWithFriendlySettings<List<PresetEntity>>();
         if (presets == null)
         {
             return ServiceResult.Failure("JSON反序列化失败", HttpStatusCode.BadRequest);

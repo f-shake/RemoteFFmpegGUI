@@ -1,6 +1,6 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Models
 {
-    public interface IVideoCodeArguments
+    public interface IVideoCodecParameters
     {
         string AspectRatio { get; set; }
         double? AverageBitrate { get; set; }

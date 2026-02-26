@@ -1,20 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Repositories
 {
     public class LogRepository(FFmpegDbContext db, DbLoggerService logger)
     {
-        public async Task<PagedListResponse<Log>> GetLogsAsync(LogQueryRequest request)
+        public async Task<PagedListResponse<LogEntity>> GetLogsAsync(LogQueryRequest request)
         {
             await logger.SaveAllAsync();
 
-            IQueryable<Log> logs = db.Logs;
+            IQueryable<LogEntity> logs = db.Logs;
             if (request.Type.HasValue)
             {
                 logs = logs.Where(p => p.Type == request.Type.Value);
@@ -49,7 +51,7 @@ namespace SimpleFFmpegGUI.Repositories
                 logs = logs.Take(take);
             }
 
-            return new PagedListResponse<Log>(await logs.ToListAsync(), count, request.Page, request.PageSize);
+            return new PagedListResponse<LogEntity>(await logs.ToListAsync(), count, request.Page, request.PageSize);
         }
     }
 }

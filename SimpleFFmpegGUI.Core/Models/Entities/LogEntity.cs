@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Models.Entities
 {
-    public class Log : ModelBase
+    public class LogEntity : EntityBase
     {
-        public Log()
+        public LogEntity()
         {
         }
 

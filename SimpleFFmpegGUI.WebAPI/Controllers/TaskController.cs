@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
 using System.Collections.Generic;
@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
@@ -87,7 +88,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpGet("Detail/{id:int}")]
-        public async Task<ActionResult<TaskInfo>> GetTaskAsync(int id)
+        public async Task<ActionResult<TaskEntity>> GetTaskAsync(int id)
         {
             var task = await taskRepository.GetTaskAsync(id);
             if (task == null)
@@ -105,7 +106,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         /// <param name="query"></param>
         /// <returns></returns>
         [HttpGet("List")]
-        public async Task<PagedListResponse<TaskInfo>> GetTasksAsync([FromQuery] TaskQueryDto query)
+        public async Task<PagedListResponse<TaskEntity>> GetTasksAsync([FromQuery] TaskQueryDto query)
         {
             // int skip = (query.Page - 1) * query.PageSize;
             // var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;

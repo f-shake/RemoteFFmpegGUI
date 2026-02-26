@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Helpers;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
@@ -26,9 +26,9 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         var inputs = request.Inputs ?? [];
         var inputCount = request.Inputs?.Count ?? 0;
 
-        switch (type.ToLower())
+        switch (type)
         {
-            case "code":
+            case nameof(TaskType.Transcode):
                 ValidateInputs(request, min: 1);
                 // Code 类型是循环创建多个任务
                 for (int i = 0; i < inputCount; i++)
@@ -40,15 +40,16 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                         return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
                     }
 
-                    var task = await taskRepository.AddTaskAsync(TaskType.Code, [file], GetOutputByInput(request, i),
-                        request.Argument);
+                    var task = await taskRepository.AddTaskAsync(TaskType.Transcode, [file],
+                        GetOutputByInput(request, i),
+                        request.Parameter);
                     ids.Add(task.Id);
                 }
 
                 break;
 
-            case "combine":
-            case "compare":
+            case nameof(TaskType.Mux):
+            case nameof(TaskType.QualityCheck):
                 ValidateInputs(request, exact: 2);
                 foreach (var file in inputs)
                 {
@@ -59,15 +60,15 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                     }
                 }
 
-                var taskType = type.ToLower() == "combine" ? TaskType.Combine : TaskType.Compare;
-                var output = taskType == TaskType.Combine ? GetOutputByInput(request, 0) : null;
-                var arg = taskType == TaskType.Combine ? request.Argument : null;
+                var taskType = type.ToLower() == "combine" ? TaskType.Mux : TaskType.QualityCheck;
+                var output = taskType == TaskType.Mux ? GetOutputByInput(request, 0) : null;
+                var arg = taskType == TaskType.Mux ? request.Parameter : null;
 
                 var t = await taskRepository.AddTaskAsync(taskType, inputs, output, arg);
                 ids.Add(t.Id);
                 break;
 
-            case "concat":
+            case nameof(TaskType.Concat):
                 ValidateInputs(request, min: 2);
                 foreach (var file in inputs)
                 {
@@ -79,18 +80,18 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 }
 
                 var concatTask = await taskRepository.AddTaskAsync(TaskType.Concat, inputs,
-                    GetOutputByInput(request, 0), request.Argument);
+                    GetOutputByInput(request, 0), request.Parameter);
                 ids.Add(concatTask.Id);
                 break;
 
-            case "custom":
-                if (request.Argument?.Extra == null)
+            case nameof(TaskType.Custom):
+                if (request.Parameter?.Extra == null)
                 {
                     return ServiceResult<List<int>>.Failure("自定义任务需要额外参数", HttpStatusCode.BadRequest);
                 }
 
                 var customTask =
-                    await taskRepository.AddTaskAsync(TaskType.Custom, null, null, request.Argument);
+                    await taskRepository.AddTaskAsync(TaskType.Custom, null, null, request.Parameter);
                 ids.Add(customTask.Id);
                 break;
 

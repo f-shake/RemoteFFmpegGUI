@@ -6,7 +6,6 @@ using Microsoft.OpenApi;
 using Serilog;
 using SimpleFFmpegGUI;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
 using SimpleFFmpegGUI.WebAPI.Controllers;
@@ -15,7 +14,9 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using SimpleFFmpegGUI.Converter;
+using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Converters;
+using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Models;
 using Log = Serilog.Log;
 

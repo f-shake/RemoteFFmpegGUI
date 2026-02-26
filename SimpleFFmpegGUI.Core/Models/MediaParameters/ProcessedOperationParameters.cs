@@ -1,6 +1,6 @@
-﻿namespace SimpleFFmpegGUI.Model
+﻿namespace SimpleFFmpegGUI.Models
 {
-    public class ProcessedOptions
+    public class ProcessedOperationParameters
     {
         /// <summary>
         /// 将输出文件的修改时间设置为最后一个输入文件的修改时间

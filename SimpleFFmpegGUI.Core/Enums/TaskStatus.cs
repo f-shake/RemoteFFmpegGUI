@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace SimpleFFmpegGUI.Model
+namespace SimpleFFmpegGUI.Enums
 {
     public enum TaskStatus
     {
