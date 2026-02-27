@@ -1,5 +1,6 @@
 ﻿using SimpleFFmpegGUI.Models;
 using System.Collections.Generic;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Dto
 {

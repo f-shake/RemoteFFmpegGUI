@@ -1,20 +1,26 @@
-﻿using SimpleFFmpegGUI.Enums;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleFFmpegGUI.Enums;
 
-namespace SimpleFFmpegGUI.Models
+namespace SimpleFFmpegGUI.Models.MediaParameters;
+
+public partial class StreamMapParameters : ObservableObject
 {
-    public class StreamMapParameters
-    {
-        /// <summary>
-        /// 输入文件的序号
-        /// </summary>
-        public int InputIndex { get; set; }
-        /// <summary>
-        /// 指定的通道
-        /// </summary>
-        public StreamChannel Channel { get; set; }
-        /// <summary>
-        /// 在指定文件（和通道）中，选取的流的序号
-        /// </summary>
-        public int? StreamIndex { get; set; }
-    }
+    /// <summary>
+    /// 输入文件的序号
+    /// </summary>
+    [ObservableProperty]
+    private int inputIndex;
+
+    /// <summary>
+    /// 指定的通道 (如 Video, Audio, Subtitle)
+    /// </summary>
+    [ObservableProperty]
+    private StreamChannel channel;
+
+    /// <summary>
+    /// 在指定文件（和通道）中，选取的流的序号。
+    /// 若为 null，通常表示选取该通道下的所有流或由 FFmpeg 自动选择。
+    /// </summary>
+    [ObservableProperty]
+    private int? streamIndex;
 }

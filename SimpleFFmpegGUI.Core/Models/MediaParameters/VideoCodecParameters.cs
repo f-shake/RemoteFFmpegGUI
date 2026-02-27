@@ -1,64 +1,66 @@
-﻿using FzLib;
-using System.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace SimpleFFmpegGUI.Models
+namespace SimpleFFmpegGUI.Models.MediaParameters;
+
+public partial class VideoCodecParameters : StreamCodecParametersBase
 {
-    public class VideoCodecParameters :  IVideoCodecParameters
-    {
+    /// <summary>
+    /// 画面比例
+    /// </summary>
+    [ObservableProperty]
+    private string? aspectRatio;
 
-        /// <summary>
-        /// 画面比例
-        /// </summary>
-        public string AspectRatio{ get; set; }
+    /// <summary>
+    /// 平均码率
+    /// </summary>
+    [ObservableProperty]
+    private double? averageBitrate;
 
-        /// <summary>
-        /// 平均码率
-        /// </summary>
-        public double? AverageBitrate { get; set; }
+    /// <summary>
+    /// CRF（视频目标质量）
+    /// </summary>
+    [ObservableProperty]
+    private int? crf;
 
-        /// <summary>
-        /// 编码
-        /// </summary>
-        public string Code { get; set; }
+    /// <summary>
+    /// 帧率
+    /// </summary>
+    [ObservableProperty]
+    private double? fps;
 
-        /// <summary>
-        /// CRF（视频目标质量）
-        /// </summary>
-        public int? Crf { get; set; }
+    /// <summary>
+    /// 最大码率
+    /// </summary>
+    [ObservableProperty]
+    private double? maxBitrate;
 
-        /// <summary>
-        /// 帧率
-        /// </summary>
-        public double? Fps { get; set; }
+    /// <summary>
+    /// 最大码率缓冲倍率
+    /// </summary>
+    [ObservableProperty]
+    private double? maxBitrateBuffer;
 
-        /// <summary>
-        /// 最大码率
-        /// </summary>
-        public double? MaxBitrate { get; set; }
+    /// <summary>
+    /// 像素格式
+    /// </summary>
+    [ObservableProperty]
+    private string? pixelFormat;
 
-        /// <summary>
-        /// 最大码率缓冲倍率
-        /// </summary>
-        public double? MaxBitrateBuffer { get; set; }
+    /// <summary>
+    /// 编码速度或速度预设
+    /// </summary>
+    [ObservableProperty]
+    private int preset;
 
-        /// <summary>
-        /// 像素格式
-        /// </summary>
-        public string PixelFormat { get; set; }
+    /// <summary>
+    /// 视频尺寸（分辨率）
+    /// </summary>
+    [ObservableProperty]
+    private string? size;
 
-        /// <summary>
-        /// 编码速度或速度预设
-        /// </summary>
-        public int Preset { get; set; }
-
-        /// <summary>
-        /// 视频尺寸（分辨率）
-        /// </summary>
-        public string Size { get; set; }
-
-        /// <summary>
-        /// 是否二次编码
-        /// </summary>
-        public bool TwoPass { get; set; }
-    }
+    /// <summary>
+    /// 是否二次编码
+    /// </summary>
+    [ObservableProperty]
+    private bool twoPass;
 }

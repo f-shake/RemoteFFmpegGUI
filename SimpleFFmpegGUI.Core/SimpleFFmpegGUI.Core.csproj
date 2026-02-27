@@ -14,6 +14,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="FzLib" Condition="! ('$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true')" />
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="Mapster" />

@@ -5,6 +5,7 @@ using SimpleFFmpegGUI.Converters;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Data
 {

@@ -1,5 +1,6 @@
 ﻿using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Dto;
 

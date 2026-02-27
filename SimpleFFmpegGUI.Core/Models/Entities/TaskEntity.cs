@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Models.Entities
 {

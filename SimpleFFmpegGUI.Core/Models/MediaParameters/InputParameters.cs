@@ -1,48 +1,56 @@
-﻿using FzLib;
-using System;
-using System.ComponentModel;
+﻿using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace SimpleFFmpegGUI.Models
+namespace SimpleFFmpegGUI.Models.MediaParameters
 {
-    public class InputParameters : IInputParameters
+    public partial class InputParameters : ObservableObject
     {
-        /// <summary>
-        /// 持续时间
-        /// </summary>
-        public TimeSpan? Duration { get; set; }
-
-        /// <summary>
-        /// 其他参数
-        /// </summary>
-        public string Extra { get; set; }
-
         /// <summary>
         /// 输入文件的路径
         /// </summary>
-        public string FilePath { get; set; }
-
-        /// <summary>
-        /// 输入格式
-        /// </summary>
-        public string Format { get; set; }
-
-        /// <summary>
-        /// 输入帧率（主要针对图像序列）
-        /// </summary>
-        public double? Framerate { get; set; }
+        [ObservableProperty]
+        private string? filePath;
 
         /// <summary>
         /// 开始时间
         /// </summary>
-        public TimeSpan? From { get; set; }
-        /// <summary>
-        /// 输入是否为图像帧序列
-        /// </summary>
-        public bool Image2 { get; set; }
+        [ObservableProperty]
+        private TimeSpan? from;
 
         /// <summary>
         /// 结束时间
         /// </summary>
-        public TimeSpan? To { get; set; }
+        [ObservableProperty]
+        private TimeSpan? to;
+
+        /// <summary>
+        /// 持续时间
+        /// </summary>
+        [ObservableProperty]
+        private TimeSpan? duration;
+
+        /// <summary>
+        /// 输入格式
+        /// </summary>
+        [ObservableProperty]
+        private string? format;
+
+        /// <summary>
+        /// 输入帧率（主要针对图像序列）
+        /// </summary>
+        [ObservableProperty]
+        private double? framerate;
+
+        /// <summary>
+        /// 输入是否为图像帧序列
+        /// </summary>
+        [ObservableProperty]
+        private bool image2;
+
+        /// <summary>
+        /// 其他参数
+        /// </summary>
+        [ObservableProperty]
+        private string? extra;
     }
 }

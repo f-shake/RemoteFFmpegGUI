@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Repositories;

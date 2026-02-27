@@ -6,6 +6,7 @@ using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WebAPI;
 
 // 建议安装这个包，断言更丝滑
@@ -25,12 +26,14 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         presets.Should().Contain(p => p.Id == id);
 
         //测试更新
+        var op = new OutputParameters();
+        op.Video.Strategy = StreamStrategy.Disable;
         await UpdatePresetAsync(id,
-            new UpdatePresetRequest("test2", new OutputParameters() { DisableVideo = true }, TaskType.Transcode));
+            new UpdatePresetRequest("test2", op, TaskType.Transcode));
         presets = await GetPresetsAsync(TaskType.Transcode);
         presets.Should().Contain(p => p.Id == id && p.Name == "test2");
-        presets.First(p => p.Id == id).Parameters.DisableVideo.Should().BeTrue();
-        
+        presets.First(p => p.Id == id).Parameters.Video.Strategy.Should().Be(StreamStrategy.Disable);
+
         //测试删除
         await DeletePresetAsync(id);
         presets = await GetPresetsAsync(TaskType.Transcode);

@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.FFmpegArgument
 {
@@ -27,6 +29,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
                 str.Append(GetInputArguments(input));
                 str.Append(' ');
             }
+
             str.Append(GetOutputArguments(task.Parameters, pass));
             str.Append(" \"");
             str.Append(output ?? task.RealOutput);
@@ -41,7 +44,8 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// <param name="outputArguments">输出参数</param>
         /// <param name="output">输出路径</param>
         /// <returns></returns>
-        public static string GetArguments(IEnumerable<InputParameters> inputs, string outputArguments, string output = null)
+        public static string GetArguments(IEnumerable<InputParameters> inputs, string outputArguments,
+            string output = null)
         {
             StringBuilder str = new StringBuilder();
             foreach (var input in inputs)
@@ -49,6 +53,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
                 str.Append(GetInputArguments(input));
                 str.Append(' ');
             }
+
             str.Append(outputArguments);
             str.Append(' ');
             str.Append(output == null ? "" : $"\"{output}\"");
@@ -98,90 +103,84 @@ namespace SimpleFFmpegGUI.FFmpegArgument
         /// <summary>
         /// 生成输出部分的字符串参数
         /// </summary>
-        /// <param name="oa">输出参数</param>
+        /// <param name="p">输出参数</param>
         /// <param name="pass">二次编码时，指定是第几次编码</param>
         /// <returns></returns>
         /// <exception cref="FFmpegArgumentException"></exception>
-        public static string GetOutputArguments(OutputParameters oa, int pass)
+        public static string GetOutputArguments(OutputParameters p, int pass)
         {
             VideoArgumentsGenerator vg = new VideoArgumentsGenerator();
             AudioArgumentsGenerator ag = new AudioArgumentsGenerator();
             StreamArgumentsGenerator sg = new StreamArgumentsGenerator();
-            CheckOutputArguments(oa);
-            if (oa.DisableVideo)
+            CheckOutputArguments(p);
+            switch (p.Video.Strategy)
             {
-                vg.Disable();
-            }
-            else if (oa.Video == null)
-            {
-                vg.Copy();
-            }
-            else
-            {
-                vg.Codec(oa.Video.Code);
-                vg.Speed(oa.Video.Preset);
-                vg.CRF(oa.Video.Crf);
-                vg.AverageBitrate(oa.Video.AverageBitrate);
-                vg.MaxBitrate(oa.Video.MaxBitrate);
-                if (oa.Video.MaxBitrate != null)
-                {
-                    vg.BufferRatio(oa.Video.MaxBitrateBuffer);
-                }
-                vg.Aspect(oa.Video.AspectRatio);
-                vg.PixelFormat(oa.Video.PixelFormat);
-                vg.FrameRate(oa.Video.Fps);
-                vg.Scale(oa.Video.Size);
-                vg.Pass(pass);
+                case StreamStrategy.Copy:
+                    vg.Copy();
+                    break;
+                case StreamStrategy.Disable:
+                    vg.Disable();
+                    break;
+                case StreamStrategy.Transcode:
+                    vg.Codec(p.Video.Codec);
+                    vg.Speed(p.Video.Preset);
+                    vg.CRF(p.Video.Crf);
+                    vg.AverageBitrate(p.Video.AverageBitrate);
+                    vg.MaxBitrate(p.Video.MaxBitrate);
+                    if (p.Video.MaxBitrate != null)
+                    {
+                        vg.BufferRatio(p.Video.MaxBitrateBuffer);
+                    }
+
+                    vg.Aspect(p.Video.AspectRatio);
+                    vg.PixelFormat(p.Video.PixelFormat);
+                    vg.FrameRate(p.Video.Fps);
+                    vg.Scale(p.Video.Size);
+                    vg.Pass(pass);
+                    break;
             }
 
-            if (oa.DisableAudio || pass == 1)
+            switch (p.Audio.Strategy)
             {
-                ag.Disable();
-            }
-            else if (oa.Audio == null)
-            {
-                ag.Copy();
-            }
-            else
-            {
-                ag.Codec(oa.Audio.Code);
-                ag.Bitrate(oa.Audio.Bitrate);
-                ag.SamplingRate(oa.Audio.SamplingRate);
+                case StreamStrategy.Copy:
+                    ag.Copy();
+                    break;
+                case StreamStrategy.Disable:
+                    ag.Disable();
+                    break;
+                case StreamStrategy.Transcode:
+                    ag.Codec(p.Audio.Codec);
+                    ag.Bitrate(p.Audio.Bitrate);
+                    ag.SamplingRate(p.Audio.SamplingRate);
+                    break;
             }
 
-            if (oa.Stream != null && oa.Stream.Maps != null && oa.Stream.Maps.Count > 0)
+
+            foreach (var map in p.Stream.Maps)
             {
-                foreach (var map in oa.Stream.Maps)
-                {
-                    sg.Map(map.InputIndex, map.Channel, map.StreamIndex);
-                }
+                sg.Map(map.InputIndex, map.Channel, map.StreamIndex);
             }
 
             string extra = "";
-            //取消指定format，因为一些不同的格式可能Format相同，指定后缀名也可以达到相同的效果
-            //if (oa.Format != null && pass!=1)
-            //{
-            //    extra = $"-f {oa.Format}";
-            //}
+
             if (pass == 1)
             {
-                extra = $"-f {oa.Format}";
+                extra = $"-f {p.Format}";
             }
-            if (oa.Extra != null)
-            {
-                extra = $"{extra} {oa.Extra}";
-            }
+
+            extra = $"{extra} {p.Extra}";
 
             return string.Join(' ', vg.GetArguments(), ag.GetArguments(), sg.GetArguments(), extra);
         }
 
-        private static void CheckOutputArguments(OutputParameters oa)
+        private static void CheckOutputArguments(OutputParameters p)
         {
-            if (oa.DisableVideo && oa.DisableAudio)
+            if (p.Video.Strategy == StreamStrategy.Disable && p.Audio.Strategy == StreamStrategy.Disable)
             {
                 throw new FFmpegArgumentException("不能同时禁用视频和音频");
             }
-            if ((oa.Video?.TwoPass ?? false) && string.IsNullOrWhiteSpace(oa.Format))
+
+            if ((p.Video?.TwoPass ?? false) && string.IsNullOrWhiteSpace(p.Format))
             {
                 throw new FFmpegArgumentException("需要二次编码时，必须指定格式（Format）");
             }

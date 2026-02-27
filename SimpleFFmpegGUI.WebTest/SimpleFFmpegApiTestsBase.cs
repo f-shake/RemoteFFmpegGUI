@@ -128,7 +128,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
 
         if ((method == HttpMethod.Post || method == HttpMethod.Put || method == HttpMethod.Patch) && body != null)
         {
-            request.Content = JsonContent.Create(body);
+            request.Content = JsonContent.Create(body, options: SystemTextJsonExtensions.WebOptions);
         }
 
         var response = await client.SendAsync(request);

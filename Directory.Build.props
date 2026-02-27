@@ -15,6 +15,7 @@
     <OutputDir>..\Generation</OutputDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <SatelliteResourceLanguages>zh-cn</SatelliteResourceLanguages>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <!--指定bin目录和obj目录位置-->

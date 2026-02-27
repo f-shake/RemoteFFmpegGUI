@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using static SimpleFFmpegGUI.Helpers.FileSystemHelper;
 using Task = System.Threading.Tasks.Task;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
@@ -517,7 +518,7 @@ public class FFmpegTaskService(TaskEntity task,
             Directory.CreateDirectory(tempDirectory);
 
             VideoArgumentsGenerator vag = new VideoArgumentsGenerator();
-            vag.Codec(task.Parameters.Video.Code);
+            vag.Codec(task.Parameters.Video.Codec);
 
             Progress = GetProgress();
             Progress.VideoLength *= 2;

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 
-namespace SimpleFFmpegGUI.Models
+namespace SimpleFFmpegGUI.Models.MediaParameters
 {
     public class StreamParameters
     {
-        public List<StreamMapParameters> Maps { get; set; }
+        public List<StreamMapParameters> Maps { get; set; } = new List<StreamMapParameters>();
     }
 }

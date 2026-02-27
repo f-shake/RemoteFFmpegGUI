@@ -18,7 +18,8 @@ public static class SystemTextJsonExtensions
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             PropertyNameCaseInsensitive = true,
             WriteIndented = false,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+            // DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
         };
 
@@ -43,6 +44,10 @@ public static class SystemTextJsonExtensions
     private static JsonSerializerOptions webOptions;
 
     private static JsonSerializerOptions friendlyOptions;
+
+    public static JsonSerializerOptions DefaultOptions => defaultOptions;
+    public static JsonSerializerOptions WebOptions => webOptions;
+    public static JsonSerializerOptions FriendlyOptions => friendlyOptions;
 
 
     extension(string json)

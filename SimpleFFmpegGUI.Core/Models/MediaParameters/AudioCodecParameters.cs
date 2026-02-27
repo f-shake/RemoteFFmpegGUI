@@ -1,23 +1,19 @@
-﻿using FzLib;
-using System.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace SimpleFFmpegGUI.Models
+namespace SimpleFFmpegGUI.Models.MediaParameters
 {
-    public class AudioCodecParameters : IAudioCodecParameters
+    public partial class AudioCodecParameters : StreamCodecParametersBase
     {
         /// <summary>
         /// 码率
         /// </summary>
-        public int? Bitrate { get; set; }
-
-        /// <summary>
-        /// 编码
-        /// </summary>
-        public string Code { get; set; }
+        [ObservableProperty]
+        private int? bitrate;
 
         /// <summary>
         /// 采样率
         /// </summary>
-        public int? SamplingRate { get; set; }
+        [ObservableProperty]
+        private int? samplingRate;
     }
 }

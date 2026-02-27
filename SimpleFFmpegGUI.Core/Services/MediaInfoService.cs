@@ -14,6 +14,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Extensions;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Services
 {
@@ -31,7 +32,7 @@ namespace SimpleFFmpegGUI.Services
 
             var video = mediaInfo.Videos[0];
 
-            arguments.Code = video.Format switch
+            arguments.Codec = video.Format switch
             {
                 "AVC" => VideoCodec.X264.Name,
                 "HEVC" => VideoCodec.X265.Name,
@@ -73,7 +74,7 @@ namespace SimpleFFmpegGUI.Services
 
                 int preset = 0;
 
-                if (arguments.Code == VideoCodec.X264.Name)
+                if (arguments.Codec == VideoCodec.X264.Name)
                 {
                     if (settings["cabac"].Equals(0))
                     {
@@ -108,7 +109,7 @@ namespace SimpleFFmpegGUI.Services
                         preset = 1;
                     }
                 }
-                else if (arguments.Code == VideoCodec.X265.Name)
+                else if (arguments.Codec == VideoCodec.X265.Name)
                 {
                     if (settings.ContainsKey("no-signhide"))
                     {

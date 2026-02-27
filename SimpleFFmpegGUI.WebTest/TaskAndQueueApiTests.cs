@@ -3,6 +3,7 @@ using FluentAssertions;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 
@@ -142,13 +143,13 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
             {
                 Video = new VideoCodecParameters
                 {
-                    Code = "H264",
+                    Codec = "H264",
                     AverageBitrate = 10d,
                     MaxBitrate = 20d,
                 },
                 Audio = new AudioCodecParameters
                 {
-                    Code = "AAC",
+                    Codec = "AAC",
                     Bitrate = 128,
                 },
             },

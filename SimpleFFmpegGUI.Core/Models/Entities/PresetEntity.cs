@@ -2,6 +2,7 @@
 using FzLib.Programming;
 using System.ComponentModel;
 using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Models.Entities
 {
