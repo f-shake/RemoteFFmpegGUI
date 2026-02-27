@@ -1,33 +1,32 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FFMpegCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Models;
+using SimpleFFmpegGUI.Repositories;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class AppLifetimeService : IHostedService
+public class AppLifetimeService(
+    IOptions<AppSettings> appSettings,
+    ConfigService configService,
+    IDbContextFactory<FFmpegDbContext> dbFactory)
+    : IHostedService
 {
-    private readonly IOptions<AppSettings> appSettings;
-    private readonly ConfigService configService;
-    private int isStopping = 0; 
+    private int isStopping = 0;
 
 
-    public AppLifetimeService(IOptions<AppSettings> appSettings,
-        ConfigService configService)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine("AppLifetimeService 构造函数");
-        this.appSettings = appSettings;
-        this.configService = configService;
-    }
-
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        Console.WriteLine("AppLifetimeService 启动");
         var ffmpegDir = appSettings.Value.FFmpegDir;
         if (string.IsNullOrEmpty(ffmpegDir))
         {
@@ -42,7 +41,16 @@ public class AppLifetimeService : IHostedService
                 { BinaryFolder = Path.Combine(Directory.GetCurrentDirectory(), ffmpegDir) });
         }
 
-        return Task.CompletedTask;
+        await using (var db = await dbFactory.CreateDbContextAsync(cancellationToken))
+        {
+            foreach (var item in db.Tasks.Where(p => p.Status == TaskStatus.Processing))
+            {
+                item.Status = TaskStatus.Error;
+                item.Message = "状态异常：启动时处于正在运行状态";
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -52,7 +60,6 @@ public class AppLifetimeService : IHostedService
             return;
         }
 
-        Console.WriteLine("AppLifetimeService 停止 (正在执行保存...)");
         await configService.SaveAsync();
     }
 }

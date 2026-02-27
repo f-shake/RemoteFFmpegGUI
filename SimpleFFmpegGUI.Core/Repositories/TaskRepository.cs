@@ -16,34 +16,8 @@ using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Repositories;
 
-public class TaskRepository
+public class TaskRepository(FFmpegDbContext db)
 {
-    private static readonly object lockObj = new object();
-
-    private static bool taskChecked = false;
-
-    private readonly FFmpegDbContext db;
-
-
-    public TaskRepository(FFmpegDbContext db)
-    {
-        this.db = db;
-        if (!taskChecked)
-        {
-            lock (lockObj)
-            {
-                taskChecked = true;
-                foreach (var item in db.Tasks.Where(p => p.Status == TaskStatus.Processing))
-                {
-                    item.Status = TaskStatus.Error;
-                    item.Message = "状态异常：启动时处于正在运行状态";
-                }
-
-                db.SaveChanges();
-            }
-        }
-    }
-
     public async Task<TaskEntity> AddTaskAsync(TaskType type, List<InputParameters> path, string outputPath,
         OutputParameters arg)
     {

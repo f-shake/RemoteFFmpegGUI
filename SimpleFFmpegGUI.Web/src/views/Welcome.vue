@@ -42,7 +42,7 @@
         </el-card></el-col
       ></el-row
     >
-    <el-link href="https://github.com/autodotua/RemoteFFmpegGUI" target="_blank">项目Github</el-link>
+    <el-link href="https://github.com/f-shake/RemoteFFmpegGUI" target="_blank">项目Github</el-link>
   </div>
 </template>
 <script lang="ts">

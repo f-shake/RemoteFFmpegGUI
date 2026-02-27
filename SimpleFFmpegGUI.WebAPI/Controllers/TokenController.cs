@@ -10,7 +10,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
 public class TokenController(IOptionsSnapshot<AppSettings> appSettings) : FFmpegControllerBase
 {
-    [HttpGet("Check/{tokenWithSha256}")]
+    [HttpGet("Check/{token}")]
     public ActionResult<bool> CheckToken(string token)
     {
         var realToken = appSettings.Value.Token;
