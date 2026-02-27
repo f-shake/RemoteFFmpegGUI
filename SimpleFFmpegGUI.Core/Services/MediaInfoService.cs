@@ -185,7 +185,7 @@ namespace SimpleFFmpegGUI.Services
                 $"-skip_frame nokey " + //只截取关键帧，提升速度，降低内存
                 $"-i \"{path}\" " +
                 "-vframes 1 " +
-                $"-vf scale={scale}:flags=fast_bilinear " + // 低内存 scale
+                $"-vf \"scale={scale}:flags=fast_bilinear,format=yuvj420p\" " +
                 "-threads 1 " + // 限制线程
                 "-max_muxing_queue_size 2 " + // 限制缓存
                 $"\"{tempPath}\"";

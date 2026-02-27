@@ -39,23 +39,15 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Snapshot")]
         public async Task<IActionResult> GetSnapshotAsync(string videoPath, double seconds)
         {
-            try
+            videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
+            if (!System.IO.File.Exists(videoPath))
             {
-                videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
-                if (!System.IO.File.Exists(videoPath))
-                {
-                    return NotFound();
-                }
-                string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds));
+                return NotFound();
+            }
 
-                return PhysicalFile(path, "image/jpeg");
-            }
-            catch (Exception ex)
-            {
-                // throw new HttpStatusCodeException($"获取截图失败：{ex.Message}",
-                //     System.Net.HttpStatusCode.InternalServerError);
-                return Problem(ex.Message);
-            }
+            string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds));
+
+            return PhysicalFile(path, "image/jpeg");
         }
     }
 }

@@ -1,12 +1,16 @@
 ﻿using SimpleFFmpegGUI.Events;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Configurations;
+using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Models;
 
 namespace SimpleFFmpegGUI.Services;
@@ -14,7 +18,7 @@ namespace SimpleFFmpegGUI.Services;
 /// <summary>
 /// FFmpeg进程
 /// </summary>
-public class FFmpegProcessService
+public partial class FFmpegProcessService
 {
     private readonly Process process = new Process();
 
@@ -23,6 +27,35 @@ public class FFmpegProcessService
     private bool started = false;
 
     private TaskCompletionSource<bool> tcs;
+
+    private List<string> outputs = new List<string>();
+
+    /// <summary>
+    /// 错误信息的识别正则
+    /// </summary>
+    private static readonly Regex[] ErrorMessageRegexs =
+    [
+        ErrorMessageRegex1(),
+        ErrorMessageRegex2(),
+        ErrorMessageRegex3(),
+        ErrorMessageRegex4(),
+        ErrorMessageRegex5()
+    ];
+
+
+    /// <summary>
+    /// 获取错误信息
+    /// </summary>
+    /// <returns></returns>
+    public string GetErrorMessage()
+    {
+        var errorLogs = outputs
+            .AsEnumerable()
+            .Reverse()
+            .Take(20)
+            .Where(p => ErrorMessageRegexs.Any(q => q.IsMatch(p)));
+        return string.Join(Environment.NewLine, errorLogs);
+    }
 
     public FFmpegProcessService(IOptionsSnapshot<AppSettings> appSettings, string argument)
     {
@@ -166,6 +199,7 @@ public class FFmpegProcessService
         process.BeginErrorReadLine();
         process.Exited += async (s, e) =>
         {
+            var manualExit = exit;
             exit = true;
             try
             {
@@ -174,13 +208,14 @@ public class FFmpegProcessService
                 {
                     tcs.SetResult(true);
                 }
-                else if (exit)
+                else if (manualExit)
                 {
                     tcs.SetException(new TaskCanceledException("进程被取消"));
                 }
                 else
                 {
-                    tcs.SetException(new Exception($"进程退出：" + process.ExitCode));
+                    var errorLog = GetErrorMessage();
+                    tcs.SetException(new Exception($"进程退出：" + (errorLog ?? "未知原因")));
                 }
 
                 await Task.Delay(10000);
@@ -216,6 +251,22 @@ public class FFmpegProcessService
             return;
         }
 
+        outputs.Add(e.Data);
         Output?.Invoke(this, new FFmpegOutputEventArgs(e.Data));
     }
+
+    [GeneratedRegex("Error.*", RegexOptions.Compiled)]
+    private static partial Regex ErrorMessageRegex1();
+
+    [GeneratedRegex(@"\[.*\] *Unable.*", RegexOptions.Compiled)]
+    private static partial Regex ErrorMessageRegex2();
+
+    [GeneratedRegex(@".*Invalid.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, "zh-CN")]
+    private static partial Regex ErrorMessageRegex3();
+
+    [GeneratedRegex(@"Could find no file.*", RegexOptions.IgnoreCase | RegexOptions.Compiled, "zh-CN")]
+    private static partial Regex ErrorMessageRegex4();
+
+    [GeneratedRegex(@".* error", RegexOptions.IgnoreCase | RegexOptions.Compiled, "zh-CN")]
+    private static partial Regex ErrorMessageRegex5();
 }

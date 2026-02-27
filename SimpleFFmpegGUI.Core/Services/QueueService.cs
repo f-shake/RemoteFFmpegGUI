@@ -175,7 +175,7 @@ namespace SimpleFFmpegGUI.Services
         {
             TaskEntity task = null;
 
-            using (var db = dbFactory.CreateDbContext())
+            await using (var db = await dbFactory.CreateDbContextAsync())
             {
                 task = await db.Tasks.FindAsync(id) ?? throw new Exception("找不到ID为" + id + "的任务");
             }
@@ -255,7 +255,7 @@ namespace SimpleFFmpegGUI.Services
 
         private void CheckMainQueueProcessingTaskManager()
         {
-            if (!Managers.Any(p => p.Task == MainQueueTask))
+            if (Managers.All(p => p.Task != MainQueueTask))
             {
                 throw new Exception("主队列未运行或当前任务正在准备中");
             }
@@ -267,7 +267,7 @@ namespace SimpleFFmpegGUI.Services
 
             FFmpegTaskService ffmpegManager =
                 scope.ServiceProvider.GetRequiredService<IFFmpegTaskServiceFactory>().Create(task);
-            using (var db = dbFactory.CreateDbContext())
+            await using (var db = await dbFactory.CreateDbContextAsync())
             {
                 var rows = await db.Tasks
                     .Where(t => t.Id == task.Id && t.Status == TaskStatus.Queue)
@@ -299,7 +299,7 @@ namespace SimpleFFmpegGUI.Services
                     task.Status = TaskStatus.Error;
                     task.Message = ex is FFmpegArgumentException
                         ? ex.Message
-                        : await ffmpegManager.GetErrorMessageAsync() ?? ex.Message;
+                        : ffmpegManager.Process.GetErrorMessage() ?? ex.Message;
                 }
                 else
                 {
@@ -307,7 +307,7 @@ namespace SimpleFFmpegGUI.Services
                 }
             }
 
-            using (var db = dbFactory.CreateDbContext())
+            await using (var db = await dbFactory.CreateDbContextAsync())
             {
                 var thisDbTask = await db.Tasks.FindAsync(task.Id);
                 if (thisDbTask == null)

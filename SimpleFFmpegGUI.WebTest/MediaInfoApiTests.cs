@@ -20,17 +20,17 @@ public class MediaInfoApiTests(SimpleFFmpegWebApplicationFactory factory) : Simp
         result.Should().NotBeNull();
     }
     
-    // [Fact]
-    // public async Task TestSnapshotAsync()
-    // {
-    //     var result = await GetSnapshotAsync(Path.GetFileName(appTestSettings.TestVideo10s), 10);
-    //     result.Should().NotBeNull();
-    // }
+    [Fact]
+    public async Task TestSnapshotAsync()
+    {
+        var result = await GetSnapshotAsync(Path.GetFileName(appTestSettings.TestVideo10s), 1);
+        result.Should().NotBeNull();
+    }
 
     private Task<MediaInfoGeneral> GetMediaInfoAsync(string name) =>
         GetObjectFromJsonAsync<MediaInfoGeneral>($"/MediaInfo/{name}");
     
-    // private Task<string> GetSnapshotAsync(string name, double seconds) =>
-    //     GetObjectFromJsonAsync<>($"/MediaInfo/Snapshot?videoPath={name}&seconds={seconds}");
+    private Task<HttpResponseMessage> GetSnapshotAsync(string name, double seconds) =>
+        GetAsync($"/MediaInfo/Snapshot?videoPath={name}&seconds={seconds}");
 
 }

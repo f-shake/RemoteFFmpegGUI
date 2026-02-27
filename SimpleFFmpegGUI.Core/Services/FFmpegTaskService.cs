@@ -39,18 +39,7 @@ public class FFmpegTaskService(TaskEntity task,
                                MediaInfoService mediaInfoService,
                                IFFmpegProcessServiceFactory ffmpegProcessServiceFactory) : INotifyPropertyChanged
 {
-    /// <summary>
-    /// 错误信息的识别正则
-    /// </summary>
-    private static readonly Regex[] ErrorMessageRegexs = new[]
-    {
-            new Regex("Error.*",RegexOptions.Compiled),
-            new Regex(@"\[.*\] *Unable.*",RegexOptions.Compiled),
-            new Regex(@".*Invalid.*",RegexOptions.Compiled|RegexOptions.IgnoreCase),
-            new Regex(@"Could find no file.*",RegexOptions.Compiled|RegexOptions.IgnoreCase),
-            new Regex(@".* error",RegexOptions.Compiled|RegexOptions.IgnoreCase),
-        };
-
+  
     /// <summary>
     /// 用于识别PSNR的正则
     /// </summary>
@@ -181,24 +170,6 @@ public class FFmpegTaskService(TaskEntity task,
         }
     }
 
-    /// <summary>
-    /// 获取错误信息
-    /// </summary>
-    /// <returns></returns>
-    public async Task<string> GetErrorMessageAsync()
-    {
-        // var logs = await logRepository.GetLogsAsync('O', Task.Id, DateTime.Now.AddSeconds(-5));
-        var logs = await logRepository.GetLogsAsync(new LogQueryRequest
-        {
-            Type = 'O',
-            TaskId = Task.Id,
-            From = DateTime.Now.AddSeconds(-5)
-        });
-        var log = logs.List
-            .Where(p => ErrorMessageRegexs.Any(q => q.IsMatch(p.Message)))
-            .OrderByDescending(p => p.Time).FirstOrDefault();
-        return log?.Message;
-    }
     /// <summary>
     /// 获取当前状态
     /// </summary>
