@@ -23,8 +23,32 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         TaskService taskService,
         TaskRepository taskRepository) : FFmpegControllerBase()
     {
-        [HttpPost]
-        [Route("Add/{type}")]
+        /// <summary>
+        /// 获取任务列表
+        /// </summary>
+        [HttpGet]
+        public async Task<PagedListResponse<TaskEntity>> GetTasksAsync([FromQuery] TaskQueryDto query)
+        {
+            var tasks = await taskRepository.GetTasksAsync(query);
+            return tasks;
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<TaskEntity>> GetTaskAsync(int id)
+        {
+            var task = await taskRepository.GetTaskAsync(id);
+            if (task == null)
+            {
+                return NotFound($"任务{id}不存在");
+            }
+
+            return task;
+        }
+
+        /// <summary>
+        /// 创建任务
+        /// </summary>
+        [HttpPost("{type}")]
         public async Task<ActionResult<List<int>>> AddTaskAsync(string type, [FromBody] TaskDto request)
         {
             if (request == null)
@@ -32,13 +56,11 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
                 return BadRequest("请求对象不能为空");
             }
 
-            var result= await taskService.AddTasks(type, request);
+            var result = await taskService.AddTasks(type, request);
             return result.ToActionResult();
         }
 
-
-        [HttpPost]
-        [Route("Cancel")]
+        [HttpPost("{id:int}/Cancel")]
         public async Task<IActionResult> CancelTaskAsync(int id)
         {
             var result = await taskService.CancelTasksAsync([id]);
@@ -55,15 +77,13 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost]
-        [Route("Cancel/List")]
+        [HttpPost("Batch/Cancel")]
         public async Task<ActionResult<TaskStatusChangeResult>> CancelTasksAsync(ICollection<int> ids)
         {
             return await taskService.CancelTasksAsync(ids);
         }
 
-        [HttpDelete]
-        [Route("{id:int}")]
+        [HttpPost("{id:int}/Delete")]
         public async Task<IActionResult> DeleteTaskAsync(int id)
         {
             var result = await taskService.DeleteTasksAsync([id]);
@@ -80,50 +100,13 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost]
-        [Route("Delete")]
+        [HttpPost("Batch/Delete")]
         public async Task<ActionResult<TaskStatusChangeResult>> DeleteTasksAsync([FromBody] ICollection<int> ids)
         {
             return await taskService.DeleteTasksAsync(ids);
         }
 
-        [HttpGet("Detail/{id:int}")]
-        public async Task<ActionResult<TaskEntity>> GetTaskAsync(int id)
-        {
-            var task = await taskRepository.GetTaskAsync(id);
-            if (task == null)
-            {
-                return NotFound($"任务{id}不存在");
-            }
-
-            return task;
-        }
-
-
-        /// <summary>
-        /// 获取任务列表
-        /// </summary>
-        /// <param name="query"></param>
-        /// <returns></returns>
-        [HttpGet("List")]
-        public async Task<PagedListResponse<TaskEntity>> GetTasksAsync([FromQuery] TaskQueryDto query)
-        {
-            // int skip = (query.Page - 1) * query.PageSize;
-            // var statusEnum = query.Status.HasValue ? (Model.TaskStatus)query.Status.Value : (Model.TaskStatus?)null;
-            // var tasks = await taskRepository.GetTasksAsync(statusEnum, skip, query.PageSize);
-            var tasks = await taskRepository.GetTasksAsync(query);
-            return tasks;
-        }
-
-        [HttpGet]
-        [Route("Formats")]
-        public VideoFormat[] GetVideoFormats()
-        {
-            return VideoFormat.Formats;
-        }
-
-        [HttpPost]
-        [Route("Reset/{id:int}")]
+        [HttpPost("{id:int}/Reset")]
         public async Task<IActionResult> ResetTaskAsync(int id)
         {
             var result = await taskService.ResetTasksAsync([id]);
@@ -140,11 +123,16 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost]
-        [Route("Reset/List")]
+        [HttpPost("Batch/Reset")]
         public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync(IEnumerable<int> ids)
         {
             return await taskService.ResetTasksAsync(ids);
+        }
+
+        [HttpGet("Formats")]
+        public VideoFormat[] GetVideoFormats()
+        {
+            return VideoFormat.Formats;
         }
     }
 }

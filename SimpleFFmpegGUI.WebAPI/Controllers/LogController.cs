@@ -13,7 +13,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
     public class LogController(LogRepository log) : FFmpegControllerBase
     {
         [HttpGet]
-        [Route("List")]
         public async Task<PagedListResponse<LogEntity>> GetLogs([FromQuery] LogQueryRequest query)
         {
             var result = await log.GetLogsAsync(query);

@@ -16,7 +16,15 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         PresetService presetsService,
         PresetRepository presetRepository) : FFmpegControllerBase()
     {
-        [HttpPost("Add")]
+        [HttpGet]
+        public async Task<ActionResult<List<PresetEntity>>> GetPresets(TaskType? type)
+        {
+            return type.HasValue
+                ? await presetRepository.GetByTypeAsync(type.Value)
+                : await presetRepository.GetAllAsync();
+        }
+
+        [HttpPost]
         public async Task<ActionResult<int>> AddAsync(AddPresetRequest request)
         {
             if (request == null)
@@ -38,7 +46,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return result.ToActionResult();
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPost("{id:int}")]
         public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdatePresetRequest request)
         {
             if (request == null)
@@ -60,7 +68,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return result.ToActionResult();
         }
 
-        [HttpDelete("{id:int}")]
+        [HttpPost("{id:int}/Delete")]
         public async Task<IActionResult> DeleteAsync(int id)
         {
             await presetsService.DeletePresetAsync(id);
@@ -72,14 +80,6 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         {
             string json = await presetsService.ExportAsync();
             return File(Encoding.UTF8.GetBytes(json), "application/octet-stream", "presetsService.json");
-        }
-
-        [HttpGet("List")]
-        public async Task<ActionResult<List<PresetEntity>>> GetPresets(TaskType? type)
-        {
-            return type.HasValue
-                ? await presetRepository.GetByTypeAsync(type.Value)
-                : await presetRepository.GetAllAsync();
         }
 
         [HttpPost("Import")]

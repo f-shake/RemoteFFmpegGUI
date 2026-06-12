@@ -84,6 +84,7 @@ import {
   showLoading,
   closeLoading,
   TaskType,
+  displayPath,
 } from "../common";
 
 import * as net from "../net";
@@ -109,7 +110,7 @@ export default Vue.extend({
         this.taskName = TaskType.GetByID(r.data.type).Description+"（";
 
         if (r.data.inputs && r.data.inputs.length > 0) {
-          this.taskName += r.data.inputs[0].filePath;
+          this.taskName += displayPath(r.data.inputs[0].filePath);
           if (r.data.inputs.length > 1) {
             this.taskName += " 等";
           }

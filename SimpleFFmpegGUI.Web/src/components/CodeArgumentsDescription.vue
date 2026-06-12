@@ -1,6 +1,6 @@
 
 <template>
-  <div>
+  <div v-if="args">
     <el-descriptions
       title="视频"
       v-if="type == 0 || (type == 4 && args.concat.type != 1)"

@@ -63,7 +63,7 @@ export default Vue.extend({
         .postAddCodeTask({
           inputs: this.files,
           output: this.output,
-          argument: args,
+          parameter: args,
           start: start,
         })
         .then((response) => {

@@ -102,6 +102,7 @@ import {
   formatDateTime,
   formatDoubleTimeSpan,
   TaskType,
+  loadDirs,
 } from "./common";
 import * as net from "./net";
 import StatusBar from "./components/StatusBar.vue";
@@ -157,6 +158,7 @@ export default Vue.extend({
       }
     });
     net.setHeader();
+    loadDirs();
     this.getStatus();
     window.addEventListener("resize", this.resizeMenu);
   },

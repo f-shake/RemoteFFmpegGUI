@@ -112,7 +112,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     }
 
     private Task<List<int>> AddCodecTaskAsync(TaskDto task) =>
-        PostObjectFromJsonAsync<List<int>>("/Task/Add/Transcode", task);
+        PostObjectFromJsonAsync<List<int>>("/Task/Transcode", task);
 
     private Task<List<int>> AddCodecTaskAsync(int count) => AddCodecTaskAsync(GetCodeTask(count));
 
@@ -120,9 +120,9 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
     private Task CancelScheduleAsync() => PostAsync("/Queue/CancelSchedule");
 
-    private Task DeleteTaskAsync(int id) => DeleteAsync($"/Task/{id}");
+    private Task DeleteTaskAsync(int id) => PostAsync($"/Task/{id}/Delete");
 
-    private Task DeleteTaskAsync(ICollection<int> ids) => PostAsync("/Task/Delete", ids);
+    private Task DeleteTaskAsync(ICollection<int> ids) => PostAsync("/Task/Batch/Delete", ids);
 
     private TaskDto GetCodeTask(int count)
     {
@@ -158,18 +158,18 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
     private int GetProcessCount() => Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg");
 
-    private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/Queue/QueueScheduleTime");
+    private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/Queue/Schedule");
 
-    private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/Queue/Status");
+    private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/Queue");
 
-    private Task<TaskEntity> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskEntity>($"/Task/Detail/{id}");
+    private Task<TaskEntity> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskEntity>($"/Task/{id}");
 
     private async Task<PagedListResponse<TaskEntity>> GetTasksAsync(int page = 1, int pageSize = 1000,
         TaskStatus? status = null)
     {
         var statusStr = status != null ? $"&status={(int)status}" : "";
         return await GetObjectFromJsonAsync<PagedListResponse<TaskEntity>>(
-            $"/Task/List?page={page}&pageSize={pageSize}{statusStr}");
+            $"/Task?page={page}&pageSize={pageSize}{statusStr}");
     }
 
     private Task ScheduleAsync(DateTime time) => PostAsync("/Queue/Schedule", new ScheduleRequest { Time = time });

@@ -5,13 +5,13 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers;
 
 public class ConfigController(ConfigService config) : FFmpegControllerBase
 {
-    [HttpGet("DefaultProcessPriority")]
+    [HttpGet("ProcessPriority")]
     public ActionResult<int> GetDefaultProcessPriority()
     {
         return config.DefaultProcessPriority;
     }
 
-    [HttpPost("DefaultProcessPriority")]
+    [HttpPost("ProcessPriority")]
     public IActionResult SetDefaultProcessPriority(int priority)
     {
         config.DefaultProcessPriority = priority;

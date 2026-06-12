@@ -41,13 +41,13 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     }
 
     private Task<int> AddPresetAsync(AddPresetRequest request) =>
-        PostObjectFromJsonAsync<int>("/Preset/Add", request);
+        PostObjectFromJsonAsync<int>("/Preset", request);
 
     private Task UpdatePresetAsync(int id, UpdatePresetRequest request) =>
-        PutAsync($"/Preset/{id}", request);
+        PostAsync($"/Preset/{id}", request);
 
-    private Task DeletePresetAsync(int id) => DeleteAsync($"/Preset/{id}");
+    private Task DeletePresetAsync(int id) => PostAsync($"/Preset/{id}/Delete");
 
     private Task<List<PresetEntity>> GetPresetsAsync(TaskType? type) =>
-        GetObjectFromJsonAsync<List<PresetEntity>>(type == null ? "/Preset/List" : $"/Preset/List?type={type}");
+        GetObjectFromJsonAsync<List<PresetEntity>>(type == null ? "/Preset" : $"/Preset?type={type}");
 }

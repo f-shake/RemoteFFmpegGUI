@@ -76,7 +76,7 @@ export default Vue.extend({
         .postAddCombineTask({
           inputs: [{filePath:this.video},{filePath: this.audio}],
           output: this.output,
-          argument: (this.$refs.args as any).getArgs(),
+          parameter: (this.$refs.args as any).getArgs(),
           start: start,
         })
         .then((response) => {

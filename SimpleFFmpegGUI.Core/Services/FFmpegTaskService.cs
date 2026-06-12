@@ -237,7 +237,7 @@ public class FFmpegTaskService(TaskEntity task,
                 Debug.Assert(false);
             }
 
-            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Parameters.ProcessedOperationParameters?.SyncModifiedTime == true)
+            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Parameters?.ProcessedOperationParameters?.SyncModifiedTime == true)
             {
                 try
                 {
@@ -251,7 +251,7 @@ public class FFmpegTaskService(TaskEntity task,
                 }
             }
 
-            if (task.Inputs.Count > 0 && task.Parameters.ProcessedOperationParameters?.DeleteInputFiles == true)
+            if (task.Inputs.Count > 0 && task.Parameters?.ProcessedOperationParameters?.DeleteInputFiles == true)
             {
                 DriveInfo[] allDrives = DriveInfo.GetDrives();
                 foreach (var file in task.Inputs)
@@ -464,6 +464,10 @@ public class FFmpegTaskService(TaskEntity task,
         if (task.Inputs.Count != 1)
         {
             throw new ArgumentException("普通编码，输入文件必须为1个");
+        }
+        if (task.Parameters == null)
+        {
+            throw new InvalidOperationException("转码任务缺少参数");
         }
         //处理图像序列名
         if (task.Inputs.Count == 1 && task.Inputs[0].Image2)

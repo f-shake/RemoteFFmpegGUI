@@ -299,7 +299,7 @@ namespace SimpleFFmpegGUI.Services
                     task.Status = TaskStatus.Error;
                     task.Message = ex is FFmpegArgumentException
                         ? ex.Message
-                        : ffmpegManager.Process.GetErrorMessage() ?? ex.Message;
+                        : ffmpegManager.Process?.GetErrorMessage() ?? ex.Message;
                 }
                 else
                 {

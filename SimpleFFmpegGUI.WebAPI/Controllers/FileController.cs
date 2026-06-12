@@ -75,7 +75,7 @@ public class FileController(
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    [Route("Ftp/Status")]
+    [Route("Ftp")]
     public ActionResult<FtpStatusDto> GetFtpStatus()
     {
         var status = new FtpStatusDto

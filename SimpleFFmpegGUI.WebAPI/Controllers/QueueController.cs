@@ -10,35 +10,28 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
     public class QueueController(QueueService queue) : FFmpegControllerBase()
     {
-        [HttpPost("Cancel")]
-        public async Task<IActionResult> CancelAsync()
-        {
-            await queue.CancelAsync();
-            return NoContent();
-        }
-
-        [HttpPost("CancelSchedule")]
-        public IActionResult CancelSchedule()
-        {
-            queue.CancelQueueSchedule();
-            return NoContent();
-        }
-
-        [HttpGet("QueueScheduleTime")]
-        public ActionResult<DateTime?> GetQueueScheduleTime()
-        {
-            return queue.GetQueueScheduleTime();
-        }
-
-        [HttpGet("Status")]
-        public ActionResult<StatusDto> GetMainQueueStatus()
+        [HttpGet]
+        public ActionResult<StatusDto> GetStatus()
         {
             var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
             return status;
         }
 
+        [HttpGet("Schedule")]
+        public ActionResult<DateTime?> GetScheduleTime()
+        {
+            return queue.GetQueueScheduleTime();
+        }
+
+        [HttpPost("Start")]
+        public IActionResult Start()
+        {
+            queue.StartQueue();
+            return NoContent();
+        }
+
         [HttpPost("Pause")]
-        public IActionResult PauseMainQueue()
+        public IActionResult Pause()
         {
             queue.SuspendMainQueue();
             return NoContent();
@@ -51,8 +44,15 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
+        [HttpPost("Cancel")]
+        public async Task<IActionResult> CancelAsync()
+        {
+            await queue.CancelAsync();
+            return NoContent();
+        }
+
         [HttpPost("Schedule")]
-        public IActionResult Schedule(ScheduleRequest req)
+        public IActionResult SetSchedule(ScheduleRequest req)
         {
             if (req.Time <= DateTime.Now)
             {
@@ -63,10 +63,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
-        [HttpPost("Start")]
-        public IActionResult Start()
+        [HttpPost("CancelSchedule")]
+        public IActionResult CancelSchedule()
         {
-            queue.StartQueue();
+            queue.CancelQueueSchedule();
             return NoContent();
         }
     }

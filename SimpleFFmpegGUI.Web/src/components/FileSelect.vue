@@ -8,7 +8,7 @@
       files == null ? '请选择文件' : '请选择文件（共' + files.length + '个）'
     "
   >
-    <el-option v-for="item in files" :key="item" :label="item" :value="item">
+    <el-option v-for="item in files" :key="item.path" :label="item.relativePath" :value="item.relativePath">
     </el-option>
   </el-select>
 </template>

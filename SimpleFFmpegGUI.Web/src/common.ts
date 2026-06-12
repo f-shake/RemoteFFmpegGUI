@@ -2,7 +2,49 @@ import Cookies from "js-cookie"
 import { Notification, Loading } from "element-ui"
 import { ElLoadingComponent } from "element-ui/types/loading";
 import { argKey, inputKey, outputKey } from "./parameters";
+import axios from "axios";
 let loadingInstance: ElLoadingComponent | null = null;
+
+// 基准目录缓存，用于路径显示
+let inputDir: string | null = null;
+let outputDir: string | null = null;
+
+/**
+ * 从 API 加载 InputDir/OutputDir 到缓存
+ */
+export async function loadDirs(): Promise<void> {
+    if (inputDir && outputDir) return;
+    try {
+        const r = await axios.get(getUrl("File/Dirs"));
+        inputDir = (r.data.inputDir ?? '').replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+        outputDir = (r.data.outputDir ?? '').replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+    } catch {
+        // 静默
+    }
+}
+
+/**
+ * 去除 InputDir/OutputDir 前缀，只显示相对路径
+ */
+export function displayPath(path: string | null | undefined): string {
+    if (!path) return "";
+    const normalized = path.replace(/\\/g, '/');
+    for (const dir of [inputDir, outputDir]) {
+        if (dir && normalized.toLowerCase().startsWith(dir)) {
+            const relative = normalized.substring(dir.length).replace(/^\//, '');
+            return relative || path;
+        }
+    }
+    return path;
+}
+
+/** 构建 API URL（内部使用） */
+function getUrl(controller: string): string {
+    if (process.env.NODE_ENV === 'production') {
+        return `api/${controller}`;
+    }
+    return `http://localhost:5001/${controller}`;
+}
 export function showLoading(): void {
     loadingInstance = Loading.service({});
 }

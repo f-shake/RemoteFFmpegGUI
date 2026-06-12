@@ -27,7 +27,7 @@ export default Vue.extend({
         .postAddCustomTask({
           input: null,
           output: null,
-          argument: args,
+          parameter: args,
           start: start,
         })
         .then((response) => {

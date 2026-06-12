@@ -30,4 +30,18 @@
         <ProjectReference Include="..\SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj"/>
     </ItemGroup>
 
+    <Target Name="CopyBinaries" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+        <ItemGroup>
+            <_FFmpegFiles Include="..\bin\ffmpeg\**\*" />
+            <_FFmpegFFMEFiles Include="..\bin\ffmpeg_FFME\**\*" />
+            <_MediaInfoFiles Include="..\bin\MediaInfo.exe" />
+            <_TestFiles Include="..\bin\test.mp4" />
+            <_VMAFFiles Include="..\bin\vmaf_float_v0.6.1.json" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_FFmpegFiles)" DestinationFolder="$(OutputPath)ffmpeg\%(RecursiveDir)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_FFmpegFFMEFiles)" DestinationFolder="$(OutputPath)ffmpeg_FFME\%(RecursiveDir)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_MediaInfoFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_TestFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_VMAFFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    </Target>
 </Project>

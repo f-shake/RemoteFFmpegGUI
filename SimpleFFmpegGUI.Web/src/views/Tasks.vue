@@ -88,11 +88,11 @@
           >
             <el-form-item label="输入">
               <div
-                v-for="file in props.row.inputs"
+                v-for="file in (props.row.displayInputs ?? props.row.inputs)"
                 :key="file.filePath"
               >
                 <a class="right24">
-                  {{ file.filePath }}
+                  {{ file.displayPath ?? file.filePath }}
                   <br v-if="file.image2" />
                   {{ file.image2 ? "图像序列，帧率为" + file.framerate : "" }}
                   <br v-if="file.extra" />
@@ -130,7 +130,7 @@
             <el-form-item label="参数">
               <code-arguments-description
                 :type="props.row.type"
-                :args="props.row.arguments"
+                :args="props.row.parameters"
               ></code-arguments-description>
             </el-form-item>
           </el-form>
@@ -175,7 +175,11 @@
         prop="inputText"
         label="输入"
         min-width="360"
-      />
+      >
+        <template slot-scope="scope">
+          <span class="ellipsis-text">{{ scope.row.inputText }}</span>
+        </template>
+      </el-table-column>
 
       <el-table-column
         label="操作"
@@ -284,6 +288,7 @@ import {
   showLoading,
   closeLoading,
   jumpByArgs,
+  displayPath,
 } from "../common";
 
 import * as net from "../net";
@@ -448,7 +453,7 @@ export default Vue.extend({
       return net
         .getTaskList(
           this.statusFilter,
-          (this.page - 1) * this.countPerPage,
+          this.page,
           this.countPerPage
         )
         .then((response) => {
@@ -460,8 +465,13 @@ export default Vue.extend({
               element.inputs == null
                 ? "未知"
                 : element.inputs.length == 1
-                ? element.inputs[0].filePath
-                : element.inputs[0].filePath + " 等";
+                ? displayPath(element.inputs[0].filePath)
+                : displayPath(element.inputs[0].filePath) + " 等";
+            element.output = displayPath(element.output);
+            element.displayInputs = (element.inputs ?? []).map((f: any) => ({
+              ...f,
+              displayPath: displayPath(f.filePath)
+            }));
           });
           this.list = response.data.list;
         })
@@ -499,5 +509,13 @@ export default Vue.extend({
 
 .cell .el-button {
   margin-right: 6px;
+}
+.ellipsis-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 </style>
