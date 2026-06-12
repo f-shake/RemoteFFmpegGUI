@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.18362.0</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWinForms>true</UseWinForms>
     <RootNamespace>SimpleFFmpegGUI.WPF</RootNamespace>
     <SatelliteResourceLanguages>zh-cn</SatelliteResourceLanguages>
     <ApplicationIcon>icon.ico</ApplicationIcon>
