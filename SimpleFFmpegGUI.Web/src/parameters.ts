@@ -1,4 +1,3 @@
-const argKey="args";
-const inputKey="input"
-const outputKey="output"
-export {argKey,inputKey,outputKey}
+export const argKey = "args";
+export const inputKey = "input";
+export const outputKey = "output";

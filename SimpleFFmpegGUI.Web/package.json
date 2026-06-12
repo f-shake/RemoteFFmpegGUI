@@ -1,60 +1,28 @@
 {
-  "name": "remote-ffmpeg-gui",
-  "version": "0.1.0",
+  "name": "simpleffmpeggui-web-vite",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/core": "^7.21.0",
-    "axios": "^0.19.2",
-    "core-js": "^3.27.2",
-    "element-ui": "^2.15.12",
-    "js-cookie": "^2.2.1",
-    "register-service-worker": "^1.7.2",
-    "vue": "^2.7.14",
-    "vue-axios": "^2.1.5",
-    "vue-class-component": "^7.2.6",
-    "vue-property-decorator": "^8.5.1",
-    "vue-router": "^3.6.5"
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.17.0",
+    "element-plus": "^2.14.2",
+    "js-cookie": "^3.0.8",
+    "vue": "^3.5.34",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@types/js-cookie": "^2.2.7",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "@vue/cli-plugin-babel": "^5.0.8",
-    "@vue/cli-plugin-eslint": "^5.0.8",
-    "@vue/cli-plugin-pwa": "^5.0.8",
-    "@vue/cli-plugin-router": "^5.0.8",
-    "@vue/cli-plugin-typescript": "^5.0.8",
-    "@vue/cli-service": "^5.0.8",
-    "@vue/eslint-config-typescript": "^7.0.0",
-    "eslint": "^7.20.0",
-    "eslint-plugin-vue": "^7.20.0",
-    "typescript": "~4.1.5",
-    "vue-template-compiler": "^2.7.14"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended",
-      "@vue/typescript/recommended"
-    ],
-    "parserOptions": {
-      "ecmaVersion": 2020,
-      "parser": "@typescript-eslint/parser"
-    },
-    "rules": {}
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+    "@types/js-cookie": "^3.0.6",
+    "@types/node": "^24.12.3",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vue/tsconfig": "^0.9.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12",
+    "vue-tsc": "^3.2.8"
+  }
 }

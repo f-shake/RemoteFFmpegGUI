@@ -3,75 +3,48 @@
     <el-form label-width="100px">
       <h2>输入和输出</h2>
       <el-form-item label="视频1">
-        <file-select :file.sync="video1" class="right24"></file-select>
+        <file-select :file="video1" @update:file="(v: string) => video1 = v" class="right24" />
       </el-form-item>
       <el-form-item label="视频2">
-        <file-select :file.sync="video2" class="right24"></file-select>
+        <file-select :file="video2" @update:file="(v: string) => video2 = v" class="right24" />
       </el-form-item>
     </el-form>
-
-    <add-to-task-buttons :addFunc="addTask"></add-to-task-buttons>
+    <AddToTaskButtons :addFunc="addTask" />
   </div>
 </template>
-<script lang="ts">
-import Vue from "vue";
-import Cookies from "js-cookie";
-import { showError, jump, showSuccess, loadArgs } from "../../common";
-import * as net from "../../net";
-import CodeArguments from "@/components/CodeArguments.vue";
-import AddToTaskButtons from "@/components/AddToTaskButtons.vue";
-export default Vue.extend({
-  name: "Home",
-  data() {
-    return {
-      video1: "",
-      video2: "",
-    };
-  },
-  computed: {},
-  methods: {
-    add() {
-      this.addTask(false);
-    },
-    addAndStart() {
-      this.addTask(true);
-    },
 
-    addTask(start: boolean) {
-      if (this.video1 == "" || this.video2 == "") {
-        showError("请选择输入文件");
-        return;
-      }
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { showError, showSuccess, loadArgs } from '../../common'
+import * as net from '../../net'
+import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
+import FileSelect from '../../components/FileSelect.vue'
 
-      net
-        .postAddCompareTask({
-          inputs: [{filePath:this.video1}, {filePath:this.video2}],
-          start: start,
-        })
-        .then((response) => {
-          this.video1 = "";
-          this.video2 = "";
-          showSuccess("已加入队列");
-        })
-        .catch(showError);
-    },
-  },
-  components: { AddToTaskButtons },
-  mounted: function () {
-    this.$nextTick(function () {
-      const inputOutput = loadArgs(null);
-      if (inputOutput.inputs) {
-        this.video1 = inputOutput.inputs[0].filePath;
-        this.video2 = inputOutput.inputs[1].filePath;
-      }
-    });
-  },
-});
-</script>
-<style scoped>
-.bottom-div {
-  display: inline-block;
-  margin-top: 36px;
-  margin-right: 24px;
+const video1 = ref('')
+const video2 = ref('')
+
+function addTask(start: boolean) {
+  if (video1.value === '' || video2.value === '') {
+    showError('请选择输入文件')
+    return
+  }
+  net.postAddCompareTask({
+    inputs: [{ filePath: video1.value }, { filePath: video2.value }],
+    start
+  })
+    .then(() => {
+      video1.value = ''
+      video2.value = ''
+      showSuccess('已加入队列')
+    })
+    .catch(showError)
 }
-</style>
+
+onMounted(() => {
+  const inputOutput = loadArgs(null)
+  if (inputOutput.inputs) {
+    video1.value = inputOutput.inputs[0]?.filePath ?? ''
+    video2.value = inputOutput.inputs[1]?.filePath ?? ''
+  }
+})
+</script>

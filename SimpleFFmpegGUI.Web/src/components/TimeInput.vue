@@ -1,4 +1,3 @@
-
 <template>
   <div>
     <el-row :gutter="12">
@@ -9,11 +8,11 @@
           v-model="str"
           class="time-text"
         >
-          <template slot="prepend"> {{ label }}</template>
+          <template #prepend>{{ label }}</template>
         </el-input>
       </el-col>
       <el-col :span="1">
-        <el-checkbox style="margin-top: 15px" v-model="isEnabled"></el-checkbox>
+        <el-checkbox style="margin-top: 15px" v-model="isEnabled" />
       </el-col>
       <el-col :xs="22" :sm="22" :md="10" class="top12 left12">
         <el-input-number
@@ -24,7 +23,7 @@
           size="small"
           :controls="false"
           class="time"
-        ></el-input-number>
+        />
         <a class="time-colon">:</a>
         <el-input-number
           :disabled="!isEnabled"
@@ -34,7 +33,7 @@
           :max="59"
           size="small"
           class="time"
-        ></el-input-number>
+        />
         <a class="time-colon"> :</a>
         <el-input-number
           :disabled="!isEnabled"
@@ -45,116 +44,77 @@
           :max="59.999"
           size="small"
           class="time"
-        ></el-input-number>
+        />
       </el-col>
     </el-row>
-    <div v-if="error != null" style="color: red">
-      {{ error }}
-    </div>
+    <div v-if="error != null" style="color: red">{{ error }}</div>
   </div>
 </template>
-<script lang="ts">
-import Vue from "vue";
-import Cookies from "js-cookie";
-import * as net from "../net";
-import { showError, jump, formatDateTime } from "../common";
-export default Vue.component("time-input", {
-  data() {
-    return {
-      h: 0,
-      m: 0,
-      s: 0.0,
-      str: "",
-      isEnabled: this.enabled,
-      error: "",
-    };
-  },
-  props: ["enabled", "label", "time"],
-  computed: {},
-  watch: {
-    enabled() {
-      this.isEnabled = this.enabled;
-    },
-    isEnabled() {
-      this.$emit("update:enabled", this.isEnabled);
-    },
-    str() {
-      this.parseTime();
-    },
-    h() {
-      this.updateTime();
-    },
-    m() {
-      this.updateTime();
-    },
-    s() {
-      this.updateTime();
-    },
-  },
-  created() {
-    if (this.time) {
-      this.h = Math.floor(this.time / 3600);
-      this.m = Math.floor((this.time / 60) % 60);
-      this.s = this.time - this.m * 60 - this.h * 3600;
-    }
-  },
-  methods: {
-    updateTime() {
-      this.$emit("update:time", this.h * 3600 + this.m * 60 + this.s);
-    },
-    parseTime() {
-      let parts: string[];
-      let h: number;
-      let m: number;
-      let s: number;
-      parts = this.str.replace("：", ":").split(":");
 
-      if (parts.length == 1 || parts.length > 3) {
-        this.error = "解析失败，无法识别时间部分";
-        return;
-      }
-      const strS = parts[parts.length - 1];
-      const strM = parts[parts.length - 2];
-      const strH = parts.length == 3 ? parts[parts.length - 3] : "0";
+<script setup lang="ts">
+import { ref, watch } from 'vue'
 
-      h = Number.parseInt(strH);
-      m = Number.parseInt(strM);
-      s = Number.parseFloat(strS);
-      if (Number.isNaN(h) || Number.isNaN(m) || Number.isNaN(s)) {
-        this.error = "解析失败，无法转为数字";
-        return;
-      }
-      this.error = "";
-      this.h = h;
-      this.m = m;
-      this.s = s;
-      this.isEnabled = true;
-    },
-  },
-  components: {},
-  mounted: function () {
-    this.$nextTick(function () {
-      return;
-    });
-  },
-});
+const props = defineProps<{
+  enabled: boolean
+  label: string
+  time: number
+}>()
+
+const emit = defineEmits<{
+  'update:enabled': [value: boolean]
+  'update:time': [value: number]
+}>()
+
+const h = ref(0)
+const m = ref(0)
+const s = ref(0)
+const str = ref('')
+const isEnabled = ref(props.enabled)
+const error = ref('')
+
+if (props.time) {
+  h.value = Math.floor(props.time / 3600)
+  m.value = Math.floor((props.time / 60) % 60)
+  s.value = props.time - m.value * 60 - h.value * 3600
+}
+
+watch(() => props.enabled, (val) => { isEnabled.value = val })
+watch(isEnabled, (val) => { emit('update:enabled', val) })
+watch(str, () => parseTime())
+watch(h, () => updateTime())
+watch(m, () => updateTime())
+watch(s, () => updateTime())
+
+function updateTime() {
+  emit('update:time', h.value * 3600 + m.value * 60 + s.value)
+}
+
+function parseTime() {
+  const parts = str.value.replace('：', ':').split(':')
+  if (parts.length === 1 || parts.length > 3) {
+    error.value = '解析失败，无法识别时间部分'
+    return
+  }
+  const strS = parts[parts.length - 1]
+  const strM = parts[parts.length - 2]
+  const strH = parts.length === 3 ? parts[parts.length - 3] : '0'
+  const parsedH = Number.parseInt(strH)
+  const parsedM = Number.parseInt(strM)
+  const parsedS = Number.parseFloat(strS)
+  if (Number.isNaN(parsedH) || Number.isNaN(parsedM) || Number.isNaN(parsedS)) {
+    error.value = '解析失败，无法转为数字'
+    return
+  }
+  error.value = ''
+  h.value = parsedH
+  m.value = parsedM
+  s.value = parsedS
+  isEnabled.value = true
+}
 </script>
-<style scoped>
-.time {
-  width: 72px;
-}
-.time-second {
-  width: 108px;
-}
-.time-colon {
-  margin-left: 6px;
-  margin-right: 6px;
-}
-.time-text {
-  max-width: 320px;
-}
 
-.time-label {
-  margin-left: 6px;
-}
+<style scoped>
+.time { width: 72px; }
+.time-colon { margin-left: 6px; margin-right: 6px; }
+.time-text { max-width: 320px; }
 </style>

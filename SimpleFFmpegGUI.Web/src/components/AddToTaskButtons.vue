@@ -1,44 +1,24 @@
-
 <template>
   <div class="out">
     <div class="in">
       <el-button-group>
-        <el-button type="primary" @click="add">加入队列</el-button>
-        <el-button @click="addAndStart">加入队列并立即开始</el-button>
+        <el-button type="primary" @click="add(false)">加入队列</el-button>
+        <el-button @click="add(true)">加入队列并立即开始</el-button>
       </el-button-group>
     </div>
   </div>
 </template>
-<script >
-import Vue from "vue";
-import Cookies from "js-cookie";
-import * as net from "../net";
-import {  showError, jump, formatDateTime } from "../common";
-export default Vue.component("add-to-task-buttons", {
-  data() {
-    return {
-      files: null,
-      file: null,
-    };
-  },
-  props: ["addFunc"],
-  computed: {},
-  methods: {
-    add() {
-      this.addFunc(false);
-    },
-    addAndStart() {
-      this.addFunc(true);
-    },
-  },
-  components: {},
-  mounted: function () {
-    this.$nextTick(function () {
-      return;
-    });
-  },
-});
+
+<script setup lang="ts">
+const props = defineProps<{
+  addFunc: (start: boolean) => void
+}>()
+
+function add(start: boolean) {
+  props.addFunc(start)
+}
 </script>
+
 <style scoped>
 .out {
   position: sticky;
@@ -48,8 +28,6 @@ export default Vue.component("add-to-task-buttons", {
   z-index: 1100;
   background-color: white;
 }
-.in {
-  float: right;
-  margin-top: 8px;
-}
+html.dark .out { background-color: #1a1a2e; }
+.in { float: right; margin-top: 8px; }
 </style>

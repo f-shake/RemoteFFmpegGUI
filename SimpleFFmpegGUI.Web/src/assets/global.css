@@ -1,98 +1,55 @@
-.right24 {
-    margin-right: 24px;
-}
-.right12 {
-    margin-right: 12px;
-}
-.left24 {
-    margin-left: 24px;
-}
-.left12 {
-    margin-left: 12px;
+html, body {
+  height: 100%;
+  margin: 0;
 }
 
-.bottom12 {
-    margin-bottom: 12px;
+#app {
+  height: 100%;
 }
 
-.bottom24 {
-    margin-bottom: 24px;
-}
-
-.bottom12 {
-    margin-bottom: 12px;
-}
-
-.top24 {
-    margin-top: 24px;
-}
-
-.top12 {
-    margin-top: 12px;
-}
-
-
-.width240 {
-    width: 240px;
-}
-
-.width160 {
-    width: 160px;
-}
-
-.width120 {
-    width: 120px;
-}
-
-.width80 {
-    width: 80px;
-}
-
-.single-line {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-html {
-    height: 100%;
-    width:100%;
-    margin: 0;
-    position:fixed
+/* 暗色模式 */
+html.dark {
+  --app-bg: #1a1a2e;
+  --app-text: #e0e0e0;
+  --app-header-bg: #16213e;
+  --app-sidebar-bg: #0f3460;
 }
 
 body {
-    height: 100%;
-    overflow: hidden;
-    margin: 0;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
 
-.is-vertical {
-    height: 100%;
+/* 边距工具类 */
+.right24 { margin-right: 24px; }
+.right12 { margin-right: 12px; }
+.right8 { margin-right: 8px; }
+.left24 { margin-left: 24px; }
+.left12 { margin-left: 12px; }
+.top24 { margin-top: 24px; }
+.top12 { margin-top: 12px; }
+.bottom12 { margin-bottom: 12px; }
+
+/* 宽度工具类 */
+.width240 { width: 240px; }
+.width160 { width: 160px; }
+.width120 { width: 120px; }
+.width80 { width: 80px; }
+
+/* 单行省略 */
+.single-line, .one-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.center {
-    height: 100%;
-    margin: 0;
-}
+/* 灰色文字 */
+.gray { color: #999; }
 
-.one-line {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .el-slider__marks-text{
-    white-space: nowrap;
-    /* elementUI的BUG，Slider标签最后一个只能显示一个字符，其他会换行 */
-  }
-  .gray{
-      color:#606266
-  }
+/* 预格式化换行 */
+.pre-wrap { white-space: pre-wrap; }
 
-  .s{
-    white-space: pre-wrap
-  }
+/* El-slider 刻度文字 */
+.el-slider__marks-text { white-space: nowrap; }
 
-  .inline{
-    display: inline
-  }
+/* 抽屉 header 高度 */
+.el-drawer__header { height: 18px; }
