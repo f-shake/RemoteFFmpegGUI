@@ -10,10 +10,10 @@
         <template v-if="!isProcessing">
           <a class="right12" v-if="hasSchedule">已计划开始时间</a>
           <el-date-picker v-if="!isProcessing" class="right12" v-model="scheduleTime"
-            value-format="yyyy-MM-dd[T]HH:mm:ss[Z]" placeholder="计划开始时间" type="datetime" :disabled="hasSchedule" />
+            value-format="YYYY-MM-DD[T]HH:mm:ss" placeholder="计划开始时间" type="datetime" :disabled="hasSchedule" />
           <el-button v-if="!isProcessing && !hasSchedule" :disabled="!scheduleTime" type="primary"
             @click="schedule" class="right12">设置计划</el-button>
-          <el-button v-if="!isProcessing && hasSchedule" type="primary" @click="cancelSchedule"
+          <el-button v-if="!isProcessing && hasSchedule" @click="cancelSchedule"
             class="right12">取消计划</el-button>
           <el-button v-if="!isProcessing" type="primary" @click="start">开始队列</el-button>
         </template>

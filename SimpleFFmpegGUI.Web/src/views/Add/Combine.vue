@@ -56,14 +56,14 @@ function addTask(start: boolean) {
   net.postAddCombineTask({
     inputs: [{ filePath: video.value }, { filePath: audio.value }],
     output: output.value,
-    parameter: args.value?.getArgs(),
-    start
+    parameter: args.value?.getArgs()
   })
     .then(() => {
       video.value = ''
       audio.value = ''
       output.value = ''
       showSuccess('已加入队列')
+      if (start) net.postStartQueue().catch(showError)
     })
     .catch(showError)
 }

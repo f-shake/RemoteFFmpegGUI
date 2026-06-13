@@ -102,6 +102,7 @@ const cardGroups = [
 .welcome {
   min-height: 100%;
   position: relative;
+  background: var(--bg-card);
 }
 
 /* ==============================================================
@@ -116,12 +117,22 @@ const cardGroups = [
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--bg-card) 50%, var(--el-color-primary-light-8) 100%);
-  opacity: 0.6;
+  background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--bg-card) 100%);
+  opacity: 0.5;
 }
 html.dark .hero-bg {
-  background: linear-gradient(135deg, rgba(51, 112, 255, 0.12) 0%, var(--bg-card) 50%, rgba(51, 112, 255, 0.06) 100%);
+  background: var(--bg-card);
   opacity: 1;
+}
+html.dark .hero-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at 50% 0, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
 }
 .hero-content {
   position: relative;
@@ -233,7 +244,7 @@ html.dark .hero-bg {
   color: var(--el-color-primary);
 }
 html.dark .card-item:hover {
-  background: rgba(51, 112, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
 }
 .card-item-icon {
   color: var(--text-secondary);

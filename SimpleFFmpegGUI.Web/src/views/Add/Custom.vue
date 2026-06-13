@@ -28,10 +28,12 @@ function addTask(start: boolean) {
   net.postAddCustomTask({
     input: null,
     output: null,
-    parameter: taskArgs,
-    start
+    parameter: taskArgs
   })
-    .then(() => showSuccess('已加入队列'))
+    .then(() => {
+      showSuccess('已加入队列')
+      if (start) net.postStartQueue().catch(showError)
+    })
     .catch(showError)
 }
 

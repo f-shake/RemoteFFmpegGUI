@@ -37,13 +37,13 @@ function addTask(start: boolean) {
     return
   }
   net.postAddCompareTask({
-    inputs: [{ filePath: video1.value }, { filePath: video2.value }],
-    start
+    inputs: [{ filePath: video1.value }, { filePath: video2.value }]
   })
     .then(() => {
       video1.value = ''
       video2.value = ''
       showSuccess('已加入队列')
+      if (start) net.postStartQueue().catch(showError)
     })
     .catch(showError)
 }

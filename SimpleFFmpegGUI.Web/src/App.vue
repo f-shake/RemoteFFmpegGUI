@@ -350,7 +350,7 @@ function getStatus() {
   font-weight: 600;
 }
 html.dark .app-aside :deep(.el-menu-item.is-active) {
-  background: rgba(51, 112, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
 }
 .app-aside :deep(.el-menu-item:hover),
 .app-aside :deep(.el-sub-menu__title:hover) {

@@ -54,13 +54,13 @@ function addTask(start: boolean) {
   net.postAddConcatTask({
     inputs: files.value,
     output: output.value,
-    parameter: taskArgs,
-    start
+    parameter: taskArgs
   })
     .then(() => {
       files.value = [getNewFile(), getNewFile()]
       output.value = ''
       showSuccess('已加入队列')
+      if (start) net.postStartQueue().catch(showError)
     })
     .catch(showError)
 }

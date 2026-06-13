@@ -78,24 +78,24 @@
 
 /* ---------- 暗色模式 ---------- */
 html.dark {
-  --bg-page: #121212;
-  --bg-card: #1e1e2e;
-  --bg-elevated: #252538;
-  --bg-tooltip: #363650;
+  --bg-page: #141416;
+  --bg-card: #1c1c1e;
+  --bg-elevated: #242426;
+  --bg-tooltip: #323234;
 
-  --text-primary: #e5e6eb;
-  --text-regular: #c9cdd4;
-  --text-secondary: #86909c;
-  --text-disabled: #4e5969;
-  --text-placeholder: #6b7785;
+  --text-primary: #e4e4e7;
+  --text-regular: #c8c8cc;
+  --text-secondary: #86868c;
+  --text-disabled: #4e4e54;
+  --text-placeholder: #6b6b72;
 
-  --border-color: #2a2a3e;
-  --border-color-light: #1e1e32;
+  --border-color: #2a2a2e;
+  --border-color-light: #1e1e20;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* ---------- Element Plus 变量覆盖 ---------- */
@@ -122,8 +122,8 @@ html.dark {
   --el-bg-color: var(--bg-page);
   --el-bg-color-overlay: var(--bg-elevated);
   --el-fill-color: var(--bg-card);
-  --el-fill-color-light: #252538;
-  --el-fill-color-lighter: #1e1e2e;
+  --el-fill-color-light: #28282a;
+  --el-fill-color-lighter: #222224;
   --el-text-color-primary: var(--text-primary);
   --el-text-color-regular: var(--text-regular);
   --el-text-color-secondary: var(--text-secondary);
@@ -258,7 +258,7 @@ html, body {
   background-color: var(--el-color-primary-light-9) !important;
 }
 html.dark .el-table__body tr:hover > td {
-  background-color: rgba(51, 112, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 /* 输入框微调 */

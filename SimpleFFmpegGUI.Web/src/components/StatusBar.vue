@@ -190,6 +190,9 @@ onMounted(() => {
 .status-bar.paused {
   background: var(--el-color-warning-light-8);
 }
+html.dark .status-bar.paused {
+  background: var(--bg-elevated);
+}
 .status-bar.error {
   background: var(--el-color-danger-light-8);
 }

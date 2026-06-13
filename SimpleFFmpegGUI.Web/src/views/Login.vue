@@ -66,7 +66,7 @@ function login() {
   background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--bg-page) 50%, var(--el-color-primary-light-8) 100%);
 }
 html.dark .login-page {
-  background: linear-gradient(135deg, rgba(51, 112, 255, 0.08) 0%, var(--bg-page) 50%, rgba(51, 112, 255, 0.04) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, var(--bg-page) 50%, rgba(255, 255, 255, 0.015) 100%);
 }
 
 .login-card {
