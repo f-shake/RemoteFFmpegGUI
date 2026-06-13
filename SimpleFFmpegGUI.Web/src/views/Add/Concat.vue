@@ -71,5 +71,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import './AddCommon.css';
+@import '@/assets/AddCommon.css';
 </style>

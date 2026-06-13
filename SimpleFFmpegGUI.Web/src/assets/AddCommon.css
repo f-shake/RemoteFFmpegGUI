@@ -17,19 +17,6 @@
   flex-shrink: 0;
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.section-title .el-icon {
-  color: var(--el-color-primary);
-}
-
 /* 表单内联调整 */
 .flex-row {
   display: flex;

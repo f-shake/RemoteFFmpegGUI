@@ -183,23 +183,14 @@ const props = withDefaults(defineProps<{
 
 defineExpose({ getArgs, updateFromArgs })
 
-const speedPresets = {
-  0: '最慢', 1: '更慢', 2: '慢', 3: '平衡',
-  4: '快', 5: '更快', 6: '很快', 7: '超快', 8: '极快'
-}
+import {
+  speedPresets, videoCodes, audioCodes, audioSamples,
+  aspectRatios, fpses, sizes, pixelFormats,
+} from '@/constants/encoding'
+
 const audioBitrates: Record<number, string> = {
   32: '32', 64: '64', 96: '96', 128: '128', 192: '192', 256: '256', 320: '320'
 }
-const videoCodes = ['自动', 'H264', 'H265', 'VP9', 'AV1 (aom)', 'AV1 (SVT)']
-const audioCodes = ['自动', 'AAC', 'OPUS']
-const audioSamples = [8000, 16000, 32000, 44100, 48000, 96000]
-const aspectRatios = ['4:3', '16:9', '2.35']
-const fpses = [10, 24, 25, 29.97, 30, 59.94, 60]
-const sizes: Record<string, string> = {
-  '480P': '-1:480', '720P': '-1:720', '1080P': '-1:1080',
-  '1440P': '-1:1440', '2160P': '-1:2160'
-}
-const pixelFormats = ['yuv420p', 'yuvj420p', 'yuv422p', 'yuvj422p', 'rgb24', 'gray', 'yuv420p10le']
 const formats = ref<any[]>([])
 const presets = ref<any[]>([])
 const preset = ref<any>(null)

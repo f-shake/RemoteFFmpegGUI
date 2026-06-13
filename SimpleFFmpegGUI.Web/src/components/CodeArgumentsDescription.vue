@@ -58,10 +58,7 @@ const props = defineProps<{
   type: number
 }>()
 
-const speedPresets: Record<number, string> = {
-  0: '最慢', 1: '更慢', 2: '慢', 3: '平衡',
-  4: '快', 5: '更快', 6: '很快', 7: '超快', 8: '极快'
-}
+import { speedPresets } from '@/constants/encoding'
 
 const showVideo = computed(() => props.args?.video && props.args?.disableVideo === false)
 const showAudio = computed(() => props.args?.audio && props.args?.disableAudio === false)

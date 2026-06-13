@@ -319,40 +319,4 @@ html.dark .el-table__body tr:hover > td {
   font-weight: 500;
 }
 
-/* ---------- 全局页面过渡 ---------- */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--transition-normal);
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-fade-enter-active {
-  transition: all var(--transition-slow);
-}
-.slide-fade-leave-active {
-  transition: all var(--transition-normal);
-}
-.slide-fade-enter-from {
-  transform: translateY(12px);
-  opacity: 0;
-}
-.slide-fade-leave-to {
-  transform: translateY(-12px);
-  opacity: 0;
-}
-
-/* ---------- 骨架屏闪烁 ---------- */
-@keyframes skeleton-loading {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
-.skeleton {
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-  background: linear-gradient(90deg, var(--border-color) 25%, var(--border-color-light) 50%, var(--border-color) 75%);
-  background-size: 200% 100%;
-  border-radius: var(--radius-xs);
-}
+/* （过渡动画在 App.vue 中定义，此处不再重复） */

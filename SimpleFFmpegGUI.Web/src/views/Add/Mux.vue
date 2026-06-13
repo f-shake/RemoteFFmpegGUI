@@ -76,7 +76,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import './AddCommon.css';
+@import '@/assets/AddCommon.css';
 .output-input { max-width: 400px; }
 @media (max-width: 640px) { .output-input { max-width: 100%; } }
 </style>
