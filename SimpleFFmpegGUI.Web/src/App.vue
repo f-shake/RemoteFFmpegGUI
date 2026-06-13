@@ -163,7 +163,7 @@ watch(
 onMounted(() => {
   nextTick(() => {
     resizeMenu()
-    setInterval(getStatus, 2000)
+    setInterval(getStatus, 3000)
   })
 })
 
@@ -190,7 +190,7 @@ window.addEventListener('resize', resizeMenu)
 
 function resizeMenu() {
   windowWidth.value = window.innerWidth
-  menuCollapse.value = window.innerWidth < 500
+  menuCollapse.value = window.innerWidth < 640
 }
 
 function delayGetStatus() {

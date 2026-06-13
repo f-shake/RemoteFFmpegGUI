@@ -154,7 +154,7 @@ defineExpose({ getArgs, outputFile })
   white-space: nowrap;
 }
 .file-name { color: var(--el-color-primary); margin-left: 4px; }
-.file-clip { color: #999; margin-left: 4px; font-size: 12px; }
+.file-clip { color: var(--text-secondary); margin-left: 4px; font-size: 12px; }
 .file-input { width: 100%; }
 .clip-section, .more-section { margin-top: 12px; }
 .file-actions { margin-top: 12px; display: flex; gap: 8px; }

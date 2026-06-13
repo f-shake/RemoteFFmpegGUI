@@ -124,8 +124,6 @@ function query() {
 </script>
 
 <style scoped>
-@import './Add/AddCommon.css';
-
 .page-container {
   max-width: 960px;
   margin: 0 auto;
@@ -141,6 +139,22 @@ function query() {
   flex: 1;
 }
 
+.section-card {
+  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.section-title .el-icon {
+  color: var(--el-color-primary);
+}
 .info-card {
   margin-bottom: 16px;
 }
@@ -162,6 +176,18 @@ function query() {
 @media (max-width: 640px) {
   .page-container {
     padding: 0;
+  }
+  .section-card {
+    border: none;
+    border-radius: 0 !important;
+    margin-bottom: 0;
+    box-shadow: none;
+  }
+  .section-card + .section-card {
+    border-top: 1px solid var(--border-color);
+  }
+  .info-card {
+    margin-bottom: 0;
   }
   .query-bar {
     flex-direction: column;

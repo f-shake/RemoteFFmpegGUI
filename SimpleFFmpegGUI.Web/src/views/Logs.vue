@@ -25,7 +25,7 @@
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
+          <template #header><el-button text @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>

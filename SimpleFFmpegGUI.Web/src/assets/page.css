@@ -13,6 +13,22 @@
   border-radius: 8px;
 }
 
+/* 表格单元格文字换行 */
+.el-table .cell { white-space: pre-line; word-wrap: break-word; }
+
+/* 节标题（图标+文字） */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.section-title .el-icon {
+  color: var(--el-color-primary);
+}
+
 @media (max-width: 640px) {
   .page-container, .page-container-wide {
     padding: 0;

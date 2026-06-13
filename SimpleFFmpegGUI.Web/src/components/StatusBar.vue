@@ -5,7 +5,7 @@
       <div v-if="windowWidth > 768" class="bar-inner">
         <div class="bar-snapshot" v-show="snapshotSrc !== ''">
           <div class="snapshot-placeholder">
-            <img :src="snapshotSrc" @click="clickSnapshot" class="snapshot-img" />
+            <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
           </div>
         </div>
         <div class="bar-info">
@@ -61,7 +61,7 @@
         <div class="bar-compact-inner">
           <div class="bar-snapshot bar-snapshot-mobile" v-show="snapshotSrc !== ''">
             <div class="snapshot-placeholder">
-              <img :src="snapshotSrc" @click="clickSnapshot" class="snapshot-img" />
+              <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
             </div>
           </div>
           <div class="bar-compact-body">
@@ -104,11 +104,11 @@
       </div>
     </div>
   </div>
+
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import * as net from '../net'
 import { showError, formatDateTime, formatDoubleTimeSpan } from '../common'
@@ -126,21 +126,12 @@ const props = defineProps<{
 const snapshotSrc = ref('')
 const lastSnapshotTime = ref(1e10)
 const lastSnapshotFile = ref('')
-
 function finishTime(): Date {
   return new Date(props.status.progress.finishTime)
 }
 
 function cancel() {
   net.postCancelQueue().catch(showError)
-}
-
-function clickSnapshot() {
-  ElMessageBox.alert(
-    `<img src="${snapshotSrc.value}" style="width:100%">`,
-    '缩略图',
-    { dangerouslyUseHTMLString: true }
-  )
 }
 
 function updateSnapshot() {
@@ -207,7 +198,7 @@ onMounted(() => {
   display: flex;
   align-items: stretch;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 8px 16px 6px;
 }
 
 /* 缩略图 */
@@ -227,10 +218,6 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   cursor: pointer;
-  transition: transform var(--transition-fast);
-}
-.snapshot-img:hover {
-  transform: scale(1.05);
 }
 
 /* 统计信息区 */
@@ -295,7 +282,7 @@ onMounted(() => {
 
 /* ---- 精简模式 ---- */
 .bar-compact {
-  padding: 6px 16px;
+  padding: 6px 16px 4px;
 }
 .bar-compact-inner {
   display: flex;
@@ -343,7 +330,7 @@ onMounted(() => {
 
 /* ---- 简单模式（无进度详情） ---- */
 .bar-simple {
-  padding: 4px 16px;
+  padding: 4px 16px 3px;
 }
 .bar-simple-inner {
   display: flex;
@@ -360,4 +347,5 @@ onMounted(() => {
   color: var(--text-regular);
   font-size: 12px;
 }
+
 </style>

@@ -87,7 +87,7 @@
             <el-switch v-model="code.video.enableFps" />
             <div v-show="code.video.enableFps" class="flex-row flex-wrap">
               <el-input-number v-model="code.video.fps" :precision="3" :min="1" :max="120" class="fps-input" />
-              <el-button type="text" @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
+              <el-button text @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
             </div>
           </div>
         </el-form-item>
@@ -96,7 +96,7 @@
             <el-switch v-model="code.video.enableSize" />
             <div v-show="code.video.enableSize" class="flex-row flex-wrap">
               <el-input class="size-input" placeholder="示例：640:480" v-model="code.video.size" />
-              <el-button v-for="(v, k) in sizes" :key="k" type="text" @click="code.video.size = v">{{ k }}</el-button>
+              <el-button v-for="(v, k) in sizes" :key="k" text @click="code.video.size = v">{{ k }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -105,7 +105,7 @@
             <el-switch v-model="code.video.enableAspectRatio" />
             <div v-show="code.video.enableAspectRatio" class="flex-row flex-wrap">
               <el-input class="size-input" placeholder="示例：4:3" v-model="code.video.aspectRatio" />
-              <el-button v-for="i in aspectRatios" :key="i" type="text" @click="code.video.aspectRatio = i">{{ i }}</el-button>
+              <el-button v-for="i in aspectRatios" :key="i" text @click="code.video.aspectRatio = i">{{ i }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -114,7 +114,7 @@
             <el-switch v-model="code.video.enablePixelFormat" />
             <div v-show="code.video.enablePixelFormat" class="flex-row flex-wrap">
               <el-input class="size-input" v-model="code.video.pixelFormat" />
-              <el-button v-for="p in pixelFormats" :key="p" type="text" @click="code.video.pixelFormat = p">{{ p }}</el-button>
+              <el-button v-for="p in pixelFormats" :key="p" text @click="code.video.pixelFormat = p">{{ p }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -408,7 +408,7 @@ div[role="slider"] { min-width: 200px; max-width: 400px; }
 }
 .help-text {
   margin-top: 8px;
-  color: #999;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.4;
 }

@@ -113,6 +113,7 @@ function abortShutdown() {
 
 function setShutdownQueue(value: boolean) {
   net.postShutdownQueue(value)
+    .catch(() => showError('设置队列结束后自动关机失败'))
 }
 
 function updateShutdownQueue() {
@@ -164,15 +165,6 @@ onMounted(() => {
 
 .section-card {
   margin-bottom: 16px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text-primary);
 }
 
 .section-desc {

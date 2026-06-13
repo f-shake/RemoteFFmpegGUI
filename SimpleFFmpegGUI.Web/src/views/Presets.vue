@@ -33,15 +33,15 @@
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="scope">
-            <el-button type="text" @click="remake(scope.row)">新建任务</el-button>
-            <el-button type="text" @click="edit(scope.row)">编辑</el-button>
+            <el-button text @click="remake(scope.row)">新建任务</el-button>
+            <el-button text @click="edit(scope.row)">编辑</el-button>
             <el-popconfirm title="真的要删除预设吗？" style="margin-left: 8px" @confirm="deletePreset(scope.row)">
-              <template #reference><el-button type="text">删除</el-button></template>
+              <template #reference><el-button text>删除</el-button></template>
             </el-popconfirm>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
+          <template #header><el-button text @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -70,6 +70,7 @@ const dialogVisible = ref(false)
 const editingPreset = ref<any>(null)
 const type = ref(0)
 const saving = ref(false)
+const args = ref<any>(null)
 
 function getHeader() { return net.getHeader() }
 function getImportPresetsUrl() { return net.getImportPresetsUrl() }
@@ -81,7 +82,7 @@ function remake(item: any) {
 function savePreset() {
   saving.value = true
   const item = editingPreset.value
-  net.postAddOrUpdatePreset(item.name, item.type, (document.querySelector('.code-arguments') as any)?.getArgs?.())
+  net.postAddOrUpdatePreset(item.name, item.type, args.value?.getArgs())
     .then(() => {
       showSuccess('保存成功')
       dialogVisible.value = false
@@ -130,7 +131,7 @@ onMounted(() => {
 .presets-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 12px;
+  margin: 4px 0 12px;
 }
 .toolbar-right {
   display: flex;
@@ -142,6 +143,16 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
+
+@media (max-width: 640px) {
+  .presets-toolbar {
+    justify-content: stretch;
+    margin: 8px 0 8px;
+  }
+  .toolbar-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
 </style>

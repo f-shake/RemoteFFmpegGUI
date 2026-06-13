@@ -1,5 +1,5 @@
 <template>
-  <div class="page-container">
+  <div class="page-container-wide">
     <!-- FTP 状态 -->
     <el-card shadow="never" class="section-card" v-if="status != null">
       <template #header>
@@ -86,11 +86,11 @@
         </el-table-column>
         <el-table-column label="操作" width="70">
           <template #default="scope">
-            <el-button type="text" size="small" @click="download(scope.row)">下载</el-button>
+            <el-button text size="small" @click="download(scope.row)">下载</el-button>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
+          <template #header><el-button text @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -147,19 +147,6 @@ onMounted(() => {
 
 .section-card {
   margin-bottom: 0;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--text-primary);
-}
-
-.section-title .el-icon {
-  color: var(--el-color-primary);
 }
 
 .section-desc {

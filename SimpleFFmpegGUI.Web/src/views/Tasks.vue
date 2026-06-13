@@ -87,20 +87,20 @@
         <el-table-column label="操作" width="210" class-name="ops-col">
           <template #default="scope">
             <div class="ops-btns">
-              <el-button @click="resetTask(scope.row)" type="text" size="small"
+              <el-button @click="resetTask(scope.row)" text size="small"
                 :disabled="scope.row.status === 1 || scope.row.status === 2">重置</el-button>
               <el-popconfirm v-if="scope.row.status === 2" title="真的要取消任务吗？任务会终止"
                 @confirm="cancelTask(scope.row)">
-                <template #reference><el-button type="text" size="small">取消</el-button></template>
+                <template #reference><el-button text size="small">取消</el-button></template>
               </el-popconfirm>
               <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(scope.row)">
-                <template #reference><el-button type="text" size="small">删除</el-button></template>
+                <template #reference><el-button text size="small">删除</el-button></template>
               </el-popconfirm>
             </div>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
+          <template #header><el-button text @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -368,8 +368,6 @@ onMounted(() => {
   padding-bottom: 16px;
 }
 
-/* 展开的 cell 换行 */
-.el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
 .ops-btns { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
 .ops-btns .el-popconfirm { display: inline-flex; }
@@ -383,6 +381,15 @@ onMounted(() => {
   vertical-align: middle;
 }
 
+
+/* 标签去背景（仅 plain 样式） */
+.el-table .el-tag--plain {
+  background: transparent !important;
+  border: none;
+}
+.el-table .el-tag--plain:hover {
+  background: transparent !important;
+}
 @media (max-width: 640px) {
   .tasks-toolbar {
     flex-direction: column;
