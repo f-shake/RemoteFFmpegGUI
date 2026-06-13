@@ -1,5 +1,6 @@
 <template>
   <div class="page-container">
+    <!-- 查询区 -->
     <el-card shadow="never" class="section-card">
       <template #header>
         <div class="section-title">
@@ -9,10 +10,11 @@
       </template>
       <div class="query-bar">
         <file-select :file="file" @update:file="(v: string) => file = v" class="query-file" />
-        <el-button type="primary" @click="query" :disabled="file === ''">查询</el-button>
+        <el-button type="primary" @click="query" :disabled="file === ''" round>查询</el-button>
       </div>
     </el-card>
 
+    <!-- 基本信息 -->
     <el-card v-if="info != null" shadow="never" class="section-card info-card">
       <template #header>
         <div class="section-title">
@@ -20,13 +22,14 @@
           <span>基本信息</span>
         </div>
       </template>
-      <el-descriptions :column="2" border size="small">
-        <el-descriptions-item label="长度">{{ formatDoubleTimeSpan(info.duration, true) }}</el-descriptions-item>
+      <el-descriptions :column="2" border size="small" class="info-descriptions">
+        <el-descriptions-item label="长度" width="80px">{{ formatDoubleTimeSpan(info.duration, true) }}</el-descriptions-item>
         <el-descriptions-item label="格式">{{ info.format }}</el-descriptions-item>
         <el-descriptions-item label="码率">{{ (info.overallBitRate / 1024 / 1024).toFixed(2) }} Mbps</el-descriptions-item>
       </el-descriptions>
     </el-card>
 
+    <!-- 视频流 -->
     <el-card v-for="s in info?.videos ?? []" :key="s.index" shadow="never" class="section-card info-card">
       <template #header>
         <div class="section-title">
@@ -34,7 +37,7 @@
           <span>视频流 #{{ s.index }}</span>
         </div>
       </template>
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions :column="2" border size="small" class="info-descriptions">
         <el-descriptions-item label="编码">{{ s.format }}</el-descriptions-item>
         <el-descriptions-item label="编码预设">{{ s.format_Profile }}</el-descriptions-item>
         <el-descriptions-item label="码率">{{ s.bitRate == null ? '' : (s.bitRate / 1024 / 1024).toFixed(2) }} Mbps</el-descriptions-item>
@@ -47,6 +50,7 @@
       </el-descriptions>
     </el-card>
 
+    <!-- 音频流 -->
     <el-card v-for="s in info?.audios ?? []" :key="s.index" shadow="never" class="section-card info-card">
       <template #header>
         <div class="section-title">
@@ -54,7 +58,7 @@
           <span>音频流 #{{ s.index }}</span>
         </div>
       </template>
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions :column="2" border size="small" class="info-descriptions">
         <el-descriptions-item label="编码">{{ s.format }}</el-descriptions-item>
         <el-descriptions-item label="码率">{{ (s.bitRate / 1024).toFixed(0) }} Kbps</el-descriptions-item>
         <el-descriptions-item label="声道数">{{ s.channels }}</el-descriptions-item>
@@ -64,6 +68,7 @@
       </el-descriptions>
     </el-card>
 
+    <!-- 字幕 -->
     <el-card v-for="s in info?.texts ?? []" :key="s.index" shadow="never" class="section-card info-card">
       <template #header>
         <div class="section-title">
@@ -71,7 +76,7 @@
           <span>字幕 #{{ s.index }}</span>
         </div>
       </template>
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions :column="2" border size="small" class="info-descriptions">
         <el-descriptions-item label="编码">{{ s.format }}</el-descriptions-item>
         <el-descriptions-item label="语言">{{ s.language }}</el-descriptions-item>
         <el-descriptions-item label="标题">{{ s.title }}</el-descriptions-item>
@@ -79,6 +84,7 @@
       </el-descriptions>
     </el-card>
 
+    <!-- 详细信息 (JSON 树) -->
     <el-card v-if="info?.raw" shadow="never" class="section-card info-card">
       <template #header>
         <div class="section-title">
@@ -97,9 +103,6 @@ import { showError, formatDoubleTimeSpan, showLoading, closeLoading } from '../c
 import * as net from '../net'
 import FileSelect from '../components/FileSelect.vue'
 import JsonTree from '../components/JsonTree.vue'
-import {
-  Search, InfoFilled, VideoCamera, Headset, ChatLineSquare, Document
-} from '@element-plus/icons-vue'
 
 const file = ref('')
 const info = ref<any>(null)
@@ -140,6 +143,20 @@ function query() {
 
 .info-card {
   margin-bottom: 16px;
+}
+
+/* descriptions 微调 */
+.info-descriptions {
+  --el-descriptions-table-border-color: var(--border-color);
+}
+.info-descriptions :deep(.el-descriptions__title) {
+  font-weight: 600;
+}
+.info-descriptions :deep(.el-descriptions__label) {
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-page);
+  white-space: nowrap;
 }
 
 @media (max-width: 640px) {

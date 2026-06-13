@@ -1,102 +1,96 @@
 <template>
   <div class="status-bar" v-if="status != null && status.isProcessing">
-    <div v-if="status.hasDetail">
-      <div v-if="windowWidth > 768">
-        <el-row>
-          <el-col style="width: 108px; height: 64px">
-            <div style="background-color: #7dd07d; width: 100%; height: 100%">
-              <img width="108" height="64" style="cursor: pointer" :src="snapshotSrc" v-show="snapshotSrc !== ''"
-                @click="clickSnapshot" />
+    <div v-if="status.hasDetail" class="bar-inner">
+      <!-- 宽屏：完整布局 -->
+      <template v-if="windowWidth > 768">
+        <div class="bar-snapshot" v-show="snapshotSrc !== ''">
+          <div class="snapshot-placeholder">
+            <img :src="snapshotSrc" @click="clickSnapshot" class="snapshot-img" />
+          </div>
+        </div>
+        <div class="bar-info">
+          <div class="bar-stats">
+            <div class="stat-item">
+              <span class="stat-label">码率</span>
+              <span class="stat-value mono">{{ status.bitrate }}</span>
             </div>
-          </el-col>
-          <el-col style="width: calc(100% - 120px); padding-left: 12px">
-            <el-row>
-              <el-col :span="7">
-                <el-row><b>码率：</b>{{ status.bitrate }}</el-row>
-                <el-row><b>已用：</b>{{ formatDoubleTimeSpan(status.progress.duration) }}</el-row>
-              </el-col>
-              <el-col :span="7">
-                <el-row><b>速度：</b>{{ status.fps }}FPS{{ ' ' }}{{ status.speed }}X</el-row>
-                <el-row><b>剩余：</b>{{ formatDoubleTimeSpan(status.progress.lastTime) }}</el-row>
-              </el-col>
-              <el-col :span="7">
-                <el-row><b>进度：</b>{{ status.frame }}帧 {{ formatDoubleTimeSpan(status.time, true) }}</el-row>
-                <el-row><b>预计：</b>{{ formatDateTime(finishTime(), true, true, false) }}</el-row>
-              </el-col>
-              <el-col :span="3">
-                <el-popconfirm title="真的要取消任务吗？" @confirm="cancel">
-                  <template #reference>
-                    <el-button type="text" style="color: red" size="large">取消</el-button>
-                  </template>
-                </el-popconfirm>
-              </el-col>
-            </el-row>
-            <el-row class="right24">
-              <el-col :span="8" class="one-line"><b>任务：</b>{{ status.isPaused ? '暂停中' : status.progress.name }}</el-col>
-              <el-col :span="16">
-                <el-progress :text-inside="true" :stroke-width="20"
-                  v-if="status.progress.isIndeterminate" :percentage="100"
-                  style="margin-right: 24px; margin-top: 4px" :show-text="true"
-                  :format="() => '进度未知'" />
-                <el-progress :text-inside="true" :stroke-width="20"
-                  :percentage="status.progress.percent * 100"
-                  v-else
-                  style="margin-right: 24px; margin-top: 4px"
-                  :format="(p: number) => p.toFixed(2) + '%'" />
-              </el-col>
-            </el-row>
-          </el-col>
-        </el-row>
-      </div>
-      <div v-else>
-        <el-row>
-          <el-col :span="12">
-            <el-row><b>码率：</b>{{ status.bitrate }}</el-row>
-            <el-row><b>速度：</b>{{ status.fps }}FPS{{ ' ' }}{{ status.speed }}X</el-row>
-            <el-row><b>进度：</b>{{ status.frame }}帧 {{ formatDoubleTimeSpan(status.time, true) }}</el-row>
-          </el-col>
-          <el-col :span="12">
-            <el-row><b>已用：</b>{{ formatDoubleTimeSpan(status.progress.duration) }}</el-row>
-            <el-row><b>剩余：</b>{{ formatDoubleTimeSpan(status.progress.lastTime) }}</el-row>
-            <el-row><b>预计：</b>{{ formatDateTime(finishTime(), true, true, false) }}</el-row>
-          </el-col>
-        </el-row>
-        <el-row class="single-line">
-          <b>任务：</b>{{ status.isPaused ? '暂停中' : status.progress.name }}
-        </el-row>
-        <el-row>
-          <el-col :span="20">
-            <el-progress :text-inside="true" :stroke-width="20"
-              v-if="status.progress.isIndeterminate" :percentage="100"
-              style="margin-right: 24px; margin-top: 4px" :show-text="true"
-              :format="() => '进度未知'" />
-            <el-progress :text-inside="true" :stroke-width="20"
-              v-else :percentage="status.progress.percent * 100"
-              style="margin-top: 10px"
-              :format="(p: number) => p.toFixed(2) + '%'" />
-          </el-col>
-          <el-col :span="4">
+            <div class="stat-item">
+              <span class="stat-label">速度</span>
+              <span class="stat-value mono">{{ status.fps }}FPS {{ status.speed }}X</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">进度</span>
+              <span class="stat-value mono">{{ status.frame }}帧 {{ formatDoubleTimeSpan(status.time, true) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">已用</span>
+              <span class="stat-value mono">{{ formatDoubleTimeSpan(status.progress.duration) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">剩余</span>
+              <span class="stat-value mono">{{ formatDoubleTimeSpan(status.progress.lastTime) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">预计完成</span>
+              <span class="stat-value mono">{{ formatDateTime(finishTime(), true, true, false) }}</span>
+            </div>
+          </div>
+          <div class="bar-progress-row">
+            <span class="bar-task-name one-line">
+              <b>任务：</b>{{ status.isPaused ? '暂停中' : status.progress.name }}
+            </span>
+            <div class="bar-progress-wrap">
+              <el-progress
+                :text-inside="true" :stroke-width="18"
+                :percentage="status.progress.isIndeterminate ? 100 : (status.progress.percent * 100)"
+                :color="status.isPaused ? '#909399' : undefined"
+                :format="status.progress.isIndeterminate ? (() => '进度未知') : ((p: number) => p.toFixed(1) + '%')"
+              />
+            </div>
             <el-popconfirm title="真的要取消任务吗？" @confirm="cancel">
               <template #reference>
-                <el-button style="width: 75%; color: red" type="text" size="large">取消</el-button>
+                <el-button text class="bar-cancel-btn">取消</el-button>
               </template>
             </el-popconfirm>
-          </el-col>
-        </el-row>
+          </div>
+        </div>
+      </template>
+
+      <!-- 窄屏：精简布局 -->
+      <div v-else class="bar-compact">
+        <div class="bar-compact-info">
+          <span class="one-line bar-task-name"><b>任务：</b>{{ status.isPaused ? '暂停中' : status.progress.name }}</span>
+          <span class="mono bar-compact-stats">
+            {{ status.fps }}FPS / {{ formatDoubleTimeSpan(status.time, true) }} / {{ (status.progress.percent * 100).toFixed(1) }}%
+          </span>
+        </div>
+        <div class="bar-compact-progress">
+          <el-progress
+            :text-inside="true" :stroke-width="18"
+            :percentage="status.progress.isIndeterminate ? 100 : (status.progress.percent * 100)"
+            :color="status.isPaused ? '#909399' : undefined"
+            :format="status.progress.isIndeterminate ? (() => '') : undefined"
+            :show-text="false"
+          />
+        </div>
+        <el-popconfirm title="真的要取消任务吗？" @confirm="cancel">
+          <template #reference>
+            <el-button text class="bar-cancel-btn">取消</el-button>
+          </template>
+        </el-popconfirm>
       </div>
     </div>
-    <div v-else style="height: 60px">
-      <el-icon v-if="windowWidth > 988" class="is-loading" style="float: left; font-size: 2em; margin-top: 12px"><Loading /></el-icon>
-      <el-popconfirm title="真的要取消任务吗？" style="float: right; margin-right: 36px; margin-top: 8px" @confirm="cancel">
-        <template #reference>
-          <el-button type="text" style="color: red" size="large">取消</el-button>
-        </template>
-      </el-popconfirm>
-      <div v-if="windowWidth > 988" style="margin-left: 48px; text-align: center; padding-top: 16px">
-        {{ status.lastOutput }}
-      </div>
-      <div v-else style="text-align: center; transform: translate(0, -4px)">
-        {{ status.lastOutput }}
+
+    <!-- 无详细信息（仅输出文本） -->
+    <div v-else class="bar-simple">
+      <div class="bar-simple-inner">
+        <el-icon class="is-loading bar-loading"><Loading /></el-icon>
+        <span class="one-line bar-output">{{ status.lastOutput || '处理中...' }}</span>
+        <el-popconfirm title="真的要取消任务吗？" @confirm="cancel">
+          <template #reference>
+            <el-button text class="bar-cancel-btn">取消</el-button>
+          </template>
+        </el-popconfirm>
       </div>
     </div>
   </div>
@@ -117,10 +111,6 @@ const props = defineProps<{
 const snapshotSrc = ref('')
 const lastSnapshotTime = ref(1e10)
 const lastSnapshotFile = ref('')
-
-const progressColor = computed(() => {
-  return props.status?.isPaused ? '#777777' : '#50a0fc'
-})
 
 function finishTime(): Date {
   return new Date(props.status.progress.finishTime)
@@ -176,13 +166,141 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ==============================================================
+   StatusBar — 融入式底部状态栏
+   ============================================================== */
 .status-bar {
-  background-color: lightgreen;
-  padding-left: 24px;
-  padding-top: 12px;
-  padding-bottom: 8px;
-  margin-left: -30px;
-  margin-right: -30px;
-  margin-top: -12px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.bar-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 8px 16px;
+}
+
+/* 缩略图 */
+.bar-snapshot {
+  flex-shrink: 0;
+  width: 120px;
+}
+.snapshot-placeholder {
+  width: 120px;
+  height: 68px;
+  background: var(--border-color-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.snapshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+.snapshot-img:hover {
+  transform: scale(1.05);
+}
+
+/* 统计信息区 */
+.bar-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bar-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+}
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stat-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.stat-value {
+  color: var(--text-primary);
+}
+
+/* 进度条行 */
+.bar-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bar-task-name {
+  flex-shrink: 0;
+  max-width: 200px;
+  font-size: 12px;
+  color: var(--text-regular);
+}
+.bar-progress-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 取消按钮 */
+.bar-cancel-btn {
+  flex-shrink: 0;
+  color: var(--el-color-danger);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.bar-cancel-btn:hover {
+  background: rgba(245, 108, 108, 0.1);
+  border-radius: var(--radius-xs);
+}
+
+/* ---- 精简模式 ---- */
+.bar-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+.bar-compact-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bar-compact-stats {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.bar-compact-progress {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* ---- 简单模式（无进度详情） ---- */
+.bar-simple {
+  padding: 4px 16px;
+}
+.bar-simple-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bar-loading {
+  font-size: 18px;
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+}
+.bar-output {
+  flex: 1;
+  color: var(--text-regular);
+  font-size: 12px;
 }
 </style>

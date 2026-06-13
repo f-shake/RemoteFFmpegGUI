@@ -1,12 +1,20 @@
+/* ==============================================================
+   AddCommon.css — 所有添加任务页面的共享样式
+   ============================================================== */
 .add-task-page {
   max-width: 960px;
   margin: 0 auto;
   padding: 16px 16px 0;
+  min-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
 }
 
 .section-card {
   margin-bottom: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .section-title {
@@ -15,6 +23,19 @@
   gap: 8px;
   font-weight: 600;
   font-size: 15px;
+  color: var(--text-primary);
+}
+
+.section-title .el-icon {
+  color: var(--el-color-primary);
+}
+
+/* 表单内联调整 */
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {
@@ -23,11 +44,11 @@
   }
   .section-card {
     border: none;
-    border-radius: 0;
+    border-radius: 0 !important;
     margin-bottom: 0;
     box-shadow: none;
   }
   .section-card + .section-card {
-    border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+    border-top: 1px solid var(--border-color);
   }
 }

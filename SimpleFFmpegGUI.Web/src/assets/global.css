@@ -1,7 +1,151 @@
+/* ============================================================
+   RemoteFFmpegGUI — 全局设计系统
+   ============================================================ */
+
+/* ---------- CSS Custom Properties (Design Tokens) ---------- */
+:root {
+  /* 品牌色 */
+  --brand-hue: 210;
+
+  /* 背景层级 */
+  --bg-page: #f5f7fa;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-tooltip: #303133;
+
+  /* 文字色阶 */
+  --text-primary: #1d2129;
+  --text-regular: #4e5969;
+  --text-secondary: #86909c;
+  --text-disabled: #c9cdd4;
+  --text-placeholder: #a9aeb8;
+
+  /* 边框 */
+  --border-color: #e5e6eb;
+  --border-color-light: #f2f3f5;
+
+  /* 阴影层级 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.12);
+
+  /* 圆角 */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 999px;
+
+  /* 间距 (基于 4px 的 scale) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 字体 */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+
+  /* 字号阶 */
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 20px;
+  --fs-3xl: 24px;
+  --fs-4xl: 28px;
+
+  /* 行高 */
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.7;
+
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.35s ease;
+}
+
+/* ---------- 暗色模式 ---------- */
+html.dark {
+  --bg-page: #121212;
+  --bg-card: #1e1e2e;
+  --bg-elevated: #252538;
+  --bg-tooltip: #363650;
+
+  --text-primary: #e5e6eb;
+  --text-regular: #c9cdd4;
+  --text-secondary: #86909c;
+  --text-disabled: #4e5969;
+  --text-placeholder: #6b7785;
+
+  --border-color: #2a2a3e;
+  --border-color-light: #1e1e32;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Element Plus 变量覆盖 ---------- */
+:root {
+  --el-color-primary: #3370ff;
+  --el-color-primary-light-3: #6090ff;
+  --el-color-primary-light-5: #8aadff;
+  --el-color-primary-light-7: #b8ccff;
+  --el-color-primary-light-8: #d0ddff;
+  --el-color-primary-light-9: #e8eeff;
+  --el-color-primary-dark-2: #295acc;
+
+  --el-border-radius-base: var(--radius-sm);
+  --el-border-radius-small: var(--radius-xs);
+  --el-border-radius-round: var(--radius-round);
+
+  --el-font-size-base: 14px;
+  --el-font-size-small: 12px;
+  --el-font-size-large: 16px;
+  --el-font-family: var(--font-family);
+}
+
+html.dark {
+  --el-bg-color: var(--bg-page);
+  --el-bg-color-overlay: var(--bg-elevated);
+  --el-fill-color: var(--bg-card);
+  --el-fill-color-light: #252538;
+  --el-fill-color-lighter: #1e1e2e;
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-regular);
+  --el-text-color-secondary: var(--text-secondary);
+  --el-text-color-placeholder: var(--text-placeholder);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color-light);
+  --el-border-color-lighter: var(--border-color-light);
+  --el-border-color-extra-light: var(--border-color-light);
+}
+
+/* ---------- 基础重置 ---------- */
 html, body {
   height: 100%;
   margin: 0;
   overflow-x: hidden;
+  font-family: var(--font-family);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--text-regular);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
@@ -9,19 +153,29 @@ html, body {
   overflow-x: hidden;
 }
 
-/* 暗色模式 */
-html.dark {
-  --app-bg: #1a1a2e;
-  --app-text: #e0e0e0;
-  --app-header-bg: #16213e;
-  --app-sidebar-bg: #0f3460;
+/* ---------- 滚动条美化 ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
-body {
-  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+/* ---------- 选中颜色 ---------- */
+::selection {
+  background: var(--el-color-primary-light-7);
+  color: var(--text-primary);
 }
 
-/* 边距工具类 */
+/* ---------- 间距工具类 ---------- */
 .right24 { margin-right: 24px; }
 .right12 { margin-right: 12px; }
 .right8 { margin-right: 8px; }
@@ -31,7 +185,7 @@ body {
 .top12 { margin-top: 12px; }
 .bottom12 { margin-bottom: 12px; }
 
-/* 宽度工具类 */
+/* ---------- 宽度工具类 ---------- */
 .width240 { width: 240px; }
 .width160 { width: 160px; }
 .width120 { width: 120px; }
@@ -42,24 +196,163 @@ body {
   .width120 { width: 100%; max-width: 120px; }
 }
 
-/* 单行省略 */
+/* ---------- 文字工具类 ---------- */
 .single-line, .one-line {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* 灰色文字 */
-.gray { color: #999; }
-
-/* 预格式化换行 */
+.gray { color: var(--text-secondary); }
 .pre-wrap { white-space: pre-wrap; }
+.mono { font-family: var(--font-mono); }
 
-/* El-slider 刻度文字 */
+/* ---------- Element Plus 全局微调 ---------- */
+.el-main { padding: 0; }
 .el-slider__marks-text { white-space: nowrap; }
-
-/* 抽屉 header 高度 */
 .el-drawer__header { height: 18px; }
 
-/* 主内容区无内边距，由各页面自行控制 */
-.el-main { padding: 0; }
+/* 卡片圆角统一 */
+.el-card {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+.el-card.is-hover-shadow:hover {
+  box-shadow: var(--shadow-md) !important;
+  border-color: var(--el-color-primary-light-5) !important;
+}
+
+/* 按钮微调 */
+.el-button {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+.el-button:active {
+  transform: scale(0.97);
+}
+.el-button--primary:not(.is-disabled):hover {
+  box-shadow: 0 4px 12px rgba(51, 112, 255, 0.3);
+}
+.el-button--danger:not(.is-disabled):hover {
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
+}
+.el-button--success:not(.is-disabled):hover {
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+}
+.el-button--warning:not(.is-disabled):hover {
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
+}
+
+/* 表格微调 */
+.el-table {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.el-table thead th {
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+}
+.el-table__body tr:hover > td {
+  background-color: var(--el-color-primary-light-9) !important;
+}
+html.dark .el-table__body tr:hover > td {
+  background-color: rgba(51, 112, 255, 0.08) !important;
+}
+
+/* 输入框微调 */
+.el-input__wrapper {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+  transition: box-shadow var(--transition-fast);
+}
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--el-color-primary-light-5) inset !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--el-color-primary) inset !important;
+}
+
+/* select 微调 */
+.el-select .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--border-color) inset !important;
+}
+
+/* switch 微调 */
+.el-switch__core {
+  border-radius: 10px;
+}
+
+/* tag 微调 */
+.el-tag {
+  border-radius: var(--radius-xs);
+  border: none;
+}
+
+/* dialog/抽屉 */
+.el-dialog {
+  border-radius: var(--radius-lg);
+}
+.el-dialog__header {
+  padding: 20px 20px 0;
+}
+.el-dialog__body {
+  padding: 20px;
+}
+.el-dialog__footer {
+  padding: 0 20px 20px;
+}
+
+/* tooltip */
+.el-tooltip__popper {
+  border-radius: var(--radius-sm);
+}
+
+/* dropdown */
+.el-dropdown-menu__item {
+  font-size: var(--fs-sm);
+}
+
+/* collapse — 用于 JsonTree */
+.el-collapse-item__header {
+  font-weight: 500;
+}
+
+/* ---------- 全局页面过渡 ---------- */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-normal);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-fade-enter-active {
+  transition: all var(--transition-slow);
+}
+.slide-fade-leave-active {
+  transition: all var(--transition-normal);
+}
+.slide-fade-enter-from {
+  transform: translateY(12px);
+  opacity: 0;
+}
+.slide-fade-leave-to {
+  transform: translateY(-12px);
+  opacity: 0;
+}
+
+/* ---------- 骨架屏闪烁 ---------- */
+@keyframes skeleton-loading {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+.skeleton {
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--border-color) 25%, var(--border-color-light) 50%, var(--border-color) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-xs);
+}

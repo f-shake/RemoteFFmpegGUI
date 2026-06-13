@@ -17,13 +17,24 @@
   .page-container, .page-container-wide {
     padding: 0;
   }
-  .page-card {
-    border: none;
-    border-radius: 0;
-    margin-bottom: 0;
-    box-shadow: none;
+
+  /* 列表类页面留点左右空 */
+  .page-container-wide {
+    padding: 0 12px;
   }
-  .page-card + .page-card {
-    border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+
+  /* 手机上所有卡片扁平化：无边框、无圆角、无阴影 */
+  .page-container .el-card,
+  .page-container-wide .el-card,
+  .welcome .el-card {
+    border: none !important;
+    border-radius: 0 !important;
+    margin-bottom: 0;
+    box-shadow: none !important;
+  }
+  .page-container .el-card + .el-card,
+  .page-container-wide .el-card + .el-card,
+  .welcome .el-card + .el-card {
+    border-top: 1px solid var(--el-border-color-light, #e4e7ed) !important;
   }
 }

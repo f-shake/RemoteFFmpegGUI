@@ -152,7 +152,16 @@ export function getUploadUrl(): string {
 }
 
 export function download(name: string): void {
-  window.open(getUrl(`File/Download/${encodeURI(name)}`))
+  axios.get(getUrl(`File/Download/${encodeURI(name)}`), {
+    responseType: 'blob',
+    headers: getHeader()
+  }).then((r) => {
+    const blob = new Blob([r.data])
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = name
+    link.click()
+  }).catch(() => {})
 }
 
 export function getDirs(): Promise<AxiosResponse<any>> {

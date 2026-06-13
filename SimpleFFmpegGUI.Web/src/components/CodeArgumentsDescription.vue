@@ -42,7 +42,7 @@
         <a v-if="args.concat.type === 1">使用concat格式</a>
       </el-descriptions-item>
     </el-descriptions>
-    <el-descriptions title="其他参数" v-if="type === 0 || type === 1 || type === 3">
+    <el-descriptions title="其他参数" v-if="type === 0 || type === 1 || type === 99">
       <el-descriptions-item label="参数">{{ args.extra || '未定义' }}</el-descriptions-item>
       <el-descriptions-item label="同步文件时间">{{ args.processedOptions?.syncModifiedTime ? '是' : '否' }}</el-descriptions-item>
       <el-descriptions-item label="完成后删除输入文件">{{ args.processedOptions?.deleteInputFiles ? '是' : '否' }}</el-descriptions-item>

@@ -27,7 +27,6 @@ import { showError, showSuccess, loadArgs } from '../../common'
 import * as net from '../../net'
 import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
 import FileSelect from '../../components/FileSelect.vue'
-import { FolderOpened } from '@element-plus/icons-vue'
 
 const video1 = ref('')
 const video2 = ref('')

@@ -31,7 +31,6 @@ import * as net from '../../net'
 import CodeArguments from '../../components/CodeArguments.vue'
 import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
 import FileIOGroup from '../../components/FileIOGroup.vue'
-import { FolderOpened, Setting } from '@element-plus/icons-vue'
 
 const io = ref<any>(null)
 const args = ref<any>(null)

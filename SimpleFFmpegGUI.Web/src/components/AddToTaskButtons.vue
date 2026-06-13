@@ -22,12 +22,18 @@ function add(start: boolean) {
   position: sticky;
   bottom: 0;
   z-index: 1100;
-  background-color: white;
+  background-color: var(--bg-card);
   padding: 16px 0;
-  border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
 }
-html.dark .out { background-color: #1a1a2e; }
-.in { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.in {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-right: 8px;
+}
 
 .action-btn {
   min-width: 160px;
@@ -42,8 +48,16 @@ html.dark .out { background-color: #1a1a2e; }
 }
 
 @media (max-width: 640px) {
-  .out { padding: 12px 12px; }
-  .in { flex-wrap: wrap; gap: 8px; }
-  .action-btn { flex: 1; min-width: 0; }
+  .out {
+    padding: 12px 12px;
+  }
+  .in {
+    gap: 8px;
+    padding-right: 0;
+  }
+  .action-btn {
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

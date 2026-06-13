@@ -26,7 +26,7 @@ const router = createRouter({
     { path: '/add/' + TaskType.GetByID(0).Route, name: TaskType.GetByID(0).Name, component: Code },
     { path: '/add/' + TaskType.GetByID(1).Route, name: TaskType.GetByID(1).Name, component: Combine },
     { path: '/add/' + TaskType.GetByID(2).Route, name: TaskType.GetByID(2).Name, component: Compare },
-    { path: '/add/' + TaskType.GetByID(3).Route, name: TaskType.GetByID(3).Name, component: Custom },
+    { path: '/add/' + TaskType.GetByID(99).Route, name: TaskType.GetByID(99).Name, component: Custom },
     { path: '/add/' + TaskType.GetByID(4).Route, name: TaskType.GetByID(4).Name, component: Concat },
     { path: '/password', name: 'Password', component: Tasks },
     {

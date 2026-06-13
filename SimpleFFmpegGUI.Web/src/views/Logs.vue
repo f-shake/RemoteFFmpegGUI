@@ -1,51 +1,64 @@
 <template>
-  <div class="page-container-wide">
-    <div>
-      <a class="right24">时间范围：</a>
-      <el-date-picker @change="fillData" v-model="timeRange" type="datetimerange" range-separator="至"
-        start-placeholder="开始日期" end-placeholder="结束日期" align="right" />
-    </div>
-    <div class="gray top12" v-if="taskName">任务：{{ taskName }}</div>
-    <el-table ref="table" :data="list" size="small">
-      <el-table-column type="expand">
-        <template #default="props">
-          <div class="pre-wrap">{{ props.row.message }}</div>
-        </template>
-      </el-table-column>
-      <el-table-column prop="timeText" label="时间" width="180" />
-      <el-table-column label="类型" width="80">
-        <template #default="scope">
-          <span v-if="scope.row.type === 'E'" style="color: red">错误</span>
-          <span style="color: orange" v-if="scope.row.type === 'W'">警告</span>
-          <span v-if="scope.row.type === 'I'">信息</span>
-          <span style="color: gray" v-if="scope.row.type === 'O'">输出</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="信息" min-width="180">
-        <template #default="scope">
-          <div class="single-line">{{ scope.row.message }}</div>
-        </template>
-      </el-table-column>
-      <el-table-column align="right">
-        <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
-      </el-table-column>
-    </el-table>
-    <div>
-      <div class="top12">
-        <el-pagination
-          style="float: left" @size-change="fillData" @current-change="fillData"
-          layout="sizes,prev, pager, next"
-          :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
-          v-model:page-size="countPerPage" v-model:current-page="page" :total="totalCount"
+  <div class="page-container-wide logs-page">
+    <!-- 过滤栏 -->
+    <div class="logs-filter">
+      <div class="filter-left">
+        <span class="filter-label">时间范围：</span>
+        <el-date-picker
+          @change="fillData" v-model="timeRange" type="datetimerange"
+          range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
+          align="right" class="filter-date"
         />
-        <el-radio-group v-model="typeFilter" size="mini" @change="fillData" style="float: right">
-          <el-radio-button :label="null"><b>全部</b></el-radio-button>
-          <el-radio-button label="E">错误</el-radio-button>
-          <el-radio-button label="W">警告</el-radio-button>
-          <el-radio-button label="I">信息</el-radio-button>
-          <el-radio-button label="O">输出</el-radio-button>
+      </div>
+      <div class="filter-right">
+        <el-radio-group v-model="typeFilter" @change="fillData">
+          <el-radio-button :value="null"><b>全部</b></el-radio-button>
+          <el-radio-button value="E">错误</el-radio-button>
+          <el-radio-button value="W">警告</el-radio-button>
+          <el-radio-button value="I">信息</el-radio-button>
+          <el-radio-button value="O">输出</el-radio-button>
         </el-radio-group>
       </div>
+    </div>
+    <div class="gray top12" v-if="taskName">任务：{{ taskName }}</div>
+
+    <!-- 日志表格 -->
+    <el-card shadow="never" class="table-card top12">
+      <el-table ref="table" :data="list" size="small">
+        <el-table-column type="expand">
+          <template #default="props">
+            <div class="expand-message">{{ props.row.message }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="timeText" label="时间" width="160" />
+        <el-table-column label="类型" width="70">
+          <template #default="scope">
+            <el-tag v-if="scope.row.type === 'E'" type="danger" size="small" effect="plain">错误</el-tag>
+            <el-tag v-if="scope.row.type === 'W'" type="warning" size="small" effect="plain">警告</el-tag>
+            <el-tag v-if="scope.row.type === 'I'" type="primary" size="small" effect="plain">信息</el-tag>
+            <el-tag v-if="scope.row.type === 'O'" type="info" size="small" effect="plain">输出</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="信息" min-width="200">
+          <template #default="scope">
+            <div class="single-line">{{ scope.row.message }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column align="right">
+          <template #header><el-button type="link" @click="fillData">刷新</el-button></template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 分页 -->
+    <div class="logs-pagination">
+      <el-pagination
+        @size-change="fillData" @current-change="fillData"
+        layout="sizes, prev, pager, next"
+        :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
+        v-model:page-size="countPerPage" v-model:current-page="page"
+        :total="totalCount" background
+      />
     </div>
   </div>
 </template>
@@ -103,6 +116,73 @@ onMounted(() => {
 
 <style scoped>
 @import '../assets/page.css';
-.el-table .cell { white-space: pre-line; word-wrap: break-word; }
-.cell .el-button { margin-right: 6px; }
+
+.logs-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.filter-date {
+  max-width: 360px;
+}
+
+.table-card {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden;
+}
+
+.expand-message {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: var(--lh-relaxed);
+  color: var(--text-regular);
+  background: var(--bg-page);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.logs-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .logs-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-date {
+    width: 100%;
+    max-width: 100%;
+  }
+  .logs-page :deep(.filter-date .el-range-editor) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .logs-page :deep(.filter-date .el-range-input) {
+    min-width: 0 !important;
+    width: 0 !important;
+    flex: 1 1 0 !important;
+  }
+}
 </style>

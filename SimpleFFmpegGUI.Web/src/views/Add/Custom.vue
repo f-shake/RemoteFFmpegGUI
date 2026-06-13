@@ -7,7 +7,7 @@
           <span>参数</span>
         </div>
       </template>
-      <CodeArguments ref="args" :type="3" />
+      <CodeArguments ref="args" :type="99" />
     </el-card>
 
     <AddToTaskButtons :addFunc="addTask" />
@@ -20,7 +20,6 @@ import { showError, showSuccess, loadArgs } from '../../common'
 import * as net from '../../net'
 import CodeArguments from '../../components/CodeArguments.vue'
 import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
-import { Setting } from '@element-plus/icons-vue'
 
 const args = ref<any>(null)
 

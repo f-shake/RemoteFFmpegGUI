@@ -152,10 +152,11 @@ export class TaskType {
     new TaskType(0, 'Transcode', 'Transcode', '转码'),
     new TaskType(1, 'Mux', 'Mux', '合并音视频'),
     new TaskType(2, 'QualityCheck', 'QualityCheck', '视频对比'),
-    new TaskType(3, 'Custom', 'Custom', '自定义'),
     new TaskType(4, 'Concat', 'Concat', '拼接'),
-    new TaskType(99, 'Custom', 'Custom', '自定义'), // 后端枚举值
+    new TaskType(99, 'Custom', 'Custom', '自定义'),
   ]
+  /** 仅含前端有路由的类型，用于导航栏 */
+  public static NavTypes = TaskType.Types
   public static GetByID(id: number): TaskType {
     const types = this.Types.filter(p => p.Id === id)
     if (types.length === 0) {

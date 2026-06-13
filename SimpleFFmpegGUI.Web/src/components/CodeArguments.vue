@@ -1,5 +1,5 @@
 <template>
-  <el-form :label-width="labelWidth" class="code-args-form">
+  <el-form :label-width="labelWidth" :label-position="labelPosition" class="code-args-form">
     <h3 v-if="showPresets">预设</h3>
     <div v-if="showPresets">
       <el-form-item label="选择和更新">
@@ -87,7 +87,7 @@
             <el-switch v-model="code.video.enableFps" />
             <div v-show="code.video.enableFps" class="flex-row flex-wrap">
               <el-input-number v-model="code.video.fps" :precision="3" :min="1" :max="120" class="fps-input" />
-              <el-button type="text" @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
+              <el-button type="link" @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
             </div>
           </div>
         </el-form-item>
@@ -96,7 +96,7 @@
             <el-switch v-model="code.video.enableSize" />
             <div v-show="code.video.enableSize" class="flex-row flex-wrap">
               <el-input class="size-input" placeholder="示例：640:480" v-model="code.video.size" />
-              <el-button v-for="(v, k) in sizes" :key="k" type="text" @click="code.video.size = v">{{ k }}</el-button>
+              <el-button v-for="(v, k) in sizes" :key="k" type="link" @click="code.video.size = v">{{ k }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -105,7 +105,7 @@
             <el-switch v-model="code.video.enableAspectRatio" />
             <div v-show="code.video.enableAspectRatio" class="flex-row flex-wrap">
               <el-input class="size-input" placeholder="示例：4:3" v-model="code.video.aspectRatio" />
-              <el-button v-for="i in aspectRatios" :key="i" type="text" @click="code.video.aspectRatio = i">{{ i }}</el-button>
+              <el-button v-for="i in aspectRatios" :key="i" type="link" @click="code.video.aspectRatio = i">{{ i }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -114,7 +114,7 @@
             <el-switch v-model="code.video.enablePixelFormat" />
             <div v-show="code.video.enablePixelFormat" class="flex-row flex-wrap">
               <el-input class="size-input" v-model="code.video.pixelFormat" />
-              <el-button v-for="p in pixelFormats" :key="p" type="text" @click="code.video.pixelFormat = p">{{ p }}</el-button>
+              <el-button v-for="p in pixelFormats" :key="p" type="link" @click="code.video.pixelFormat = p">{{ p }}</el-button>
             </div>
           </div>
         </el-form-item>
@@ -151,7 +151,7 @@
       </div>
     </div>
     <div>
-      <h3>{{ type === 3 ? '参数' : '其他参数' }}</h3>
+      <h3>{{ type === 99 ? '参数' : '其他参数' }}</h3>
       <el-form-item label="额外参数">
         <el-input v-model="code.extra" type="textarea" autosize spellcheck="false" autocorrect="off"
           placeholder="请输入ffmpeg的输出参数" />
@@ -231,8 +231,17 @@ const showFormats = computed(() => [0, 1, 2, 4].includes(props.type))
 const showVideosAndAudios = computed(() => [0].includes(props.type))
 
 const labelWidth = ref('100px')
+const labelPosition = ref<'top' | 'left' | 'right'>('right')
 onMounted(() => {
-  function updateWidth() { labelWidth.value = window.innerWidth < 640 ? '80px' : '100px' }
+  function updateWidth() {
+    if (window.innerWidth < 640) {
+      labelPosition.value = 'top'
+      labelWidth.value = '100%'
+    } else {
+      labelPosition.value = 'right'
+      labelWidth.value = '100px'
+    }
+  }
   updateWidth()
   window.addEventListener('resize', updateWidth)
 })
@@ -389,7 +398,7 @@ div[role="slider"] { min-width: 200px; max-width: 400px; }
 .switch-slider-row .el-slider {
   flex: 1;
 }
-.preset-select { min-width: 200px; }
+.preset-select { min-width: 200px; flex: 1; }
 .preset-name-input { width: 180px; }
 .format-select { min-width: 160px; }
 .fps-input { width: 100px; }
@@ -415,13 +424,18 @@ div[role="slider"] { min-width: 200px; max-width: 400px; }
   .code-args-form .el-slider { width: 100% !important; min-width: 0 !important; }
   .code-args-form .el-input-number, .code-args-form .el-select { min-width: 0 !important; }
   .code-args-form .el-slider .el-input-number { width: 130px !important; }
-  .code-args-form .el-slider .el-slider__runway { display: none !important; }
   .code-args-form .el-slider .el-slider__input { margin-left: 0 !important; }
   .code-args-form .switch-slider-row .el-slider { min-width: 0 !important; width: auto !important; flex: none !important; }
   .code-args-form .el-input, .code-args-form .el-textarea { width: 100% !important; }
   .size-input { width: 100% !important; }
   .fps-input { width: 100% !important; }
-  .preset-name-input { width: 100% !important; }
+
+  /* 预设行：select 和按钮保持同行，左右分布 */
+  .code-args-form .flex-row { width: 100%; }
+  .code-args-form .preset-select { flex: 1; min-width: 80px !important; }
+  .code-args-form .preset-name-input { flex: 1; min-width: 80px !important; }
+
+  /* 隐藏预设文字按钮节省空间 */
   .code-args-form .el-form-item .el-button--text { display: none; }
 }
 .code-args-form .el-form-item { margin-bottom: 20px !important; }
