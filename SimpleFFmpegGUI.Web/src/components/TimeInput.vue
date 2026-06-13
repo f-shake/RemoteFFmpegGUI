@@ -11,8 +11,8 @@
           <template #prepend>{{ label }}</template>
         </el-input>
       </el-col>
-      <el-col :span="1">
-        <el-checkbox style="margin-top: 15px" v-model="isEnabled" />
+      <el-col :span="1" class="checkbox-col">
+        <el-checkbox v-model="isEnabled" />
       </el-col>
       <el-col :xs="22" :sm="22" :md="10" class="top12 left12">
         <el-input-number
@@ -114,7 +114,12 @@ function parseTime() {
 </script>
 
 <style scoped>
-.time { width: 72px; }
-.time-colon { margin-left: 6px; margin-right: 6px; }
+.time { width: 60px; }
+.time-colon { margin-left: 4px; margin-right: 4px; }
 .time-text { max-width: 320px; }
+.checkbox-col { padding-top: 10px; }
+@media (max-width: 480px) {
+  .time { width: 48px; }
+  :deep(.el-input-number .el-input__inner) { padding: 0 4px; text-align: center; }
+}
 </style>

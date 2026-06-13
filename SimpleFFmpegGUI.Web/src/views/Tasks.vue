@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-container-wide">
     <div>
       <span style="float: right">
         <a class="right12" v-if="!isProcessing && hasSchedule">已计划开始时间</a>
@@ -253,6 +253,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '../assets/page.css';
 .el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
 .ellipsis-text {

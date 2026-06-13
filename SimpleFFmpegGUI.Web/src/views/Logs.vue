@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-container-wide">
     <div>
       <a class="right24">时间范围：</a>
       <el-date-picker @change="fillData" v-model="timeRange" type="datetimerange" range-separator="至"
@@ -102,6 +102,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '../assets/page.css';
 .el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
 </style>

@@ -1,11 +1,25 @@
 <template>
-  <div>
-    <el-form label-width="100px">
-      <h2>输入和输出</h2>
+  <div class="add-task-page">
+    <el-card shadow="never" class="section-card">
+      <template #header>
+        <div class="section-title">
+          <el-icon><FolderOpened /></el-icon>
+          <span>输入和输出</span>
+        </div>
+      </template>
       <FileIOGroup :inputs="files" :output="output" :min="2" ref="io" :showClip="false" :singleOutput="true" />
-      <h2>参数</h2>
-    </el-form>
-    <CodeArguments ref="args" :type="4" />
+    </el-card>
+
+    <el-card shadow="never" class="section-card">
+      <template #header>
+        <div class="section-title">
+          <el-icon><Setting /></el-icon>
+          <span>参数</span>
+        </div>
+      </template>
+      <CodeArguments ref="args" :type="4" />
+    </el-card>
+
     <AddToTaskButtons :addFunc="addTask" />
   </div>
 </template>
@@ -17,6 +31,7 @@ import * as net from '../../net'
 import CodeArguments from '../../components/CodeArguments.vue'
 import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
 import FileIOGroup from '../../components/FileIOGroup.vue'
+import { FolderOpened, Setting } from '@element-plus/icons-vue'
 
 const io = ref<any>(null)
 const args = ref<any>(null)
@@ -58,6 +73,6 @@ onMounted(() => {
 })
 </script>
 
-<style>
-.el-collapse-item__header { height: 32px !important; }
+<style scoped>
+@import './AddCommon.css';
 </style>

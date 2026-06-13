@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-container-wide">
     <el-button style="float: right" class="right12" @click="exportPresets">导出</el-button>
     <el-upload
       style="float: right"
@@ -9,7 +9,7 @@
       :on-success="fillData"
       accept="application/json"
     >
-      <el-button size="small">导入</el-button>
+      <el-button>导入</el-button>
     </el-upload>
     <el-table ref="table" :data="list">
       <el-table-column type="expand">
@@ -62,7 +62,7 @@ function getHeader() { return net.getHeader() }
 function getImportPresetsUrl() { return net.getImportPresetsUrl() }
 
 function remake(item: any) {
-  jumpByArgs(item.arguments, item.inputs, item.output, item.type)
+  jumpByArgs(item.parameters ?? item.arguments, item.inputs, item.output, item.type)
 }
 
 function savePreset() {
@@ -112,6 +112,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '../assets/page.css';
 .el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
 </style>

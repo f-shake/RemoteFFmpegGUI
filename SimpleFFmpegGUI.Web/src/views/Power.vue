@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-container">
     <div class="top24">
       <h2>立即关机</h2>
       <el-popconfirm title="是否立即关机？" @confirm="shutdown" class="right12">
@@ -107,3 +107,7 @@ onMounted(() => {
   setInterval(loadCpuCoreUsage, 5000)
 })
 </script>
+
+<style scoped>
+@import '../assets/page.css';
+</style>

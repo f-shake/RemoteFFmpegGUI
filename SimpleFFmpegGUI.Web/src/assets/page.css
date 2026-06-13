@@ -1,0 +1,29 @@
+.page-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+
+.page-container-wide {
+  padding: 16px 16px 0;
+}
+
+.page-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+@media (max-width: 640px) {
+  .page-container, .page-container-wide {
+    padding: 0;
+  }
+  .page-card {
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    box-shadow: none;
+  }
+  .page-card + .page-card {
+    border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+  }
+}

@@ -1,38 +1,36 @@
 <template>
   <el-container style="height: 100%">
-    <el-header class="header one-line" style="height: auto; padding-left: 28px; padding-top: 8px">
-      <div>
-        <h2 style="display: inline-block; margin-top: 8px; margin-bottom: 8px">
-          远程FFmpeg工具箱
-        </h2>
-        <a
-          v-if="netError"
-          style="color: red; display: inline-block; float: right; margin-top: 18px; font-size: 12px"
-        >获取状态失败</a>
-        <el-button
-          style="display: inline-block; float: right; margin-top: 12px"
-          text
-          v-show="logged"
-          @click="logout"
-        >已登录</el-button>
-        <el-switch
-          style="display: inline-block; float: right; margin-top: 14px; margin-right: 12px"
-          v-model="isDark"
-          active-icon="Moon"
-          inactive-icon="Sunny"
-          @change="toggleDark"
-          size="small"
-        />
+    <el-header class="app-header">
+      <div class="header-inner">
+        <div class="header-left">
+          <el-icon :size="24" color="var(--el-color-primary)"><VideoCamera /></el-icon>
+          <h2 class="header-title">远程 FFmpeg 工具箱</h2>
+        </div>
+        <div class="header-right">
+          <a v-if="netError" class="header-error">获取状态失败</a>
+          <el-button text v-show="logged" @click="logout">已登录</el-button>
+          <el-dropdown @command="setTheme" size="small">
+            <el-button text size="small">
+              <el-icon><Monitor v-if="themeMode === 'auto'" /><Sunny v-else-if="themeMode === 'light'" /><Moon v-else /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="auto" :class="{ active: themeMode === 'auto' }">
+                  <el-icon><Monitor /></el-icon> 跟随系统
+                </el-dropdown-item>
+                <el-dropdown-item command="light" :class="{ active: themeMode === 'light' }">
+                  <el-icon><Sunny /></el-icon> 亮色
+                </el-dropdown-item>
+                <el-dropdown-item command="dark" :class="{ active: themeMode === 'dark' }">
+                  <el-icon><Moon /></el-icon> 暗色
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
     </el-header>
-    <el-container
-      class="center"
-      :style="{
-        height: 'calc(100% - ' + (headerHeight + footerHeight) + 'px)',
-        marginBottom: status == null || status.isProcessing == false ? '0' : '12px',
-        paddingBottom: status == null || status.isProcessing == false ? '0' : '8px'
-      }"
-    >
+    <el-container class="center" style="overflow: auto">
       <el-aside class="app-aside" :class="{ collapsed: menuCollapse }" v-if="route.path != '/login'">
         <el-menu router :default-active="route.path" :collapse="menuCollapse" :collapse-transition="false">
           <el-menu-item index="/">
@@ -85,8 +83,9 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
-  Fold, Expand, HomeFilled, DocumentAdd, CirclePlus,
-  Search, Document, CopyDocument, FolderOpened, Setting, TakeawayBox
+  Fold, Expand, HomeFilled, DocumentAdd, CirclePlus, VideoCamera,
+  Search, Document, CopyDocument, FolderOpened, Setting, TakeawayBox,
+  Monitor, Sunny, Moon
 } from '@element-plus/icons-vue'
 import Cookies from 'js-cookie'
 import { jump, showError, TaskType, loadDirs } from './common'
@@ -109,19 +108,33 @@ const status = ref<any>(null)
 const netError = ref(false)
 const menuCollapse = ref(false)
 const windowWidth = ref(0)
-const headerHeight = ref(0)
-const footerHeight = ref(0)
 const logged = ref(false)
-const isDark = ref(localStorage.getItem('theme') === 'dark')
+const themeMode = ref(localStorage.getItem('theme') || 'auto')
 
-function toggleDark(val: boolean) {
-  document.documentElement.classList.toggle('dark', val)
-  localStorage.setItem('theme', val ? 'dark' : 'light')
+function applyTheme(mode: string) {
+  if (mode === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else if (mode === 'light') {
+    document.documentElement.classList.remove('dark')
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', prefersDark)
+  }
 }
 
-if (isDark.value) {
-  document.documentElement.classList.add('dark')
+function setTheme(mode: string) {
+  themeMode.value = mode
+  localStorage.setItem('theme', mode)
+  applyTheme(mode)
 }
+
+applyTheme(themeMode.value)
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (themeMode.value === 'auto') {
+    applyTheme('auto')
+  }
+})
 
 watch(
   () => route.path,
@@ -157,10 +170,6 @@ getStatus()
 window.addEventListener('resize', resizeMenu)
 
 function resizeMenu() {
-  const header = document.getElementsByClassName('header')[0]
-  const footer = document.getElementsByClassName('footer')[0]
-  headerHeight.value = header?.scrollHeight ?? 0
-  footerHeight.value = footer?.scrollHeight ?? 0
   windowWidth.value = window.innerWidth
   menuCollapse.value = window.innerWidth < 500
 }
@@ -192,16 +201,48 @@ function getStatus() {
 </script>
 
 <style scoped>
-.header {
-  margin-left: -12px;
-  margin-right: -12px;
-  margin-top: -12px;
-  background: #ebeef5;
-  color: #606266;
+.app-header {
+  height: 52px !important;
+  padding: 0 24px !important;
+  background: #fff;
+  border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
-html.dark .header {
+html.dark .app-header {
   background: #1a1a2e;
-  color: #e0e0e0;
+  border-bottom-color: #2a2a3e;
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  color: var(--el-text-color-primary);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.header-error {
+  color: #f56c6c;
+  font-size: 12px;
+}
+.el-dropdown-menu__item.active {
+  color: var(--el-color-primary);
+  font-weight: 600;
 }
 
 /* 侧边栏动画 */

@@ -1,10 +1,12 @@
 html, body {
   height: 100%;
   margin: 0;
+  overflow-x: hidden;
 }
 
 #app {
   height: 100%;
+  overflow-x: hidden;
 }
 
 /* 暗色模式 */
@@ -34,6 +36,11 @@ body {
 .width160 { width: 160px; }
 .width120 { width: 120px; }
 .width80 { width: 80px; }
+@media (max-width: 640px) {
+  .width240 { width: 100%; max-width: 240px; }
+  .width160 { width: 100%; max-width: 160px; }
+  .width120 { width: 100%; max-width: 120px; }
+}
 
 /* 单行省略 */
 .single-line, .one-line {
@@ -53,3 +60,6 @@ body {
 
 /* 抽屉 header 高度 */
 .el-drawer__header { height: 18px; }
+
+/* 主内容区无内边距，由各页面自行控制 */
+.el-main { padding: 0; }

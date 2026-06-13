@@ -1,14 +1,22 @@
 <template>
-  <div>
-    <el-form label-width="100px">
-      <h2>输入和输出</h2>
-      <el-form-item label="视频1">
-        <file-select :file="video1" @update:file="(v: string) => video1 = v" class="right24" />
-      </el-form-item>
-      <el-form-item label="视频2">
-        <file-select :file="video2" @update:file="(v: string) => video2 = v" class="right24" />
-      </el-form-item>
-    </el-form>
+  <div class="add-task-page">
+    <el-card shadow="never" class="section-card">
+      <template #header>
+        <div class="section-title">
+          <el-icon><FolderOpened /></el-icon>
+          <span>输入</span>
+        </div>
+      </template>
+      <el-form label-position="top">
+        <el-form-item label="视频 1">
+          <file-select :file="video1" @update:file="(v: string) => video1 = v" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="视频 2">
+          <file-select :file="video2" @update:file="(v: string) => video2 = v" style="width:100%" />
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <AddToTaskButtons :addFunc="addTask" />
   </div>
 </template>
@@ -19,6 +27,7 @@ import { showError, showSuccess, loadArgs } from '../../common'
 import * as net from '../../net'
 import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
 import FileSelect from '../../components/FileSelect.vue'
+import { FolderOpened } from '@element-plus/icons-vue'
 
 const video1 = ref('')
 const video2 = ref('')
@@ -48,3 +57,7 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+@import './AddCommon.css';
+</style>

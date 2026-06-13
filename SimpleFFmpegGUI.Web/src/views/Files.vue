@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="page-container">
     <div v-if="status != null">
       <h2>FTP</h2>
       <el-row>
@@ -21,8 +21,10 @@
       <h2>上传输入文件</h2>
       <a>仅支持小文件，大文件请通过其他方式上传</a>
       <el-upload class="top12" :action="getUploadUrl()" :auto-upload="false" :headers="getHeader()" ref="uploadRef">
-        <el-button #trigger size="small" type="primary" class="right24">浏览文件</el-button>
-        <el-button size="small" type="success" @click="doUpload">上传到服务器</el-button>
+        <template #trigger>
+          <el-button type="primary" class="right12">浏览文件</el-button>
+        </template>
+        <el-button type="success" @click="doUpload">上传到服务器</el-button>
       </el-upload>
     </div>
     <div v-if="files != null" class="top24">
@@ -90,3 +92,7 @@ onMounted(() => {
   getStatus().finally(closeLoading)
 })
 </script>
+
+<style scoped>
+@import '../assets/page.css';
+</style>

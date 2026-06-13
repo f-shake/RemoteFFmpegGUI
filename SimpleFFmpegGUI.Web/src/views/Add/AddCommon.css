@@ -1,0 +1,33 @@
+.add-task-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+
+.section-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+@media (max-width: 640px) {
+  .add-task-page {
+    padding: 0;
+  }
+  .section-card {
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    box-shadow: none;
+  }
+  .section-card + .section-card {
+    border-top: 1px solid var(--el-border-color-light, #e4e7ed);
+  }
+}

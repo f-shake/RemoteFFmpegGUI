@@ -1,18 +1,22 @@
 <template>
-  <el-form label-width="100px">
+  <el-form :label-width="labelWidth" class="code-args-form">
     <h3 v-if="showPresets">预设</h3>
     <div v-if="showPresets">
       <el-form-item label="选择和更新">
-        <el-select @change="selectPreset" placeholder="加载预设" v-model="preset" class="right24">
-          <el-option v-for="p in presets" :key="p.id" :label="p.name" :value="p.id" />
-        </el-select>
-        <el-button :disabled="preset == null" @click="updatePreset">更新</el-button>
+        <div class="flex-row">
+          <el-select @change="selectPreset" placeholder="加载预设" v-model="preset" class="preset-select">
+            <el-option v-for="p in presets" :key="p.id" :label="p.name" :value="p.id" />
+          </el-select>
+          <el-button :disabled="preset == null" @click="updatePreset">更新</el-button>
+        </div>
       </el-form-item>
       <el-form-item label="新增">
-        <el-input v-model="newPresetName" style="width: 128px" class="right24" />
-        <el-button style="display: inline" :disabled="!newPresetName?.trim()" @click="savePreset">
-          保存或更新"{{ newPresetName }}"
-        </el-button>
+        <div class="flex-row">
+          <el-input v-model="newPresetName" class="preset-name-input" />
+          <el-button :disabled="!newPresetName?.trim()" @click="savePreset">
+            保存或更新"{{ newPresetName }}"
+          </el-button>
+        </div>
       </el-form-item>
     </div>
     <div v-if="type === 1">
@@ -23,86 +27,95 @@
     </div>
     <div v-if="showFormats">
       <h3>容器</h3>
-      <el-form-item label="指定输出容器">
-        <el-switch v-model="code.enableFormat" class="right24" />
-        <el-select v-if="code.enableFormat" v-model="code.format" placeholder="指定容器格式">
-          <el-option v-for="item in formats" :key="item.extension" :label="item.extension" :value="item.name">
-            <span style="float: left">{{ item.extension }}</span>
-            <span style="float: right; color: #8492a6; font-size: 13px">{{ item.name }}</span>
-          </el-option>
-        </el-select>
-        <div v-if="code.enableFormat" class="gray">指定输出容器后，输出时会根据格式修改文件扩展名</div>
+      <el-form-item label="指定输出容器" class="format-form-item">
+        <div>
+          <div class="flex-row" style="flex-wrap: nowrap;">
+            <el-switch v-model="code.enableFormat" />
+            <el-select v-show="code.enableFormat" v-model="code.format" placeholder="指定容器格式" class="format-select">
+              <el-option v-for="item in formats" :key="item.extension" :label="item.extension" :value="item.name" />
+            </el-select>
+          </div>
+          <div v-show="code.enableFormat" class="help-text">指定输出容器后，输出时会根据格式修改文件扩展名</div>
+        </div>
       </el-form-item>
     </div>
     <div v-if="showVideosAndAudios">
       <h3>视频编码</h3>
       <el-form-item label="重编码">
-        <el-switch v-model="code.enableVideo" class="right24" />
-        <a v-show="!code.enableVideo" class="right12 gray">不导出视频</a>
+        <el-switch v-model="code.enableVideo" />
+        <span v-show="!code.enableVideo" class="right12 gray">不导出视频</span>
         <el-switch v-show="!code.enableVideo" v-model="code.disableVideo" />
       </el-form-item>
       <div v-show="code.enableVideo">
-        <el-form-item label="编码" size="small">
+        <el-form-item label="编码">
           <el-select v-model="code.video.code">
             <el-option v-for="c in videoCodes" :key="c" :label="c" :value="c" />
           </el-select>
         </el-form-item>
-        <el-form-item label="速度预设" class="bottom24">
-          <el-slider style="width: 90%" :max="8" :show-tooltip="false" v-model="code.video.preset" :marks="speedPresets" />
+        <el-form-item label="速度预设" class="preset-slider-item">
+          <el-slider :max="8" :show-tooltip="false" v-model="code.video.preset" :marks="speedPresets" />
         </el-form-item>
-        <el-form-item label="CRF" class="top24">
-          <el-switch v-model="code.video.enableCrf" />
-          <el-slider v-show="code.video.enableCrf" style="width: 90%" :max="40" :min="10" show-input :step="1"
-            v-model="code.video.crf" />
+        <el-form-item label="CRF">
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableCrf" />
+            <el-slider v-show="code.video.enableCrf" :max="40" :min="10" show-input :step="1" v-model="code.video.crf" />
+          </div>
         </el-form-item>
-        <el-form-item label="二次编码" class="top24">
+        <el-form-item label="二次编码">
           <el-switch v-model="code.video.twoPass" />
         </el-form-item>
-        <el-form-item label="平均码率" class="bottom24">
-          <el-switch v-model="code.video.enableBitrate" />
-          <el-slider v-show="code.video.enableBitrate" style="width: 90%" :max="200" :min="0.1" show-input
-            :step="0.1" v-model="code.video.bitrate" />
+        <el-form-item label="平均码率">
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableBitrate" />
+            <el-slider v-show="code.video.enableBitrate" :max="200" :min="0.1" show-input :step="0.1" v-model="code.video.bitrate" />
+          </div>
         </el-form-item>
-        <el-form-item label="最大码率" class="bottom24">
-          <el-switch v-model="code.video.enableMaxBitrate" />
-          <el-slider v-show="code.video.enableMaxBitrate" style="width: 90%" :max="500" :min="0.1" show-input
-            :step="0.1" v-model="code.video.maxBitrate" />
+        <el-form-item label="最大码率">
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableMaxBitrate" />
+            <el-slider v-show="code.video.enableMaxBitrate" :max="500" :min="0.1" show-input :step="0.1" v-model="code.video.maxBitrate" />
+          </div>
         </el-form-item>
-        <el-form-item label="缓冲倍率" class="bottom24" v-show="code.video.enableMaxBitrate">
-          <el-slider style="width: 90%" :max="10" :min="1" show-input show-stops :step="0.5"
-            v-model="code.video.maxBitrateBuffer" />
+        <el-form-item label="缓冲倍率" v-show="code.video.enableMaxBitrate">
+          <div class="switch-slider-row">
+            <span class="label-placeholder"></span>
+            <el-slider :max="10" :min="1" show-input show-stops :step="0.5" v-model="code.video.maxBitrateBuffer" />
+          </div>
         </el-form-item>
         <el-form-item label="帧率">
-          <el-switch v-model="code.video.enableFps" class="right24" />
-          <div v-show="code.video.enableFps" class="inline">
-            <el-input-number size="small" v-model="code.video.fps" :precision="3" :min="1" class="right24"
-              :max="120" />
-            <el-button type="text" class="right24" @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableFps" />
+            <div v-show="code.video.enableFps" class="flex-row flex-wrap">
+              <el-input-number v-model="code.video.fps" :precision="3" :min="1" :max="120" class="fps-input" />
+              <el-button type="text" @click="code.video.fps = f" v-for="f in fpses" :key="f">{{ f }}帧</el-button>
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="分辨率">
-          <el-switch v-model="code.video.enableSize" class="right24" />
-          <div class="inline" v-show="code.video.enableSize">
-            <el-input size="small" class="right24 width160" placeholder="示例：640:480 或 640:-1 或 iw/2:ih/2"
-              v-model="code.video.size" />
-            <el-button v-for="(v, k) in sizes" :key="k" type="text" class="right24" @click="code.video.size = v">{{ k }}</el-button>
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableSize" />
+            <div v-show="code.video.enableSize" class="flex-row flex-wrap">
+              <el-input class="size-input" placeholder="示例：640:480" v-model="code.video.size" />
+              <el-button v-for="(v, k) in sizes" :key="k" type="text" @click="code.video.size = v">{{ k }}</el-button>
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="画面比例">
-          <el-switch v-model="code.video.enableAspectRatio" class="right24" />
-          <div class="inline" v-show="code.video.enableAspectRatio">
-            <el-input size="small" class="right24 width160" placeholder="示例：4:3或1.3333"
-              v-model="code.video.aspectRatio" />
-            <el-button v-for="i in aspectRatios" :key="i" type="text" class="right24"
-              @click="code.video.aspectRatio = i">{{ i }}</el-button>
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enableAspectRatio" />
+            <div v-show="code.video.enableAspectRatio" class="flex-row flex-wrap">
+              <el-input class="size-input" placeholder="示例：4:3" v-model="code.video.aspectRatio" />
+              <el-button v-for="i in aspectRatios" :key="i" type="text" @click="code.video.aspectRatio = i">{{ i }}</el-button>
+            </div>
           </div>
         </el-form-item>
         <el-form-item label="像素格式">
-          <el-switch v-model="code.video.enablePixelFormat" class="right24" />
-          <div class="inline" v-show="code.video.enablePixelFormat">
-            <el-input size="small" class="right24 width160" v-model="code.video.pixelFormat" />
-            <el-button v-for="p in pixelFormats" :key="p" type="text" class="right24"
-              @click="code.video.pixelFormat = p">{{ p }}</el-button>
+          <div class="switch-slider-row">
+            <el-switch v-model="code.video.enablePixelFormat" />
+            <div v-show="code.video.enablePixelFormat" class="flex-row flex-wrap">
+              <el-input class="size-input" v-model="code.video.pixelFormat" />
+              <el-button v-for="p in pixelFormats" :key="p" type="text" @click="code.video.pixelFormat = p">{{ p }}</el-button>
+            </div>
           </div>
         </el-form-item>
       </div>
@@ -110,26 +123,30 @@
     <div v-if="showVideosAndAudios">
       <h3>音频编码</h3>
       <el-form-item label="重编码">
-        <el-switch v-model="code.enableAudio" class="right24" />
-        <a v-show="!code.enableAudio" class="right12 gray">不导出音频</a>
+        <el-switch v-model="code.enableAudio" />
+        <span v-show="!code.enableAudio" class="right12 gray">不导出音频</span>
         <el-switch v-show="!code.enableAudio" v-model="code.disableAudio" />
       </el-form-item>
       <div v-show="code.enableAudio">
         <el-form-item label="编码">
-          <el-select v-model="code.audio.code" size="small">
+          <el-select v-model="code.audio.code">
             <el-option v-for="c in audioCodes" :key="c" :label="c" :value="c" />
           </el-select>
         </el-form-item>
-        <el-form-item label="码率" class="bottom24">
-          <el-switch v-model="code.audio.enableBitrate" />
-          <el-slider v-show="code.audio.enableBitrate" style="width: 90%" :max="320" :min="32"
-            :show-tooltip="false" :step="32" v-model="code.audio.bitrate" :marks="audioBitrates" />
+        <el-form-item label="码率">
+          <div class="switch-slider-row">
+            <el-switch v-model="code.audio.enableBitrate" />
+            <el-slider v-show="code.audio.enableBitrate" :max="320" :min="32" :show-tooltip="false" :step="32"
+              v-model="code.audio.bitrate" :marks="audioBitrates" />
+          </div>
         </el-form-item>
-        <el-form-item label="采样率" style="margin-top: 24px">
-          <el-switch v-model="code.audio.enableSample" class="right24" />
-          <el-select v-model="code.audio.sample" v-show="code.audio.enableSample">
-            <el-option v-for="c in audioSamples" :key="c" :label="c" :value="c" />
-          </el-select>
+        <el-form-item label="采样率">
+          <div class="switch-slider-row">
+            <el-switch v-model="code.audio.enableSample" />
+            <el-select v-model="code.audio.sample" v-show="code.audio.enableSample">
+              <el-option v-for="c in audioSamples" :key="c" :label="c" :value="c" />
+            </el-select>
+          </div>
         </el-form-item>
       </div>
     </div>
@@ -140,12 +157,12 @@
           placeholder="请输入ffmpeg的输出参数" />
       </el-form-item>
       <el-form-item label="同步文件时间">
-        <el-switch v-model="code.processedOptions.syncModifiedTime" class="right24" />
-        <a class="gray">将输出文件的修改时间设置为最后一个输入文件的修改时间</a>
+        <el-switch v-model="code.processedOptions.syncModifiedTime" />
+        <span class="gray left12">将输出文件的修改时间设置为最后一个输入文件的修改时间</span>
       </el-form-item>
       <el-form-item label="删除输入文件">
-        <el-switch v-model="code.processedOptions.deleteInputFiles" class="right24" />
-        <a class="gray">处理完成后，删除所有输入文件</a>
+        <el-switch v-model="code.processedOptions.deleteInputFiles" />
+        <span class="gray left12">处理完成后，删除所有输入文件</span>
       </el-form-item>
     </div>
   </el-form>
@@ -212,6 +229,13 @@ const code = reactive({
 
 const showFormats = computed(() => [0, 1, 2, 4].includes(props.type))
 const showVideosAndAudios = computed(() => [0].includes(props.type))
+
+const labelWidth = ref('100px')
+onMounted(() => {
+  function updateWidth() { labelWidth.value = window.innerWidth < 640 ? '80px' : '100px' }
+  updateWidth()
+  window.addEventListener('resize', updateWidth)
+})
 
 function fillPresetsAnd(action: (id: number) => void) {
   net.getPresets(props.type)
@@ -344,6 +368,61 @@ onMounted(() => {
 </script>
 
 <style scoped>
-div[role="slider"] { min-width: 240px; max-width: 480px; }
+div[role="slider"] { min-width: 200px; max-width: 400px; }
 .el-select { min-width: 160px; }
+
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.switch-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.switch-slider-row .el-slider {
+  flex: 1;
+}
+.preset-select { min-width: 200px; }
+.preset-name-input { width: 180px; }
+.format-select { min-width: 160px; }
+.fps-input { width: 100px; }
+.size-input { width: 200px; }
+.preset-slider-item {
+  padding-bottom: 20px;
+}
+.help-text {
+  margin-top: 8px;
+  color: #999;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.format-form-item :deep(.el-form-item__content) {
+  align-items: flex-start;
+}
+.code-args-form .el-form-item { margin-bottom: 20px !important; }
+</style>
+
+<style>
+@media (max-width: 640px) {
+  .code-args-form .el-form-item__content > * { max-width: 100%; }
+  .code-args-form .el-slider { width: 100% !important; min-width: 0 !important; }
+  .code-args-form .el-input-number, .code-args-form .el-select { min-width: 0 !important; }
+  .code-args-form .el-slider .el-input-number { width: 130px !important; }
+  .code-args-form .el-slider .el-slider__runway { display: none !important; }
+  .code-args-form .el-slider .el-slider__input { margin-left: 0 !important; }
+  .code-args-form .switch-slider-row .el-slider { min-width: 0 !important; width: auto !important; flex: none !important; }
+  .code-args-form .el-input, .code-args-form .el-textarea { width: 100% !important; }
+  .size-input { width: 100% !important; }
+  .fps-input { width: 100% !important; }
+  .preset-name-input { width: 100% !important; }
+  .code-args-form .el-form-item .el-button--text { display: none; }
+}
+.code-args-form .el-form-item { margin-bottom: 20px !important; }
 </style>
