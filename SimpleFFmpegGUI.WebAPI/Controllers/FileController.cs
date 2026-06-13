@@ -122,7 +122,7 @@ public class FileController(
     [HttpPost, HttpOptions]
     [Route("Upload")]
     [DisableRequestSizeLimit]
-    public async Task<IActionResult> UploadFile([FromQuery] IFormFile file)
+    public async Task<IActionResult> UploadFile(IFormFile file)
     {
         if (file.Length > 0)
         {

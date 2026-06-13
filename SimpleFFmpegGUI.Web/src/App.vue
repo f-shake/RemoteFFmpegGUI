@@ -424,6 +424,7 @@ html.dark .app-aside :deep(.el-menu-item.is-active) {
   height: auto !important;
   flex-shrink: 0;
   z-index: 1000;
+  padding: 0 !important;
 }
 
 /* ==============================================================

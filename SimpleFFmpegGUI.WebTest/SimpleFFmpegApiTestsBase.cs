@@ -118,6 +118,19 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         }
     }
 
+    protected async Task<HttpResponseMessage> PostMultipartAsync(string endpoint, MultipartFormDataContent content)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        if (token != null)
+        {
+            request.Headers.Add("Authorization", $"Bearer {token}");
+        }
+        request.Content = content;
+        var response = await client.SendAsync(request);
+        await CheckResponseAsync(response);
+        return response;
+    }
+
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string endpoint, object body = null)
     {
         var request = new HttpRequestMessage(method, endpoint);

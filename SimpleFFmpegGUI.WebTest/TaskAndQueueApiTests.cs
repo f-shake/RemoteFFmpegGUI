@@ -73,6 +73,41 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     }
 
     [Fact]
+    public async Task TestTaskCancelAndResetAsync()
+    {
+        // 创建两个任务
+        var ids = await AddCodecTaskAsync(2);
+        ids.Count.Should().Be(2);
+
+        // 单体取消
+        await CancelTaskAsync(ids[0]);
+        var task0 = await GetTaskAsync(ids[0]);
+        task0.Status.Should().Be(TaskStatus.Cancel);
+
+        // 取消后不能再次取消（应返回错误但接口设计上仍可调用）
+        // 测试 Batch/Cancel
+        await CancelTasksAsync(new[] { ids[1] });
+        var task1 = await GetTaskAsync(ids[1]);
+        task1.Status.Should().Be(TaskStatus.Cancel);
+
+        // 批量重置
+        await ResetTasksAsync(new[] { ids[0], ids[1] });
+        task0 = await GetTaskAsync(ids[0]);
+        task0.Status.Should().Be(TaskStatus.Queue);
+        task1 = await GetTaskAsync(ids[1]);
+        task1.Status.Should().Be(TaskStatus.Queue);
+
+        // 单体取消和重置换个顺序再测一次
+        await CancelTaskAsync(ids[0]);
+        task0 = await GetTaskAsync(ids[0]);
+        task0.Status.Should().Be(TaskStatus.Cancel);
+
+        await ResetTaskAsync(ids[0]);
+        task0 = await GetTaskAsync(ids[0]);
+        task0.Status.Should().Be(TaskStatus.Queue);
+    }
+
+    [Fact]
     public async Task TestTasksCurdAsync()
     {
         var tasks = await GetTasksAsync();
@@ -117,6 +152,14 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     private Task<List<int>> AddCodecTaskAsync(int count) => AddCodecTaskAsync(GetCodeTask(count));
 
     private Task CancelQueueAsync() => PostAsync("/Queue/Cancel");
+
+    private Task CancelTaskAsync(int id) => PostAsync($"/Task/{id}/Cancel");
+
+    private Task CancelTasksAsync(ICollection<int> ids) => PostAsync("/Task/Batch/Cancel", ids);
+
+    private Task ResetTaskAsync(int id) => PostAsync($"/Task/{id}/Reset");
+
+    private Task ResetTasksAsync(IEnumerable<int> ids) => PostAsync("/Task/Batch/Reset", ids);
 
     private Task CancelScheduleAsync() => PostAsync("/Queue/CancelSchedule");
 

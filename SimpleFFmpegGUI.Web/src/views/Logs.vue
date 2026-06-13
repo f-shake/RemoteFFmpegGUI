@@ -1,26 +1,6 @@
 <template>
   <div class="page-container-wide logs-page">
-    <!-- 过滤栏 -->
-    <div class="logs-filter">
-      <div class="filter-left">
-        <span class="filter-label">时间范围：</span>
-        <el-date-picker
-          @change="fillData" v-model="timeRange" type="datetimerange"
-          range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
-          align="right" class="filter-date"
-        />
-      </div>
-      <div class="filter-right">
-        <el-radio-group v-model="typeFilter" @change="fillData">
-          <el-radio-button :value="null"><b>全部</b></el-radio-button>
-          <el-radio-button value="E">错误</el-radio-button>
-          <el-radio-button value="W">警告</el-radio-button>
-          <el-radio-button value="I">信息</el-radio-button>
-          <el-radio-button value="O">输出</el-radio-button>
-        </el-radio-group>
-      </div>
-    </div>
-    <div class="gray top12" v-if="taskName">任务：{{ taskName }}</div>
+    <div class="gray" v-if="taskName" style="margin-bottom: 12px;">任务：{{ taskName }}</div>
 
     <!-- 日志表格 -->
     <el-card shadow="never" class="table-card top12">
@@ -45,12 +25,12 @@
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="link" @click="fillData">刷新</el-button></template>
+          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <!-- 分页 -->
+    <!-- 分页 + 类型筛选 -->
     <div class="logs-pagination">
       <el-pagination
         @size-change="fillData" @current-change="fillData"
@@ -59,6 +39,21 @@
         v-model:page-size="countPerPage" v-model:current-page="page"
         :total="totalCount" background
       />
+      <div class="filter-bar">
+        <span class="filter-label">时间范围：</span>
+        <el-date-picker
+          @change="fillData" v-model="timeRange" type="datetimerange"
+          range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
+          align="right" class="filter-date"
+        />
+        <el-radio-group v-model="typeFilter" @change="fillData">
+          <el-radio-button :value="0"><b>全部</b></el-radio-button>
+          <el-radio-button value="E">错误</el-radio-button>
+          <el-radio-button value="W">警告</el-radio-button>
+          <el-radio-button value="I">信息</el-radio-button>
+          <el-radio-button value="O">输出</el-radio-button>
+        </el-radio-group>
+      </div>
     </div>
   </div>
 </template>
@@ -74,7 +69,7 @@ const list = ref<any[]>([])
 const totalCount = ref(0)
 const page = ref(1)
 const countPerPage = ref(100)
-const typeFilter = ref<string | null>(null)
+const typeFilter = ref<string | number>(0)
 const timeRange = ref<any[]>([])
 const taskName = ref('')
 
@@ -96,7 +91,8 @@ function fillData() {
   const from = timeRange.value && timeRange.value.length === 2 ? (timeRange.value[0] as Date).toJSON() : null
   const to = timeRange.value && timeRange.value.length === 2 ? (timeRange.value[1] as Date).toJSON() : null
   const taskId = route.query.id ? Number.parseInt(route.query.id as string) : 0
-  return net.getLogs(typeFilter.value, taskId, from, to, (page.value - 1) * countPerPage.value, countPerPage.value)
+  const type = typeFilter.value === 0 ? null : typeFilter.value as string
+  return net.getLogs(type, taskId, from, to, (page.value - 1) * countPerPage.value, countPerPage.value)
     .then((response) => {
       totalCount.value = response.data.totalCount
       response.data.list.forEach((element: any) => {
@@ -117,28 +113,6 @@ onMounted(() => {
 <style scoped>
 @import '../assets/page.css';
 
-.logs-filter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.filter-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.filter-label {
-  font-size: 13px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-.filter-date {
-  max-width: 360px;
-}
-
 .table-card {
   border-radius: var(--radius-lg) !important;
   overflow: hidden;
@@ -157,17 +131,34 @@ onMounted(() => {
 
 .logs-pagination {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-top: 12px;
   padding-bottom: 16px;
 }
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.filter-date {
+  max-width: 280px;
+}
 
 @media (max-width: 640px) {
-  .logs-filter {
+  .logs-pagination {
     flex-direction: column;
     align-items: stretch;
   }
-  .filter-left {
+  .filter-bar {
     flex-direction: column;
     align-items: stretch;
   }

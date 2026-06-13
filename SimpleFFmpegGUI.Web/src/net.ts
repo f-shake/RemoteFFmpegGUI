@@ -11,9 +11,9 @@ function getUrl(controller: string): string {
 
 // ===== Task =====
 
-export function getTaskList(status: number | null, page: number, pageSize: number): Promise<AxiosResponse<any>> {
+export function getTaskList(status: number | null | undefined, page: number, pageSize: number): Promise<AxiosResponse<any>> {
   let url = `Task?Page=${page}&PageSize=${pageSize}`
-  if (status !== null) {
+  if (status != null) {
     url += `&Status=${status}`
   }
   return axios.get(getUrl(url))

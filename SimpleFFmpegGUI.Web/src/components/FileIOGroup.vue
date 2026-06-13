@@ -142,6 +142,8 @@ function getArgs() {
     })
   return inputs
 }
+
+defineExpose({ getArgs, outputFile })
 </script>
 
 <style scoped>

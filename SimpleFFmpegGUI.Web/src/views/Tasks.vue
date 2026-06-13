@@ -22,7 +22,7 @@
             <template #reference><el-button type="danger">停止</el-button></template>
           </el-popconfirm>
           <el-button class="right12" v-if="isProcessing && !isPaused" type="warning" @click="pause">暂停</el-button>
-          <el-button class="right12" v-if="isProcessing && isPaused" type="warning" @click="resume">继续</el-button>
+          <el-button class="right12" v-if="isProcessing && isPaused" type="primary" @click="resume">继续</el-button>
         </template>
       </div>
     </div>
@@ -84,21 +84,23 @@
             <span class="ellipsis-text">{{ scope.row.inputText }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="210" class-name="ops-col">
           <template #default="scope">
-            <el-button @click="resetTask(scope.row)" type="link" size="small"
-              :disabled="scope.row.status === 1 || scope.row.status === 2">重置</el-button>
-            <el-popconfirm v-if="scope.row.status === 2" title="真的要取消任务吗？任务会终止"
-              style="margin-left: 10px; margin-right: 10px" @confirm="cancelTask(scope.row)">
-              <template #reference><el-button type="link" size="small">取消</el-button></template>
-            </el-popconfirm>
-            <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(scope.row)">
-              <template #reference><el-button type="link" size="small">删除</el-button></template>
-            </el-popconfirm>
+            <div class="ops-btns">
+              <el-button @click="resetTask(scope.row)" type="text" size="small"
+                :disabled="scope.row.status === 1 || scope.row.status === 2">重置</el-button>
+              <el-popconfirm v-if="scope.row.status === 2" title="真的要取消任务吗？任务会终止"
+                @confirm="cancelTask(scope.row)">
+                <template #reference><el-button type="text" size="small">取消</el-button></template>
+              </el-popconfirm>
+              <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(scope.row)">
+                <template #reference><el-button type="text" size="small">删除</el-button></template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="link" @click="fillData">刷新</el-button></template>
+          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -113,7 +115,7 @@
         :total="totalCount" background
       />
       <el-radio-group v-model="statusFilter" @change="fillData">
-        <el-radio-button :value="null"><b>全部</b></el-radio-button>
+        <el-radio-button :value="0"><b>全部</b></el-radio-button>
         <el-radio-button :value="1">排队中</el-radio-button>
         <el-radio-button :value="2">进行中</el-radio-button>
         <el-radio-button :value="3">已完成</el-radio-button>
@@ -140,7 +142,7 @@ const totalCount = ref(0)
 const selection = ref<any[]>([])
 const page = ref(1)
 const countPerPage = ref(20)
-const statusFilter = ref<number | null>(null)
+const statusFilter = ref<number>(0)
 const scheduleTime = ref('')
 const hasSchedule = ref(false)
 
@@ -152,21 +154,50 @@ function getSelectionIds(): number[] {
   return selection.value.map(p => p.id)
 }
 
+function refreshQueueStatus() {
+  net.getQueueStatus()
+    .then((r) => {
+      isProcessing.value = r.data.isProcessing ?? false
+      isPaused.value = r.data.isPaused ?? false
+    })
+    .catch(() => {})
+}
+
 function start() {
-  net.postStartQueue().catch(showError)
+  net.postStartQueue()
+    .then(() => {
+      isProcessing.value = true
+      isPaused.value = false
+      setTimeout(fillData, 500)
+    })
+    .catch(showError)
 }
 
 function pause() {
-  net.postPauseQueue().catch(showError)
+  net.postPauseQueue()
+    .then(() => {
+      isPaused.value = true
+      setTimeout(fillData, 500)
+    })
+    .catch(showError)
 }
 
 function resume() {
-  net.postResumeQueue().catch(showError)
+  net.postResumeQueue()
+    .then(() => {
+      isPaused.value = false
+      setTimeout(fillData, 500)
+    })
+    .catch(showError)
 }
 
 function cancel() {
   net.postCancelQueue()
-    .then(() => setTimeout(fillData, 500))
+    .then(() => {
+      isProcessing.value = false
+      isPaused.value = false
+      setTimeout(fillData, 1500)
+    })
     .catch(showError)
 }
 
@@ -238,7 +269,8 @@ function cancelTasks() {
 }
 
 function fillData() {
-  return net.getTaskList(statusFilter.value, page.value, countPerPage.value)
+  const s = statusFilter.value === 0 ? null : statusFilter.value
+  return net.getTaskList(s, page.value, countPerPage.value)
     .then((response) => {
       totalCount.value = response.data.totalCount
       response.data.list.forEach((element: any) => {
@@ -262,6 +294,7 @@ function fillData() {
 onMounted(() => {
   showLoading()
   fillData()
+  refreshQueueStatus()
   net.getQueueScheduleTime()
     .then((r) => {
       const time = r.data
@@ -271,7 +304,16 @@ onMounted(() => {
       }
     })
     .catch(showError)
-    .finally(closeLoading)
+    .finally(() => {
+      closeLoading()
+      // 定时轮询队列状态
+      setInterval(() => {
+        refreshQueueStatus()
+        if (isProcessing.value) {
+          fillData()
+        }
+      }, 3000)
+    })
 })
 </script>
 
@@ -329,6 +371,9 @@ onMounted(() => {
 /* 展开的 cell 换行 */
 .el-table .cell { white-space: pre-line; word-wrap: break-word; }
 .cell .el-button { margin-right: 6px; }
+.ops-btns { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
+.ops-btns .el-popconfirm { display: inline-flex; }
+.ops-btns .el-button { flex-shrink: 0; }
 .ellipsis-text {
   display: inline-block;
   max-width: 100%;

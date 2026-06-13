@@ -16,13 +16,13 @@ namespace SimpleFFmpegGUI.WebTest;
 public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
 {
     public const string TestAppsettingsJson = "appsettings.test.json";
-    private static bool hasInitialized = false;
+    private bool hasInitialized = false;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         if (hasInitialized)
         {
-            throw new Exception("SimpleFFmpegWebApplicationFactory 只能初始化一次");
+            return;
         }
 
         hasInitialized = true;

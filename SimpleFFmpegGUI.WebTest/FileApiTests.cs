@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +46,26 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         var outputs = await GetOutputListAsync();
         outputs.Count.Should().BeGreaterThanOrEqualTo(1);
         outputs.Should().Contain(p => p.Name == Path.GetFileName(appTestSettings.TestOutputVideo10s));
+    }
+
+    [Fact]
+    public async Task TestUploadAsync()
+    {
+        // 上传一个测试文件
+        var content = "test file content for upload";
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(content));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        var form = new MultipartFormDataContent
+        {
+            { fileContent, "file", "test_upload.txt" }
+        };
+        var response = await PostMultipartAsync("/File/Upload", form);
+        var uploadedPath = await response.Content.ReadAsStringAsync();
+        uploadedPath.Should().NotBeNullOrEmpty();
+        uploadedPath.Should().Contain("test_upload");
+        File.Exists(uploadedPath).Should().BeTrue();
+        var savedContent = await File.ReadAllTextAsync(uploadedPath);
+        savedContent.Should().Be(content);
     }
 
     private Task<string> DownloadAsync(string name) => GetStringAsync($"/File/Download/{name}");

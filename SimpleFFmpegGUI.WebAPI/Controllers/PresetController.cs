@@ -83,7 +83,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpPost("Import")]
-        public async Task<IActionResult> ImportAsync([FromQuery] IFormFile file)
+        public async Task<IActionResult> ImportAsync(IFormFile file)
         {
             await using var s = file.OpenReadStream();
             byte[] buffer = new byte[s.Length];

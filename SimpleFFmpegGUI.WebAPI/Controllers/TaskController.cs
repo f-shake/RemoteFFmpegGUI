@@ -78,7 +78,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpPost("Batch/Cancel")]
-        public async Task<ActionResult<TaskStatusChangeResult>> CancelTasksAsync(ICollection<int> ids)
+        public async Task<ActionResult<TaskStatusChangeResult>> CancelTasksAsync([FromBody] ICollection<int> ids)
         {
             return await taskService.CancelTasksAsync(ids);
         }
@@ -124,7 +124,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         }
 
         [HttpPost("Batch/Reset")]
-        public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync(IEnumerable<int> ids)
+        public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync([FromBody] IEnumerable<int> ids)
         {
             return await taskService.ResetTasksAsync(ids);
         }

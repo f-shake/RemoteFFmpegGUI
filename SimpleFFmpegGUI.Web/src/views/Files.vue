@@ -86,11 +86,11 @@
         </el-table-column>
         <el-table-column label="操作" width="70">
           <template #default="scope">
-            <el-button type="link" size="small" @click="download(scope.row)">下载</el-button>
+            <el-button type="text" size="small" @click="download(scope.row)">下载</el-button>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="link" @click="fillData">刷新</el-button></template>
+          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>

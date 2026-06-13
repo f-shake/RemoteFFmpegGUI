@@ -25,7 +25,7 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("ShutdownQueue")]
         public IActionResult SetShutdownAfterQueueFinished([FromForm] bool on)
         {
-            power.ShutdownAfterQueueFinished = true;
+            power.ShutdownAfterQueueFinished = on;
             return NoContent();
         }
 

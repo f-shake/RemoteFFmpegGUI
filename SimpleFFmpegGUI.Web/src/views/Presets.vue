@@ -33,15 +33,15 @@
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="scope">
-            <el-button type="link" @click="remake(scope.row)">新建任务</el-button>
-            <el-button type="link" @click="edit(scope.row)">编辑</el-button>
+            <el-button type="text" @click="remake(scope.row)">新建任务</el-button>
+            <el-button type="text" @click="edit(scope.row)">编辑</el-button>
             <el-popconfirm title="真的要删除预设吗？" style="margin-left: 8px" @confirm="deletePreset(scope.row)">
-              <template #reference><el-button type="link">删除</el-button></template>
+              <template #reference><el-button type="text">删除</el-button></template>
             </el-popconfirm>
           </template>
         </el-table-column>
         <el-table-column align="right">
-          <template #header><el-button type="link" @click="fillData">刷新</el-button></template>
+          <template #header><el-button type="text" @click="fillData">刷新</el-button></template>
         </el-table-column>
       </el-table>
     </el-card>
