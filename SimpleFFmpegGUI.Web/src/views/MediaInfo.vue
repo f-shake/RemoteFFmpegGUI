@@ -86,22 +86,30 @@
           <span>详细信息</span>
         </div>
       </template>
-      <pre class="raw-text">{{ info.raw }}</pre>
+      <json-tree :data="parsedRaw" />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { showError, formatDoubleTimeSpan, showLoading, closeLoading } from '../common'
 import * as net from '../net'
 import FileSelect from '../components/FileSelect.vue'
+import JsonTree from '../components/JsonTree.vue'
 import {
   Search, InfoFilled, VideoCamera, Headset, ChatLineSquare, Document
 } from '@element-plus/icons-vue'
 
 const file = ref('')
 const info = ref<any>(null)
+const parsedRaw = computed(() => {
+  if (!info.value?.raw) return null
+  if (typeof info.value.raw === 'string') {
+    try { return JSON.parse(info.value.raw) } catch { return info.value.raw }
+  }
+  return info.value.raw
+})
 
 function query() {
   showLoading()
@@ -132,17 +140,6 @@ function query() {
 
 .info-card {
   margin-bottom: 16px;
-}
-
-.raw-text {
-  font-family: Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-all;
-  margin: 0;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 @media (max-width: 640px) {
