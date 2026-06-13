@@ -107,8 +107,10 @@ import {
   Monitor, Sunny, Moon, UserFilled
 } from '@element-plus/icons-vue'
 import Cookies from 'js-cookie'
-import { jump, showError, TaskType, loadDirs } from './common'
-import * as net from './net'
+import { showError } from '@/utils/ui'
+import { jump, loadDirs } from '@/utils/navigation'
+import { TaskType } from '@/models/TaskType'
+import * as net from './api'
 import StatusBar from './components/StatusBar.vue'
 
 const route = useRoute()

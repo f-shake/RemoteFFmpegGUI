@@ -58,12 +58,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import {
-  showError, showSuccess, getTaskTypeDescription, showLoading, closeLoading, jumpByArgs
-} from '../common'
-import * as net from '../net'
-import CodeArguments from '../components/CodeArguments.vue'
-import CodeArgumentsDescription from '../components/CodeArgumentsDescription.vue'
+import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
+import { getTaskTypeDescription } from '@/models/TaskType'
+import { jumpByArgs } from '@/utils/navigation'
+import * as net from '@/api'
+import CodeArguments from '@/components/CodeArguments.vue'
+import CodeArgumentsDescription from '@/components/CodeArgumentsDescription.vue'
 
 const list = ref<any[]>([])
 const dialogVisible = ref(false)

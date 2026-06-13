@@ -31,9 +31,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import * as net from '../net'
+import * as net from '@/api'
 import Cookies from 'js-cookie'
-import { showError } from '../common'
+import { showError } from '@/utils/ui'
 
 const router = useRouter()
 const token = ref('')

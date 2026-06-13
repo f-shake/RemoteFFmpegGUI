@@ -11,8 +11,8 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import * as net from '../net'
-import { showError } from '../common'
+import * as net from '@/api'
+import { showError } from '@/utils/ui'
 
 const props = defineProps<{ file: string }>()
 const emit = defineEmits<{ 'update:file': [value: string] }>()

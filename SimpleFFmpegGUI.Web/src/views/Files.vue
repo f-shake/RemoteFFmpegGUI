@@ -99,8 +99,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { showError, formatDateTime, showLoading, closeLoading } from '../common'
-import * as net from '../net'
+import { showError, showLoading, closeLoading } from '@/utils/ui'
+import { formatDateTime } from '@/utils/format'
+import * as net from '@/api'
 
 const status = ref<any>(null)
 const files = ref<any[]>([])

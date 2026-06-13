@@ -59,7 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import { jump, TaskType } from '../common'
+import { jump } from '@/utils/navigation'
+import { TaskType } from '@/models/TaskType'
 import {
   VideoCameraFilled, DocumentAdd, Plus, ArrowRight,
   Search, Document, CopyDocument, FolderOpened, Setting, TakeawayBox, Share

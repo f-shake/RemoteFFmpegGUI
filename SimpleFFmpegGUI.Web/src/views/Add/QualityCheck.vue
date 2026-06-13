@@ -23,29 +23,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { showError, showSuccess, loadArgs } from '../../common'
-import * as net from '../../net'
-import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
-import FileSelect from '../../components/FileSelect.vue'
+import { showError } from '@/utils/ui'
+import { loadArgs } from '@/utils/navigation'
+import * as net from '@/api'
+import { useAddTask } from '@/composables/useAddTask'
+import AddToTaskButtons from '@/components/AddToTaskButtons.vue'
+import FileSelect from '@/components/FileSelect.vue'
 
 const video1 = ref('')
 const video2 = ref('')
+
+const { addTask: submitTask } = useAddTask(
+  (data: any) => net.postAddCompareTask(data),
+  () => { video1.value = ''; video2.value = '' }
+)
 
 function addTask(start: boolean) {
   if (video1.value === '' || video2.value === '') {
     showError('请选择输入文件')
     return
   }
-  net.postAddCompareTask({
+  submitTask(start, {
     inputs: [{ filePath: video1.value }, { filePath: video2.value }]
   })
-    .then(() => {
-      video1.value = ''
-      video2.value = ''
-      showSuccess('已加入队列')
-      if (start) net.postStartQueue().catch(showError)
-    })
-    .catch(showError)
 }
 
 onMounted(() => {

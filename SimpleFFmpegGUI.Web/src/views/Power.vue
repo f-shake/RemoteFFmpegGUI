@@ -80,8 +80,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { showError, showSuccess, showLoading, closeLoading } from '../common'
-import * as net from '../net'
+import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
+import * as net from '@/api'
 
 const shutdownQueue = ref(false)
 const cpuCoreUsages = ref<any[]>([])

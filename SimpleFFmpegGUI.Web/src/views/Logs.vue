@@ -61,8 +61,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { showError, formatDateTime, showLoading, closeLoading, TaskType, displayPath } from '../common'
-import * as net from '../net'
+import { showError, showLoading, closeLoading } from '@/utils/ui'
+import { formatDateTime } from '@/utils/format'
+import { displayPath } from '@/utils/navigation'
+import { TaskType } from '@/models/TaskType'
+import * as net from '@/api'
 
 const route = useRoute()
 const list = ref<any[]>([])

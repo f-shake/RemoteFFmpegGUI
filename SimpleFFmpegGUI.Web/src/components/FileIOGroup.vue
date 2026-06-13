@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Plus, Close } from '@element-plus/icons-vue'
-import { showError } from '../common'
+import { showError } from '@/utils/ui'
 import FileSelect from './FileSelect.vue'
 import TimeInput from './TimeInput.vue'
 

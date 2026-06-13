@@ -16,25 +16,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { showError, showSuccess, loadArgs } from '../../common'
-import * as net from '../../net'
-import CodeArguments from '../../components/CodeArguments.vue'
-import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
+import { loadArgs } from '@/utils/navigation'
+import * as net from '@/api'
+import { useAddTask } from '@/composables/useAddTask'
+import CodeArguments from '@/components/CodeArguments.vue'
+import AddToTaskButtons from '@/components/AddToTaskButtons.vue'
 
-const args = ref<any>(null)
+const { args, addTask: submitTask } = useAddTask(
+  (data: any) => net.postAddCustomTask(data),
+)
 
 function addTask(start: boolean) {
   const taskArgs = args.value?.getArgs()
-  net.postAddCustomTask({
+  submitTask(start, {
     input: null,
     output: null,
     parameter: taskArgs
   })
-    .then(() => {
-      showSuccess('已加入队列')
-      if (start) net.postStartQueue().catch(showError)
-    })
-    .catch(showError)
 }
 
 onMounted(() => {

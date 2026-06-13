@@ -99,10 +99,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { showError, formatDoubleTimeSpan, showLoading, closeLoading } from '../common'
-import * as net from '../net'
-import FileSelect from '../components/FileSelect.vue'
-import JsonTree from '../components/JsonTree.vue'
+import { showError, showLoading, closeLoading } from '@/utils/ui'
+import { formatDoubleTimeSpan } from '@/utils/format'
+import * as net from '@/api'
+import FileSelect from '@/components/FileSelect.vue'
+import JsonTree from '@/components/JsonTree.vue'
 
 const file = ref('')
 const info = ref<any>(null)

@@ -110,8 +110,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
-import * as net from '../net'
-import { showError, formatDateTime, formatDoubleTimeSpan } from '../common'
+import * as net from '@/api'
+import { showError } from '@/utils/ui'
+import { formatDateTime, formatDoubleTimeSpan } from '@/utils/format'
 
 const barClass = computed(() => ({
   paused: props.status?.isPaused,

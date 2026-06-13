@@ -128,12 +128,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import {
-  showError, showSuccess, getTaskTypeDescription,
-  showLoading, closeLoading, displayPath
-} from '../common'
-import * as net from '../net'
-import CodeArgumentsDescription from '../components/CodeArgumentsDescription.vue'
+import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
+import { getTaskTypeDescription } from '@/models/TaskType'
+import { displayPath } from '@/utils/navigation'
+import * as net from '@/api'
+import CodeArgumentsDescription from '@/components/CodeArgumentsDescription.vue'
 
 const list = ref<any[]>([])
 const isProcessing = ref(false)

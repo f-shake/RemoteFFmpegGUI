@@ -170,8 +170,8 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
-import { showError, showSuccess } from '../common'
-import * as net from '../net'
+import { showError, showSuccess } from '@/utils/ui'
+import * as net from '@/api'
 
 const props = withDefaults(defineProps<{
   type?: number

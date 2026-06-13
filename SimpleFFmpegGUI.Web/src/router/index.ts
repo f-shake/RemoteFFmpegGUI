@@ -1,17 +1,17 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { TaskType } from '../common'
-import Welcome from '../views/Welcome.vue'
-import MediaInfo from '../views/MediaInfo.vue'
-import Code from '../views/Add/Code.vue'
-import Combine from '../views/Add/Combine.vue'
-import Compare from '../views/Add/Compare.vue'
-import Concat from '../views/Add/Concat.vue'
-import Custom from '../views/Add/Custom.vue'
-import Tasks from '../views/Tasks.vue'
-import Files from '../views/Files.vue'
-import Presets from '../views/Presets.vue'
-import Logs from '../views/Logs.vue'
-import Power from '../views/Power.vue'
+import { TaskType } from '@/models/TaskType'
+import Welcome from '@/views/Welcome.vue'
+import MediaInfo from '@/views/MediaInfo.vue'
+import Transcode from '@/views/Add/Transcode.vue'
+import Mux from '@/views/Add/Mux.vue'
+import QualityCheck from '@/views/Add/QualityCheck.vue'
+import Concat from '@/views/Add/Concat.vue'
+import Custom from '@/views/Add/Custom.vue'
+import Tasks from '@/views/Tasks.vue'
+import Files from '@/views/Files.vue'
+import Presets from '@/views/Presets.vue'
+import Logs from '@/views/Logs.vue'
+import Power from '@/views/Power.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -23,9 +23,9 @@ const router = createRouter({
     { path: '/file', name: 'File', component: Files },
     { path: '/tasks', name: 'Tasks', component: Tasks },
     { path: '/power', name: 'Power', component: Power },
-    { path: '/add/' + TaskType.GetByID(0).Route, name: TaskType.GetByID(0).Name, component: Code },
-    { path: '/add/' + TaskType.GetByID(1).Route, name: TaskType.GetByID(1).Name, component: Combine },
-    { path: '/add/' + TaskType.GetByID(2).Route, name: TaskType.GetByID(2).Name, component: Compare },
+    { path: '/add/' + TaskType.GetByID(0).Route, name: TaskType.GetByID(0).Name, component: Transcode },
+    { path: '/add/' + TaskType.GetByID(1).Route, name: TaskType.GetByID(1).Name, component: Mux },
+    { path: '/add/' + TaskType.GetByID(2).Route, name: TaskType.GetByID(2).Name, component: QualityCheck },
     { path: '/add/' + TaskType.GetByID(99).Route, name: TaskType.GetByID(99).Name, component: Custom },
     { path: '/add/' + TaskType.GetByID(4).Route, name: TaskType.GetByID(4).Name, component: Concat },
     { path: '/password', redirect: '/tasks' },

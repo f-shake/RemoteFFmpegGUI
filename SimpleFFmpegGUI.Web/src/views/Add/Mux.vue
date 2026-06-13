@@ -37,13 +37,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { showError, showSuccess, loadArgs } from '../../common'
-import * as net from '../../net'
-import CodeArguments from '../../components/CodeArguments.vue'
-import AddToTaskButtons from '../../components/AddToTaskButtons.vue'
-import FileSelect from '../../components/FileSelect.vue'
+import { showError } from '@/utils/ui'
+import { loadArgs } from '@/utils/navigation'
+import * as net from '@/api'
+import { useAddTask } from '@/composables/useAddTask'
+import CodeArguments from '@/components/CodeArguments.vue'
+import AddToTaskButtons from '@/components/AddToTaskButtons.vue'
+import FileSelect from '@/components/FileSelect.vue'
 
-const args = ref<any>(null)
+const { args, addTask: submitTask } = useAddTask(
+  (data: any) => net.postAddCombineTask(data),
+  () => { video.value = ''; audio.value = ''; output.value = '' }
+)
 const video = ref('')
 const audio = ref('')
 const output = ref('')
@@ -53,19 +58,11 @@ function addTask(start: boolean) {
     showError('请选择输入文件')
     return
   }
-  net.postAddCombineTask({
+  submitTask(start, {
     inputs: [{ filePath: video.value }, { filePath: audio.value }],
     output: output.value,
     parameter: args.value?.getArgs()
   })
-    .then(() => {
-      video.value = ''
-      audio.value = ''
-      output.value = ''
-      showSuccess('已加入队列')
-      if (start) net.postStartQueue().catch(showError)
-    })
-    .catch(showError)
 }
 
 onMounted(() => {
