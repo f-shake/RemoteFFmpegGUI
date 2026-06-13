@@ -4,9 +4,9 @@
     <div class="presets-toolbar">
       <div class="toolbar-right">
         <el-upload
-          :headers="getHeader()"
+          :headers="net.getHeader()"
           class="right12"
-          :action="getImportPresetsUrl()"
+          :action="net.getImportPresetsUrl()"
           :on-success="fillData"
           accept="application/json"
           :show-file-list="false"
@@ -72,8 +72,6 @@ const type = ref(0)
 const saving = ref(false)
 const args = ref<any>(null)
 
-function getHeader() { return net.getHeader() }
-function getImportPresetsUrl() { return net.getImportPresetsUrl() }
 
 function remake(item: any) {
   jumpByArgs(item.parameters ?? item.arguments, item.inputs, item.output, item.type)

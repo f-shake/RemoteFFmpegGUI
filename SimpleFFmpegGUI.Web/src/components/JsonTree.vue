@@ -44,11 +44,8 @@
   </div>
 </template>
 
-<script lang="ts">
-export default { name: 'JsonTree' }
-</script>
-
 <script setup lang="ts">
+defineOptions({ name: 'JsonTree' })
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{ data: any }>()

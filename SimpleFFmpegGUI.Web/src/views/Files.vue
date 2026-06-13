@@ -54,9 +54,9 @@
       </template>
       <p class="section-desc">仅支持小文件，大文件请通过其他方式上传。</p>
       <el-upload
-        :action="getUploadUrl()"
+        :action="net.getUploadUrl()"
         :auto-upload="false"
-        :headers="getHeader()"
+        :headers="net.getHeader()"
         ref="uploadRef"
         drag
         class="upload-area"
@@ -106,9 +106,6 @@ import * as net from '@/api'
 const status = ref<any>(null)
 const files = ref<any[]>([])
 const uploadRef = ref<any>(null)
-
-function getHeader() { return net.getHeader() }
-function getUploadUrl() { return net.getUploadUrl() }
 
 function download(file: any) {
   net.download(file.name)

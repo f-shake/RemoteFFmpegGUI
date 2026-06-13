@@ -19,3 +19,8 @@ export const sizes: Record<string, string> = {
 }
 
 export const pixelFormats = ['yuv420p', 'yuvj420p', 'yuv422p', 'yuvj422p', 'rgb24', 'gray', 'yuv420p10le']
+
+// localStorage keys
+export const argKey = "args";
+export const inputKey = "input";
+export const outputKey = "output";

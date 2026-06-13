@@ -1,4 +1,4 @@
-import { argKey, inputKey, outputKey } from '@/parameters'
+import { argKey, inputKey, outputKey } from '@/constants/encoding'
 import axios from 'axios'
 import { showError, showSuccess } from './ui'
 import { TaskType } from '@/models/TaskType'
