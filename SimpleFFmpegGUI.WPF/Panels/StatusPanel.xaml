@@ -6,7 +6,7 @@
     xmlns:dto="clr-namespace:SimpleFFmpegGUI.Dto;assembly=SimpleFFmpegGUI.Core"
     xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="clr-namespace:SimpleFFmpegGUI.Model;assembly=SimpleFFmpegGUI.Core"
+    xmlns:model="clr-namespace:SimpleFFmpegGUI.Enums;assembly=SimpleFFmpegGUI.Core"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
     xmlns:uimodel="clr-namespace:SimpleFFmpegGUI.WPF.ViewModels"
     x:Name="root"

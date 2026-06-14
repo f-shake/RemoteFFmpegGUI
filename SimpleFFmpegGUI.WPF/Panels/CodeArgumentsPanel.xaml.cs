@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
@@ -12,18 +13,6 @@ using System.Windows.Controls;
 
 namespace SimpleFFmpegGUI.WPF.Panels
 {
-    public enum ChannelOutputStrategy
-    {
-        [Description("重新编码")]
-        Code,
-
-        [Description("复制")]
-        Copy,
-
-        [Description("不导出")]
-        Disable,
-    }
-
     public partial class CodeArgumentsPanel : UserControl
     {
 
@@ -34,7 +23,7 @@ namespace SimpleFFmpegGUI.WPF.Panels
         }
         public CodeArgumentsPanelViewModel ViewModel { get; } = App.ServiceProvider.GetService<CodeArgumentsPanelViewModel>();
 
-        public OutputArguments GetOutputArguments()
+        public OutputParameters GetOutputArguments()
         {
             return ViewModel.GetArguments();
         }
@@ -49,7 +38,7 @@ namespace SimpleFFmpegGUI.WPF.Panels
           return  ViewModel.UpdateTypeAsync(type);
         }
 
-        public void Update(TaskType type, OutputArguments arguments)
+        public void Update(TaskType type, OutputParameters arguments)
         {
             ViewModel.Update(type, arguments);
         }
@@ -78,8 +67,9 @@ namespace SimpleFFmpegGUI.WPF.Panels
                     try
                     {
                         IsEnabled = false;
-                        var info = await MediaInfoService.GetMediaInfoAsync(file);
-                        var videoArgs = MediaInfoService.ConvertToVideoArguments(info);
+                        var mediaInfoService = App.ServiceProvider.GetRequiredService<MediaInfoService>();
+                        var info = await mediaInfoService.GetMediaInfoAsync(file);
+                        var videoArgs = mediaInfoService.ConvertToVideoArguments(info);
                         ViewModel.Video = videoArgs.Adapt<VideoArgumentsViewModel>();
                         if (videoArgs.Crf.HasValue)
                         {

@@ -1,4 +1,4 @@
-﻿using SimpleFFmpegGUI.Model;
+﻿using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.ViewModels;
 
 namespace SimpleFFmpegGUI.WPF.Messages

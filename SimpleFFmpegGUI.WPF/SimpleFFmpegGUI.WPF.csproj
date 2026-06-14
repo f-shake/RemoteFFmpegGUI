@@ -41,6 +41,12 @@
     <Reference Include="FzStandardLib">
       <HintPath>..\libs\FzStandardLib.dll</HintPath>
     </Reference>
+    <Reference Include="FzLib">
+      <HintPath>..\libs\FzLib.dll</HintPath>
+    </Reference>
+    <Reference Include="FzLib">
+      <HintPath>..\libs\FzLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

@@ -3,7 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
-using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Models.MediaInfo;
+using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
@@ -41,7 +42,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             SendMessage(new WindowEnableMessage(false));
             try
             {
-                MediaInfo = await MediaInfoService.GetMediaInfoAsync(FilePath);
+                MediaInfo = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetMediaInfoAsync(FilePath);
             }
             catch (Exception ex)
             {

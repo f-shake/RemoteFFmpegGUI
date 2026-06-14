@@ -2,14 +2,14 @@
 using FzLib;
 using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System.ComponentModel;
 using System.Linq;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
-    public partial class VideoArgumentsViewModel : ViewModelBase,IVideoCodeArguments, IArgumentVideModel
+    public partial class VideoArgumentsViewModel : ViewModelBase, IArgumentVideModel
     {
         [ObservableProperty]
         private string aspectRatio;

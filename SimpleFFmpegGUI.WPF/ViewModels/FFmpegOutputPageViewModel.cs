@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Input;
-using SimpleFFmpegGUI.Logging;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Events;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -10,11 +11,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class FFmpegOutputPageViewModel : ViewModelBase
     {
-        public FFmpegOutputPageViewModel()
+        public FFmpegOutputPageViewModel(DbLoggerService logger)
         {
-            DbLogger.Log += Logger_Log;
+            logger.Log += Logger_Log;
         }
-        public ObservableCollection<Log> Outputs { get; } = new ObservableCollection<Log>();
+        public ObservableCollection<LogEntity> Outputs { get; } = new ObservableCollection<LogEntity>();
 
         [RelayCommand]
         private void ClearAll()

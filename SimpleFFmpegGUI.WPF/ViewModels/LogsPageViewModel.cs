@@ -2,7 +2,9 @@
 using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Mapster;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
@@ -22,7 +24,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private DateTime from = DateTime.Now.AddDays(-1);
 
         [ObservableProperty]
-        private IList<Log> logs;
+        private IList<LogEntity> logs;
 
         [ObservableProperty]
         private TaskInfoViewModel selectedTask;
@@ -38,7 +40,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public LogsPageViewModel(TaskRepository taskManager, LogRepository logManager)
         {
-            taskManager.GetTasksAsync(take: 20).ContinueWith(data =>
+            taskManager.GetTasksAsync(new TaskQueryDto { Page = 1, PageSize = 20 }).ContinueWith(data =>
               {
                   Tasks = data.Result.List.Adapt<List<TaskInfoViewModel>>();
               });
@@ -57,7 +59,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         public async Task FillLogsAsync()
         {
-            Logs = (await logManager.GetLogsAsync(type: Type, taskId: SelectedTask?.Id ?? 0, from: From, to: To)).List;
+            Logs = (await logManager.GetLogsAsync(new LogQueryRequest { Type = Type, TaskId = SelectedTask?.Id, From = From, To = To })).List;
         }
     }
 }

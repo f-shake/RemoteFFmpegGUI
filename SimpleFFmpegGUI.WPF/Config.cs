@@ -4,7 +4,8 @@ using FzLib.DataStorage.Serialization;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -83,7 +84,7 @@ namespace SimpleFFmpegGUI.WPF
             }
         }
 
-        public Dictionary<TaskType, OutputArguments> LastOutputArguments { get; set; } = new Dictionary<TaskType, OutputArguments>();
+        public Dictionary<TaskType, OutputParameters> LastOutputArguments { get; set; } = new Dictionary<TaskType, OutputParameters>();
 
         public PerformanceTestCodecParameterViewModel[] TestCodecs { get; set; }
         public PerformanceTestLine[] TestItems { get; set; }

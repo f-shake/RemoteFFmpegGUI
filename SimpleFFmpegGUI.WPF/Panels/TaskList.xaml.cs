@@ -2,8 +2,6 @@
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WPF;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Pages;
@@ -23,7 +21,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.WPF.Panels
 {

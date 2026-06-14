@@ -15,12 +15,12 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class SettingPageViewModel : ViewModelBase
     {
-        private readonly DbConfigService configManager;
+        private readonly ConfigService configManager;
 
         [ObservableProperty]
         private Config configs;
 
-        public SettingPageViewModel(DbConfigService configManager)
+        public SettingPageViewModel(ConfigService configManager)
         {
             configs = Config.Instance.DeepCopy();
             this.configManager = configManager;

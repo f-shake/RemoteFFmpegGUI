@@ -3,7 +3,10 @@ using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Microsoft.Win32;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Model;
+using Microsoft.Extensions.DependencyInjection;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
@@ -50,15 +53,17 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [ObservableProperty]
         private int qCMode;
 
-        private FFmpegTaskServiceFactory runningFFmpeg = null;
+        private readonly IFFmpegTaskServiceFactory ffmpegFactory;
+        private FFmpegTaskService runningFFmpeg = null;
 
         private bool stopping = false;
 
         [ObservableProperty]
         private string testVideo = "test.mp4";
 
-        public TestWindowViewModel()
+        public TestWindowViewModel(IFFmpegTaskServiceFactory ffmpegFactory)
         {
+            this.ffmpegFactory = ffmpegFactory;
             if (Config.Instance.TestItems == null || Config.Instance.TestItems.Any(p => p == null) || Config.Instance.TestItems.Length != Tests.Length)
             {
                 for (int i = 0; i < SizesCount; i++)
@@ -137,28 +142,31 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <exception cref="Exception"></exception>
         private async Task CreateRefVideosAsync(string input, string[] sizes)
         {
-            var task = new TaskInfo()
+            var task = new TaskEntity()
             {
-                Inputs = new List<InputArguments>()
+                Inputs = new List<InputParameters>()
                 {
-                    new InputArguments()
+                    new InputParameters()
                     {
                         FilePath = input,
                     }
                 },
-                Arguments = new OutputArguments()
+                Parameters = new OutputParameters()
                 {
-                    Video = new VideoCodeArguments()
+                    Video = new VideoCodecParameters()
                     {
+                        Strategy = StreamStrategy.Transcode,
                         Preset = 7,
-                        Code = "H264",
+                        Codec = "H264",
                         Crf = 13,
                     },
-                    Audio = null,
-                    DisableAudio = true,
+                    Audio = new AudioCodecParameters()
+                    {
+                        Strategy = StreamStrategy.Disable,
+                    },
                     Format = "mp4",
                 },
-                Type = TaskType.Code,
+                Type = TaskType.Transcode,
             };
             for (int i = 0; i < sizes.Length; i++)
             {
@@ -169,14 +177,14 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     continue;
                 }
                 Message = $"正在准备{size.Split(':')[1]}P素材";
-                task.Arguments.Video.Size = size;
+                task.Parameters.Video.Size = size;
                 task.Output = Path.GetFullPath($"{TestDir}/{size.Split(':')[1]}P.mp4");
 
                 if (File.Exists(task.Output))
                 {
                     continue;
                 }
-                runningFFmpeg = new FFmpegManager(task);
+                runningFFmpeg = ffmpegFactory.Create(task);
                 runningFFmpeg.StatusChanged += (s, e) =>
                 {
                     var status = runningFFmpeg.GetStatus();
@@ -396,7 +404,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <exception cref="Exception"></exception>
         private async Task TestAsync(string input)
         {
-            var media = await MediaInfoService.GetMediaInfoAsync(input);
+            var media = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetMediaInfoAsync(input);
             var frameCount = media.Videos[0].FrameRate * media.Videos[0].DurationSeconds;
             await CreateRefVideosAsync(input, sizes);
             MaxProgress = Tests.Sum(p => p.Items.Count(q => q.IsChecked));
@@ -406,17 +414,16 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
 
 
-            var task = new TaskInfo()
+            var task = new TaskEntity()
             {
-                Inputs = new List<InputArguments>(),
-                Arguments = new OutputArguments()
+                Inputs = new List<InputParameters>(),
+                Parameters = new OutputParameters()
                 {
-                    Video = new VideoCodeArguments(),
-                    Audio = null,
-                    DisableAudio = true,
+                    Video = new VideoCodecParameters() { Strategy = StreamStrategy.Transcode },
+                    Audio = new AudioCodecParameters() { Strategy = StreamStrategy.Disable },
                     Format = "mp4"
                 },
-                Type = TaskType.Code,
+                Type = TaskType.Transcode,
             };
             for (int i = 0; i < CodecsCount; i++)
             {
@@ -435,24 +442,24 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     Message = $"正在编码：{codec.Name}，{sizeTexts[j]}";
                     DetailProgress = 0;
                     task.Inputs.Clear();
-                    task.Inputs.Add(new InputArguments() { FilePath = Path.GetFullPath($"test/{sizeTexts[j]}.mp4") });
-                    task.Arguments.Video.Code = codec.Name;
-                    task.Arguments.Video.Preset = codec.CpuSpeed;
-                    task.Arguments.Video.TwoPass = false;
+                    task.Inputs.Add(new InputParameters() { FilePath = Path.GetFullPath($"test/{sizeTexts[j]}.mp4") });
+                    task.Parameters.Video.Codec = codec.Name;
+                    task.Parameters.Video.Preset = codec.CpuSpeed;
+                    task.Parameters.Video.TwoPass = false;
                     switch (QCMode)//平均码率
                     {
                         case 0:
-                            task.Arguments.Video.AverageBitrate = test.MBitrate * codec.BitrateFactor;
+                            task.Parameters.Video.AverageBitrate = test.MBitrate * codec.BitrateFactor;
                             break;
                         default:
-                            task.Arguments.Video.Crf = codec.CRF;
+                            task.Parameters.Video.Crf = codec.CRF;
                             break;
                     }
-                    task.Arguments.Extra = codec.ExtraArguments;
+                    task.Parameters.Extra = codec.ExtraArguments;
                     string qctext = QCMode == 0 ? $"bitrate={test.MBitrate}M&factor={codec.BitrateFactor}" : $"crf={codec.CRF}";
                     task.Output = Path.GetFullPath($"{TestDir}/codec={codec.Name}&size={sizeTexts[j]}&speed={codec.CpuSpeed}&{qctext}.mp4");
 
-                    runningFFmpeg = new FFmpegManager(task);
+                    runningFFmpeg = ffmpegFactory.Create(task);
                     runningFFmpeg.StatusChanged += (s, e) =>
                     {
                         var status = runningFFmpeg.GetStatus();
@@ -491,24 +498,24 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
 
                     //编码质量测试
-                    var qualityTask = new TaskInfo()
+                    var qualityTask = new TaskEntity()
                     {
-                        Inputs = new List<InputArguments>()
+                        Inputs = new List<InputParameters>()
                         {
                             task.Inputs[0],
-                            new InputArguments()
+                            new InputParameters()
                             {
                                 FilePath =task.RealOutput
                             }
                         },
-                        Arguments = new OutputArguments(),
-                        Type = TaskType.Compare,
+                        Parameters = new OutputParameters(),
+                        Type = TaskType.QualityCheck,
                     };
                     Message = $"正在质量测试：{codec.Name}，{sizeTexts[j]}";
                     DetailProgress = 0;
 
 
-                    runningFFmpeg = new FFmpegManager(qualityTask);
+                    runningFFmpeg = ffmpegFactory.Create(qualityTask);
                     runningFFmpeg.StatusChanged += (s, e) =>
                     {
                         var status = runningFFmpeg.GetStatus();

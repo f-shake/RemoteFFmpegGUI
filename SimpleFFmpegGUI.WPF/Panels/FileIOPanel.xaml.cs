@@ -4,8 +4,8 @@ using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Pages;
@@ -43,7 +43,7 @@ namespace SimpleFFmpegGUI.WPF.Panels
 
         public FileIOPanelViewModel ViewModel { get; }
 
-        public void Update(TaskType type, List<InputArguments> inputs, string output)
+        public void Update(TaskType type, List<InputParameters> inputs, string output)
         {
             ViewModel.Update(type, inputs, output);
         }

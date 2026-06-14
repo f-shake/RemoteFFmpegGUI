@@ -2,8 +2,7 @@
 using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections;

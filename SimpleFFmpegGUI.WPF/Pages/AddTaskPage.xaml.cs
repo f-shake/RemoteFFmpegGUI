@@ -7,8 +7,9 @@ using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using SimpleFFmpegGUI.FFmpegArgument;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -49,19 +50,19 @@ namespace SimpleFFmpegGUI.WPF.Pages
         }
 
         public AddTaskPageViewModel ViewModel { get; set; }
-        public void SetAsClone(TaskInfo task)
+        public void SetAsClone(TaskEntity task)
         {
             canInitializeType = false;
             ViewModel.SetAndNotify(nameof(ViewModel.Type), task.Type);
             fileIOPanel.Update(task.Type, task.Inputs, task.Output);
-            argumentsPanel.Update(task.Type, task.Arguments);
+            argumentsPanel.Update(task.Type, task.Parameters);
         }
 
         public void SetFiles(IEnumerable<string> files, TaskType type)
         {
             canInitializeType = false;
             ViewModel.SetAndNotify(nameof(ViewModel.Type), type);
-            fileIOPanel.Update(type, files.Select(p => new InputArguments() { FilePath = p }).ToList(), null);
+            fileIOPanel.Update(type, files.Select(p => new InputParameters() { FilePath = p }).ToList(), null);
         }
 
         private void CommandBar_MouseEnter(object sender, MouseEventArgs e)

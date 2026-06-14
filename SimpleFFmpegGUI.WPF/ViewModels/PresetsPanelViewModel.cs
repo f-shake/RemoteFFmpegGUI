@@ -4,8 +4,11 @@ using Enterwell.Clients.Wpf.Notifications;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Repositories;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Pages;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
@@ -20,34 +23,35 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class PresetsPanelViewModel : ViewModelBase
     {
-        public PresetsPanelViewModel(PresetManager presetManager)
+        private readonly PresetRepository presetRepository;
+        private readonly PresetService presetService;
+
+        public PresetsPanelViewModel(PresetRepository presetRepository, PresetService presetService)
         {
-            this.presetManager = presetManager;
+            this.presetRepository = presetRepository;
+            this.presetService = presetService;
         }
 
-        private readonly PresetManager presetManager;
-
         [ObservableProperty]
-        private ObservableCollection<CodePreset> presets;
+        private ObservableCollection<PresetEntity> presets;
 
         public INotificationMessageManager Manager { get; } = new NotificationMessageManager();
 
         public async Task UpdateTypeAsync(TaskType type)
         {
             Type = type;
-            Presets = new ObservableCollection<CodePreset>((await presetManager.GetPresetsAsync()).Where(p => p.Type == type));
-
+            Presets = new ObservableCollection<PresetEntity>(await presetRepository.GetByTypeAsync(type));
         }
 
         [RelayCommand]
-        private async Task DeleteAsync(CodePreset preset)
+        private async Task DeleteAsync(PresetEntity preset)
         {
             Debug.Assert(CodeArgumentsViewModel != null);
             if (await CommonDialog.ShowYesNoDialogAsync("删除预设", $"是否删除预设：{preset.Name}？"))
             {
                 try
                 {
-                    await presetManager.DeletePresetAsync(preset.Id);
+                    await presetRepository.SoftDeleteAsync(preset.Id);
                     Presets.Remove(preset);
                 }
                 catch (Exception ex)
@@ -58,13 +62,13 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         [RelayCommand]
-        private async Task UpdateAsync(CodePreset preset)
+        private async Task UpdateAsync(PresetEntity preset)
         {
             Debug.Assert(CodeArgumentsViewModel != null);
             try
             {
-                preset.Arguments = CodeArgumentsViewModel.GetArguments();
-                await presetManager.UpdatePresetAsync(preset);
+                preset.Parameters = CodeArgumentsViewModel.GetArguments();
+                await presetRepository.UpdateAsync(preset);
                 QueueSuccessMessage($"预设“{preset.Name}”更新成功");
             }
             catch (Exception ex)
@@ -77,12 +81,12 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private TaskType type;
 
         [RelayCommand]
-        private async Task MakeDefaultAsync(CodePreset preset)
+        private async Task MakeDefaultAsync(PresetEntity preset)
         {
             Debug.Assert(preset != null);
             try
             {
-                await presetManager.SetDefaultPresetAsync(preset.Id);
+                await presetRepository.SetAsDefaultAsync(preset.Id);
                 QueueSuccessMessage($"已将“{preset.Name}”设置为当前任务类型的默认预设");
             }
             catch (Exception ex)
@@ -92,11 +96,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         [RelayCommand]
-        private void Apply(CodePreset preset)
+        private void Apply(PresetEntity preset)
         {
             Debug.Assert(CodeArgumentsViewModel != null);
             Debug.Assert(preset != null);
-            CodeArgumentsViewModel.Update(Type, preset.Arguments.Adapt<OutputArguments>());
+            CodeArgumentsViewModel.Update(Type, preset.Parameters);
             QueueSuccessMessage($"已加载预设“{preset.Name}”");
         }
         public CodeArgumentsPanelViewModel CodeArgumentsViewModel { get; set; }
@@ -113,7 +117,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
             try
             {
-                var preset = await presetManager.AddPresetAsync(name, Type, CodeArgumentsViewModel.GetArguments());
+                var preset = new PresetEntity { Name = name, Type = Type, Parameters = CodeArgumentsViewModel.GetArguments() };
+                await presetRepository.AddAsync(preset);
                 Presets.Add(preset);
             }
             catch (Exception ex)

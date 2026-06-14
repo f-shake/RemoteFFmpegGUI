@@ -6,8 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
 using Newtonsoft.Json;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -42,13 +43,13 @@ namespace SimpleFFmpegGUI.WPF.Pages
       
         private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count > 0 && e.AddedItems[0] is CodePreset preset)
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is PresetEntity preset)
             {
                 grd.RowDefinitions[2].Height = new GridLength(48);
                 lvw.IsHitTestVisible = false;
                 lvw.ScrollIntoView(preset);
                 grd.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
-                argumentsPanel.Update(preset.Type, preset.Arguments);
+                argumentsPanel.Update(preset.Type, preset.Parameters);
             }
             else
             {

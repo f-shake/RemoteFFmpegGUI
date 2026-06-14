@@ -6,8 +6,7 @@ using FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+// (usings removed - no longer needed)
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Collections.Generic;

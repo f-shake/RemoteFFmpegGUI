@@ -1,14 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
 using Newtonsoft.Json.Linq;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.ComponentModel;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
-    public partial class InputArgumentsViewModel : ViewModelBase, IInputArguments, IArgumentVideModel
+    public partial class InputArgumentsViewModel : ViewModelBase, IArgumentVideModel
     {
         [ObservableProperty]
         private bool canDelete;

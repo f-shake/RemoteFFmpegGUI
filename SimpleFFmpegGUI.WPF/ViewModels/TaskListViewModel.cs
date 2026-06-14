@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Model;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Pages;
@@ -17,7 +16,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.Repositories;
 
@@ -83,7 +82,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 SendMessage(new WindowEnableMessage(false));
                 foreach (var task in tasks)
                 {
-                    await taskManager.CancelTaskAsync(task.Id);
+                    await taskManager.UpdateStatusAsync([task.Id], TaskStatus.Cancel);
                     await task.UpdateSelfAsync();
                 }
             }
@@ -172,7 +171,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             Debug.Assert(tasks.Count > 0);
             foreach (var task in tasks)
             {
-                await taskManager.ResetTaskAsync(task.Id);
+                await taskManager.UpdateStatusAsync([task.Id], TaskStatus.Queue);
                 await task.UpdateSelfAsync();
                 currentTasks.NotifyTaskReseted(task);
             }

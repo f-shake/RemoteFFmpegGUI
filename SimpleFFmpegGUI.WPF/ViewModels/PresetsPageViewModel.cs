@@ -2,8 +2,11 @@
 using CommunityToolkit.Mvvm.Input;
 using FzLib;
 using Microsoft.Win32;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Repositories;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
 using System.Collections;
@@ -21,19 +24,21 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class PresetsPageViewModel : ViewModelBase
     {
-        private readonly PresetManager presetManager;
+        private readonly PresetService presetService;
+        private readonly PresetRepository presetRepository;
 
         [ObservableProperty]
-        private ObservableCollection<CodePreset> presets;
+        private ObservableCollection<PresetEntity> presets;
 
         [ObservableProperty]
-        private CodePreset selectedPreset;
+        private PresetEntity selectedPreset;
 
         [ObservableProperty]
-        private TaskType type = TaskType.Code;
-        public PresetsPageViewModel(PresetManager presetManager)
+        private TaskType type = TaskType.Transcode;
+        public PresetsPageViewModel(PresetService presetService, PresetRepository presetRepository)
         {
-            this.presetManager = presetManager;
+            this.presetService = presetService;
+            this.presetRepository = presetRepository;
         }
 
         public CodeArgumentsPanelViewModel CodeArgumentsViewModel { get; set; }
@@ -41,7 +46,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public async Task FillPresetsAsync()
         {
-            Presets = new ObservableCollection<CodePreset>(await presetManager.GetPresetsAsync(Type));
+            Presets = new ObservableCollection<PresetEntity>(await presetRepository.GetByTypeAsync(Type));
         }
 
         protected override async void OnPropertyChanged(PropertyChangedEventArgs e)
@@ -59,7 +64,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 try
                 {
-                    await presetManager.DeletePresetsAsync();
+                    await presetRepository.SoftDeleteAllAsync();
                     await FillPresetsAsync();
                 }
                 catch (Exception ex)
@@ -70,11 +75,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         [RelayCommand]
-        private async Task DeleteAsync(CodePreset preset)
+        private async Task DeleteAsync(PresetEntity preset)
         {
             if (await CommonDialog.ShowYesNoDialogAsync("删除预设", $"是否删除“{preset.Name}”？"))
             {
-                await presetManager.DeletePresetAsync(preset.Id);
+                await presetRepository.SoftDeleteAsync(preset.Id);
                 Presets.Remove(preset);
             }
         }
@@ -88,7 +93,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             string path = dialog.FileName;
             if (!string.IsNullOrEmpty(path))
             {
-                var json = await presetManager.ExportAsync();
+                var json = await presetService.ExportAsync();
                 File.WriteAllText(path, json, new UTF8Encoding());
                 QueueSuccessMessage("导出成功");
             }
@@ -104,7 +109,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 try
                 {
-                    await presetManager.ImportAsync(File.ReadAllText(path, new UTF8Encoding()));
+                    await Task.Run(async () => await presetService.ImportAsync(File.ReadAllText(path, new UTF8Encoding())));
                     await FillPresetsAsync();
                     QueueSuccessMessage("导入成功，同名预设已被更新");
                 }
@@ -121,8 +126,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             Debug.Assert(SelectedPreset != null);
             try
             {
-                SelectedPreset.Arguments = CodeArgumentsViewModel.GetArguments();
-                await presetManager.UpdatePresetAsync(SelectedPreset);
+                SelectedPreset.Parameters = CodeArgumentsViewModel.GetArguments();
+                await presetRepository.UpdateAsync(SelectedPreset);
                 SelectedPreset = null;
             }
             catch (Exception ex)
@@ -137,7 +142,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             Debug.Assert(SelectedPreset != null);
             Presets.ForEach(p => p.Default = false);
             SelectedPreset.Default = true;
-            await presetManager.SetDefaultPresetAsync(SelectedPreset.Id);
+            await presetRepository.SetAsDefaultAsync(SelectedPreset.Id);
         }
 
         [RelayCommand]

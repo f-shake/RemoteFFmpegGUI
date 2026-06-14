@@ -8,8 +8,7 @@ using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Model;
-using SimpleFFmpegGUI.Model.MediaInfo;
+using SimpleFFmpegGUI.Models.MediaInfo;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
@@ -96,7 +95,7 @@ namespace SimpleFFmpegGUI.WPF
             ViewModel.FilePath = path;
             try
             {
-                mediaInfo = await MediaInfoService.GetMediaInfoAsync(path);
+                mediaInfo = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetMediaInfoAsync(path);
             }
             catch (Exception ex)
             {

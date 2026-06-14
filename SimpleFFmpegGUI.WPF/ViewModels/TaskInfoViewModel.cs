@@ -6,8 +6,11 @@ using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Attributes;
 using SimpleFFmpegGUI.Events;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.Converters;
@@ -24,14 +27,14 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using TaskStatus = SimpleFFmpegGUI.Model.TaskStatus;
+using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
-    public partial class TaskInfoViewModel : ViewModelBase, IModel
+    public partial class TaskInfoViewModel : ViewModelBase
     {
         [ObservableProperty]
-        private OutputArguments arguments;
+        private OutputParameters arguments;
 
         [ObservableProperty]
         private DateTime createTime;
@@ -45,7 +48,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(InputText), nameof(InputsText), nameof(IOText))]
-        private List<InputArguments> inputs;
+        private List<InputParameters> inputs;
 
         [ObservableProperty]
         private bool isSelected;
@@ -62,10 +65,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(OutputText), nameof(IOText))]
         private string output;
 
-        private FFmpegTaskServiceFactory processManager;
+        private FFmpegTaskService processManager;
 
         [ObservableProperty]
-        private int processPriority = App.ServiceProvider.GetRequiredService<DbConfigService>().DefaultProcessPriority;
+        private int processPriority = App.ServiceProvider.GetRequiredService<ConfigService>().DefaultProcessPriority;
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Percent), nameof(Status), nameof(StatusText), nameof(IsIndeterminate))]
@@ -188,7 +191,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         public double Percent => ProcessStatus == null || ProcessStatus.HasDetail == false ? 0 : ProcessStatus.Progress.Percent;
-        public FFmpegTaskServiceFactory ProcessManager
+        public FFmpegTaskService ProcessManager
         {
             get => processManager;
             set
@@ -215,19 +218,19 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             : AttributeHelper.GetAttributeValue<NameDescriptionAttribute, string>(Type, p => p.Name) + "：" + InputText;
 
         public SnapshotViewModel Snapshot { get; } = new SnapshotViewModel();
-        public static TaskInfoViewModel FromTask(TaskInfo task)
+        public static TaskInfoViewModel FromTask(TaskEntity task)
         {
             return task.Adapt<TaskInfoViewModel>();
         }
 
-        public Task<TaskInfo> GetTaskAsync()
+        public Task<TaskEntity> GetTaskAsync()
         {
             return App.ServiceProvider.GetRequiredService<TaskRepository>().GetTaskAsync(Id);
         }
 
-        public TaskInfo ToTask()
+        public TaskEntity ToTask()
         {
-            return this.Adapt<TaskInfo>();
+            return this.Adapt<TaskEntity>();
         }
 
         public async Task UpdateSelfAsync()
@@ -240,7 +243,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         public async Task UpdateSnapshotAsync()
         {
             if (Snapshot.DisplayFrame == false
-                || Type != TaskType.Code //不是编码类型的任务
+                || Type != TaskType.Transcode //不是编码类型的任务
                 || ProcessStatus == null //没有状态
                 || !ProcessStatus.HasDetail) //状态无详情)
             {
@@ -261,7 +264,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             string path = null;
             try
             {
-                path = await MediaInfoService.GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
+                path = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
             }
             catch (Exception ex)
             {

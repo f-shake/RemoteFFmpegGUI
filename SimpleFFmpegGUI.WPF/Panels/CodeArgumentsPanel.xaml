@@ -7,6 +7,7 @@
     xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
+    xmlns:enums="clr-namespace:SimpleFFmpegGUI.Enums;assembly=SimpleFFmpegGUI.Core"
     xmlns:vm="clr-namespace:SimpleFFmpegGUI.WPF.ViewModels"
     d:DataContext="{d:DesignInstance Type=vm:CodeArgumentsPanelViewModel}"
     d:DesignHeight="450"
@@ -252,7 +253,7 @@
                 <!--  视频  -->
                 <GroupBox
                     Header="视频"
-                    Visibility="{Binding VideoOutputStrategy, ConverterParameter={x:Static local:ChannelOutputStrategy.Code}, Converter={StaticResource EqualConverter}}">
+                    Visibility="{Binding VideoOutputStrategy, ConverterParameter={x:Static enums:StreamStrategy.Transcode}, Converter={StaticResource EqualConverter}}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="120" />
@@ -492,7 +493,7 @@
                 <!--  音频  -->
                 <GroupBox
                     Header="音频"
-                    Visibility="{Binding AudioOutputStrategy, ConverterParameter={x:Static local:ChannelOutputStrategy.Code}, Converter={StaticResource EqualConverter}}">
+                    Visibility="{Binding AudioOutputStrategy, ConverterParameter={x:Static enums:StreamStrategy.Transcode}, Converter={StaticResource EqualConverter}}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="120" />
@@ -560,10 +561,10 @@
                 <!--  合并参数  -->
                 <GroupBox
                     Header="合并参数"
-                    Visibility="{Binding CanSetCombine, Converter={StaticResource Bool2VisibilityConverter}}">
+                    Visibility="{Binding CanSetMux, Converter={StaticResource Bool2VisibilityConverter}}">
                     <CheckBox
                         Content="裁剪到视频长度"
-                        IsChecked="{Binding Combine.Shortest}" />
+                        IsChecked="{Binding Mux.Shortest}" />
                 </GroupBox>
                 <!--  额外参数  -->
                 <GroupBox Header="其他">

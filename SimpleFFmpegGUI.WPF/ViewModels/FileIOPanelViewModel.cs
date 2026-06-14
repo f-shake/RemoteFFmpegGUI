@@ -6,7 +6,9 @@ using FzLib.WPF.Converters;
 using Mapster;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Helpers;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
@@ -80,7 +82,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <summary>
         /// 是否可以设置输出文件名
         /// </summary>
-        public bool CanSetOutputFileName => !(Type == TaskType.Code && Inputs.Count > 1);
+        public bool CanSetOutputFileName => !(Type == TaskType.Transcode && Inputs.Count > 1);
 
         public ObservableCollection<InputArgumentsViewModel> Inputs { get; } = new ObservableCollection<InputArgumentsViewModel>();
 
@@ -150,7 +152,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         }
 
-        public List<InputArguments> GetInputs()
+        public List<InputParameters> GetInputs()
         {
             foreach (var input in Inputs)
             {
@@ -161,10 +163,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 throw new Exception("输入文件少于需要的文件数量");
             }
-            return inputs.Adapt<List<InputArguments>>();
+            return inputs.Adapt<List<InputParameters>>();
         }
 
-        public string GetOutput(InputArguments inputArgs)
+        public string GetOutput(InputParameters inputArgs)
         {
             var input = inputArgs.FilePath;
             string dir = OutputDir;
@@ -237,7 +239,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <param name="inputs"></param>
         /// <param name="output"></param>
         /// <returns>若所有文件都被接受，返回True；若文件数量超过允许范围，返回False</returns>
-        public void Update(TaskType type, List<InputArguments> inputs, string output)
+        public void Update(TaskType type, List<InputParameters> inputs, string output)
         {
             UpdateType(type);
             Inputs.Clear();
@@ -267,22 +269,22 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         public void UpdateType(TaskType type)
         {
             Type = type;
-            CanChangeInputsCount = type is TaskType.Code or TaskType.Concat;
+            CanChangeInputsCount = type is TaskType.Transcode or TaskType.Concat;
             MinInputsCount = type switch
             {
-                TaskType.Code => 1,
-                TaskType.Combine or TaskType.Concat or TaskType.Compare => 2,
+                TaskType.Transcode => 1,
+                TaskType.Mux or TaskType.Concat or TaskType.QualityCheck => 2,
                 _ => 0
             };
             MaxInputsCount = type switch
             {
-                TaskType.Code or TaskType.Concat => int.MaxValue,
-                TaskType.Combine or TaskType.Compare => 2,
+                TaskType.Transcode or TaskType.Concat => int.MaxValue,
+                TaskType.Mux or TaskType.QualityCheck => 2,
                 _ => 0
             };
             ShowTimeClip = type switch
             {
-                TaskType.Code => true,
+                TaskType.Transcode => true,
                 _ => false
             };
         }
@@ -297,7 +299,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 if (input.Image2)
                 {
-                    string seqFilename = FileSystemUtility.GetSequence(path);
+                    string seqFilename = FileSystemHelper.GetSequence(path);
                     if (seqFilename != null)
                     {
                         bool rename = await CommonDialog.ShowYesNoDialogAsync("图像序列", $"指定的文件可能是图像序列中的一个，是否将输入路径修改为{seqFilename}？");

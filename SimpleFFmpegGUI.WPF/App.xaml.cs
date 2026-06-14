@@ -2,9 +2,11 @@
 using log4net;
 using log4net.Appender;
 using log4net.Layout;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using Microsoft.EntityFrameworkCore;
+using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Pages;
 using System;
@@ -17,10 +19,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using static SimpleFFmpegGUI.Services.DependencyInjectionExtension;
+using static SimpleFFmpegGUI.DependencyInjectionExtension;
 using System.Windows.Interop;
 using FFMpegCore;
-using SimpleFFmpegGUI.Logging;
 using SimpleFFmpegGUI.Services;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
@@ -47,18 +48,45 @@ namespace SimpleFFmpegGUI.WPF
 
             try
             {
-                FFmpegDbContext.Migrate();
+                var config = new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        [$"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}"] = "Data Source=db.sqlite"
+                    })
+                    .Build();
+                var tempServices = new ServiceCollection();
+                tempServices.AddSingleton<IConfiguration>(config);
+                tempServices.AddFFmpegServices();
+                var sp = tempServices.BuildServiceProvider();
+                var factory = sp.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
+                using var context = factory.CreateDbContext();
+                context.Database.EnsureCreated();
             }
             catch (Exception ex)
             {
-                throw new Exception("数据库迁移失败", ex);
+                throw new Exception("数据库初始化失败", ex);
             }
 
             Unosquare.FFME.Library.FFmpegDirectory = Path.Combine(FzLib.Program.App.ProgramDirectoryPath,"ffmpeg_FFME");
             GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Program.App.ProgramDirectoryPath, "ffmpeg") });
+            var config2 = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    [$"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}"] = "Data Source=db.sqlite"
+                })
+                .Build();
             var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<IConfiguration>(config2);
             ConfigureServices(serviceCollection);
             ServiceProvider = serviceCollection.BuildServiceProvider();
+
+            // 订阅数据库日志事件
+            var dbLogger = ServiceProvider.GetService<DbLoggerService>();
+            if (dbLogger != null)
+            {
+                dbLogger.Log += Logger_Log;
+                dbLogger.LogSaveFailed += Logger_LogSaveFailed;
+            }
 
             if (e.Args.Length > 1)
             {
@@ -139,23 +167,21 @@ namespace SimpleFFmpegGUI.WPF
             //本地日志
             AppLog = log4net.LogManager.GetLogger(GetType());
             AppLog.Info("程序启动");
+        }
 
-            //数据库日志
-            DbLogger.Log += Logger_Log;
-            DbLogger.LogSaveFailed += Logger_LogSaveFailed;
-            void Logger_Log(object sender, LogEventArgs e)
+        private void Logger_Log(object sender, LogEventArgs e)
+        {
+            switch (e.Log.Type)
             {
-                switch (e.Log.Type)
-                {
-                    case 'E': AppLog.Error(e.Log.Message); break;
-                    case 'W': AppLog.Warn(e.Log.Message); break;
-                    case 'I': AppLog.Info(e.Log.Message); break;
-                }
+                case 'E': AppLog.Error(e.Log.Message); break;
+                case 'W': AppLog.Warn(e.Log.Message); break;
+                case 'I': AppLog.Info(e.Log.Message); break;
             }
-            void Logger_LogSaveFailed(object sender, ExceptionEventArgs e)
-            {
-                AppLog.Error(e.Exception.Message, e.Exception);
-            }
+        }
+
+        private void Logger_LogSaveFailed(object sender, ExceptionEventArgs e)
+        {
+            AppLog.Error(e.Exception.Message, e.Exception);
         }
 
         private void UnhandledException_UnhandledExceptionCatched(object sender, FzLib.Program.Runtime.UnhandledExceptionEventArgs e)
@@ -179,7 +205,7 @@ namespace SimpleFFmpegGUI.WPF
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            DbLogger.SaveAll();
+            App.ServiceProvider?.GetService<DbLoggerService>()?.SaveAllAsync();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
 using Mapster;
+using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Repositories;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
         public override async Task RefreshAsync()
         {
-            var tasks = await taskManager.GetTasksAsync(null, Page * CountPerPage, CountPerPage);
+            var tasks = await taskManager.GetTasksAsync(new TaskQueryDto { Page = Page + 1, PageSize = CountPerPage });
             Count = tasks.TotalCount;
             PageCount = (int)Math.Ceiling(1.0 * Count / CountPerPage);
             Tasks = new ObservableCollection<TaskInfoViewModel>(tasks.List.Adapt<List<TaskInfoViewModel>>());

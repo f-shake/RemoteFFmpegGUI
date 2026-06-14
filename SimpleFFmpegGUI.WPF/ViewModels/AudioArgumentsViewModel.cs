@@ -1,12 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System.ComponentModel;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
-    public partial class AudioArgumentsViewModel : ViewModelBase, IAudioCodeArguments, IArgumentVideModel
+    public partial class AudioArgumentsViewModel : ViewModelBase, IArgumentVideModel
     {
         [ObservableProperty]
         private int? bitrate;

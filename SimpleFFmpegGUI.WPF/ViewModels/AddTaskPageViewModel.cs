@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FzLib;
 using Microsoft.Extensions.DependencyInjection;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.WPF.Enums;
+using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
@@ -43,7 +46,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             this.tasks = tasks;
         }
 
-        public bool CanAddFile => Type is TaskType.Code or TaskType.Concat;
+        public bool CanAddFile => Type is TaskType.Transcode or TaskType.Concat;
         public CodeArgumentsPanelViewModel CodeArgumentsViewModel { get; set; }
         public FileIOPanelViewModel FileIOViewModel { get; set; }
         public PresetsPanelViewModel PresetsViewModel { get; set; }
@@ -119,9 +122,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             var args = CodeArgumentsViewModel.GetArguments();
             try
             {
-                if (Type is TaskType.Code)
+                if (Type is TaskType.Transcode)
                 {
-                    FFmpegTaskServiceFactory.TestOutputArguments(args);
+                FFmpegTaskService.TestOutputArguments(args);
                 }
             }
             catch (FFmpegArgumentException ex)
@@ -133,23 +136,23 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             SendMessage(new WindowEnableMessage(false));
             try
             {
-                List<InputArguments> inputs = FileIOViewModel.GetInputs();
+                List<InputParameters> inputs = FileIOViewModel.GetInputs();
 
-                List<TaskInfo> createdTasks = new List<TaskInfo>();
+                List<TaskEntity> createdTasks = new List<TaskEntity>();
                 switch (Type)
                 {
-                    case TaskType.Code://需要将输入文件单独加入任务
+                    case TaskType.Transcode://需要将输入文件单独加入任务
                         foreach (var input in inputs)
                         {
-                            TaskInfo task = await taskManager.AddTaskAsync(TaskType.Code, new List<InputArguments>() { input }, FileIOViewModel.GetOutput(input), args);
+                            TaskEntity task = await taskManager.AddTaskAsync(TaskType.Transcode, new List<InputParameters>() { input }, FileIOViewModel.GetOutput(input), args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
                             createdTasks.Add(task);
                         }
                         QueueSuccessMessage($"已加入{inputs.Count}个任务队列");
                         break;
-                    case TaskType.Custom or TaskType.Compare://不存在文件输出
+                    case TaskType.Custom or TaskType.QualityCheck://不存在文件输出
                         {
-                            TaskInfo task = await taskManager.AddTaskAsync(Type, inputs, null, args);
+                            TaskEntity task = await taskManager.AddTaskAsync(Type, inputs, null, args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
                             createdTasks.Add(task);
                             QueueSuccessMessage("已加入队列");
@@ -157,7 +160,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                         break;
                     default:
                         {
-                            TaskInfo task = await taskManager.AddTaskAsync(Type, inputs, FileIOViewModel.GetOutput(inputs[0]), args);
+                            TaskEntity task = await taskManager.AddTaskAsync(Type, inputs, FileIOViewModel.GetOutput(inputs[0]), args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
                             createdTasks.Add(task);
                             QueueSuccessMessage("已加入队列");
@@ -215,9 +218,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             var args = CodeArgumentsViewModel.GetArguments();
             try
             {
-                if (Type is TaskType.Code)
+                if (Type is TaskType.Transcode)
                 {
-                    FFmpegTaskServiceFactory.TestOutputArguments(args);
+                FFmpegTaskService.TestOutputArguments(args);
                 }
             }
             catch (FFmpegArgumentException ex)
@@ -237,7 +240,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             try
             {
                 var host = Config.Instance.RemoteHosts[index];
-                List<InputArguments> inputs = FileIOViewModel.GetInputs().Adapt<List<InputArguments>>();
+                List<InputParameters> inputs = FileIOViewModel.GetInputs().Adapt<List<InputParameters>>();
                 foreach (var i in inputs)
                 {
                     //绝对路径，仅保留文件名
@@ -285,8 +288,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             try
             {
-                OutputArguments args = CodeArgumentsViewModel.GetArguments();
-                await CommonDialog.ShowOkDialogAsync("输出参数", FFmpegTaskServiceFactory.TestOutputArguments(args));
+                OutputParameters args = CodeArgumentsViewModel.GetArguments();
+                await CommonDialog.ShowOkDialogAsync("输出参数", FFmpegTaskService.TestOutputArguments(args));
             }
             catch (Exception ex)
             {
@@ -301,7 +304,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             await PresetsViewModel.UpdateTypeAsync(value);
         }
 
-        private void SaveAsLastOutputArguments(OutputArguments arguments)
+        private void SaveAsLastOutputArguments(OutputParameters arguments)
         {
             if (!Config.Instance.RememberLastArguments)
             {

@@ -3,9 +3,12 @@ using FzLib;
 using FzLib.Collection;
 using Mapster;
 using Newtonsoft.Json.Linq;
+using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.FFmpegLib;
-using SimpleFFmpegGUI.Manager;
-using SimpleFFmpegGUI.Model;
+using SimpleFFmpegGUI.Models.MediaParameters;
+using SimpleFFmpegGUI.Repositories;
+using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
@@ -18,18 +21,19 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class CodeArgumentsPanelViewModel : ViewModelBase
     {
-        private readonly PresetManager presetManager;
+        private readonly PresetRepository presetRepository;
+        private readonly PresetService presetService;
 
         private AudioArgumentsViewModel audio = new AudioArgumentsViewModel();
 
         [ObservableProperty]
-        private ChannelOutputStrategy audioOutputStrategy = ChannelOutputStrategy.Copy;
+        private StreamStrategy audioOutputStrategy = StreamStrategy.Copy;
 
         [ObservableProperty]
         private bool canApplyDefaultPreset = true;
 
         [ObservableProperty]
-        private bool canSetCombine;
+        private bool canSetMux;
 
         [ObservableProperty]
         private bool canSetConcat;
@@ -41,7 +45,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private bool canSpecifyFormat;
 
         [ObservableProperty]
-        private CombineArguments combine = new CombineArguments();
+        private MuxParameters mux = new MuxParameters();
 
         [ObservableProperty]
         private string extra;
@@ -50,20 +54,21 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private FormatArgumentViewModel format = new FormatArgumentViewModel();
 
         [ObservableProperty]
-        private ProcessedOptions processedOptions = new ProcessedOptions();
+        private ProcessedOperationParameters processedOptions = new ProcessedOperationParameters();
 
         [ObservableProperty]
         private VideoArgumentsViewModel video = new VideoArgumentsViewModel();
 
         [ObservableProperty]
-        private ChannelOutputStrategy videoOutputStrategy = ChannelOutputStrategy.Copy;
+        private StreamStrategy videoOutputStrategy = StreamStrategy.Copy;
 
-        public CodeArgumentsPanelViewModel(PresetManager presetManager)
+        public CodeArgumentsPanelViewModel(PresetRepository presetRepository, PresetService presetService)
         {
-            this.presetManager = presetManager;
+            this.presetRepository = presetRepository;
+            this.presetService = presetService;
         }
 
-        public OutputArguments Arguments { get; set; }
+        public OutputParameters Arguments { get; set; }
 
         public IEnumerable AspectRatios { get; } = new[] { "16:9", "4:3", "1:1", "3:4", "16:9", "2.35" };
 
@@ -79,7 +84,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public IEnumerable AudioSamplingRates { get; } = new[] { 8000, 16000, 32000, 44100, 48000, 96000, 192000 };
 
-        public IEnumerable ChannelOutputStrategies => Enum.GetValues(typeof(ChannelOutputStrategy));
+        public IEnumerable ChannelOutputStrategies => Enum.GetValues(typeof(StreamStrategy));
 
         public IEnumerable Formats => VideoFormat.Formats;
 
@@ -91,52 +96,61 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public IEnumerable VideoCodecs { get; } = new[] { "自动" }.Concat(VideoCodec.VideoCodecs.Select(p => p.Name));
 
-        public OutputArguments GetArguments()
+        public OutputParameters GetArguments()
         {
-            if (VideoOutputStrategy == ChannelOutputStrategy.Code)
+            if (VideoOutputStrategy == StreamStrategy.Transcode)
             {
                 Video.Apply();
             }
-            if (AudioOutputStrategy == ChannelOutputStrategy.Code)
+            if (AudioOutputStrategy == StreamStrategy.Transcode)
             {
                 Audio.Apply();
             }
             Format.Apply();
-            return new OutputArguments()
+
+            var videoParams = new VideoCodecParameters();
+            videoParams.Strategy = VideoOutputStrategy;
+            if (VideoOutputStrategy == StreamStrategy.Transcode)
             {
-                Video = VideoOutputStrategy == ChannelOutputStrategy.Code ? Video.Adapt<VideoCodeArguments>() : null,
-                Audio = AudioOutputStrategy == ChannelOutputStrategy.Code ? Audio.Adapt<AudioCodeArguments>() : null,
+                Video.Adapt(videoParams);
+            }
+
+            var audioParams = new AudioCodecParameters();
+            audioParams.Strategy = AudioOutputStrategy;
+            if (AudioOutputStrategy == StreamStrategy.Transcode)
+            {
+                Audio.Adapt(audioParams);
+            }
+
+            return new OutputParameters()
+            {
+                Video = videoParams,
+                Audio = audioParams,
                 Format = Format.Format,
-                Combine = Combine,
+                Mux = Mux,
                 Extra = Extra,
-                ProcessedOptions = ProcessedOptions,
-                DisableVideo = VideoOutputStrategy == ChannelOutputStrategy.Disable,
-                DisableAudio = AudioOutputStrategy == ChannelOutputStrategy.Disable,
+                ProcessedOperationParameters = ProcessedOptions,
             };
         }
 
-        public void Update(TaskType type, OutputArguments argument = null)
+        public void Update(TaskType type, OutputParameters argument = null)
         {
-            CanSpecifyFormat = type is TaskType.Code or TaskType.Combine or TaskType.Concat;
-            CanSetVideoAndAudio = type is TaskType.Code;
-            CanSetCombine = type is TaskType.Combine;
+            CanSpecifyFormat = type is TaskType.Transcode or TaskType.Mux or TaskType.Concat;
+            CanSetVideoAndAudio = type is TaskType.Transcode;
+            CanSetMux = type is TaskType.Mux;
             CanSetConcat = type is TaskType.Concat;
             if (argument != null)
             {
                 Video = argument.Video.Adapt<VideoArgumentsViewModel>();
                 Video?.Update();
-                VideoOutputStrategy = argument.Video == null ?
-                    argument.DisableVideo ? ChannelOutputStrategy.Disable : ChannelOutputStrategy.Copy
-                    : ChannelOutputStrategy.Code;
+                VideoOutputStrategy = argument.Video.Strategy;
                 Audio = argument.Audio.Adapt<AudioArgumentsViewModel>();
                 Audio?.Update();
-                AudioOutputStrategy = argument.Audio == null ?
-                 argument.DisableAudio ? ChannelOutputStrategy.Disable : ChannelOutputStrategy.Copy
-                 : ChannelOutputStrategy.Code;
+                AudioOutputStrategy = argument.Audio.Strategy;
                 Format = new FormatArgumentViewModel() { Format = argument.Format };
                 Format.Update();
-                Combine = argument.Combine;
-                ProcessedOptions = argument.ProcessedOptions ?? new ProcessedOptions();
+                Mux = argument.Mux ?? new MuxParameters();
+                ProcessedOptions = argument.ProcessedOperationParameters ?? new ProcessedOperationParameters();
                 Extra = argument.Extra;
             }
         }
@@ -148,7 +162,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 if (Config.Instance.RememberLastArguments)//记住上次输出参数
                 {
-                    if (Config.Instance.LastOutputArguments.GetOrDefault(type) is OutputArguments lastArguments)
+                    if (Config.Instance.LastOutputArguments.GetOrDefault(type) is OutputParameters lastArguments)
                     {
                         Update(type, lastArguments);
                         //(await this.CreateMessageAsync()).QueueSuccess($"已加载上次任务的参数");
@@ -157,9 +171,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 }
                 if (!updated)//记住上次输出参数为False，或不存在上次的参数
                 {
-                    if ((await presetManager.GetDefaultPresetAsync(type)) is CodePreset defaultPreset)
+                    var defaultPreset = await presetRepository.GetDefaultByTypeAsync(type);
+                    if (defaultPreset != null)
                     {
-                        Update(type, defaultPreset.Arguments);
+                        Update(type, defaultPreset.Parameters);
                         QueueSuccessMessage($"已加载默认预设“{defaultPreset.Name}”");
                         updated = true;
                     }
@@ -171,9 +186,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
         }
 
-        partial void OnAudioOutputStrategyChanged(ChannelOutputStrategy value)
+        partial void OnAudioOutputStrategyChanged(StreamStrategy value)
         {
-            if (value == ChannelOutputStrategy.Code && Audio == null)
+            if (value == StreamStrategy.Transcode && Audio == null)
             {
                 Audio = new AudioArgumentsViewModel();
             }
@@ -183,19 +198,19 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             if (CanSetVideoAndAudio)
             {
-                VideoOutputStrategy = ChannelOutputStrategy.Code;
-                AudioOutputStrategy = ChannelOutputStrategy.Code;
+                VideoOutputStrategy = StreamStrategy.Transcode;
+                AudioOutputStrategy = StreamStrategy.Transcode;
             }
             else
             {
-                VideoOutputStrategy = ChannelOutputStrategy.Disable;
-                AudioOutputStrategy = ChannelOutputStrategy.Disable;
+                VideoOutputStrategy = StreamStrategy.Disable;
+                AudioOutputStrategy = StreamStrategy.Disable;
             }
         }
 
-        partial void OnVideoOutputStrategyChanged(ChannelOutputStrategy value)
+        partial void OnVideoOutputStrategyChanged(StreamStrategy value)
         {
-            if (value == ChannelOutputStrategy.Code && Video == null)
+            if (value == StreamStrategy.Transcode && Video == null)
             {
                 Video = new VideoArgumentsViewModel();
             }
