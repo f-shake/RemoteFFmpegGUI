@@ -36,9 +36,9 @@ onMounted(() => {
 <style scoped>
 .el-select-dropdown__item {
   max-width: 100%;
-  height: auto;
-  min-height: 34px;
-  white-space: break-spaces;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding-left: 28px;
   padding-right: 28px;
 }

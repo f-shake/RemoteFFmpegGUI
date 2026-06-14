@@ -17,6 +17,21 @@
   flex-shrink: 0;
 }
 
+/* 节标题（图标+文字） */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.section-title .el-icon {
+  font-size: 18px;
+  color: var(--el-color-primary);
+  flex-shrink: 0;
+}
+
 /* 表单内联调整 */
 .flex-row {
   display: flex;

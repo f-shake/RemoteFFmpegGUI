@@ -9,6 +9,7 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FzLib.Web;
+using SimpleFFmpegGUI.Compatibility;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.Entities;
@@ -91,7 +92,13 @@ public class PresetService(PresetRepository repository)
     public async Task<ServiceResult> ImportAsync(string json, bool overwrite = false)
     {
         var presets = json.DeserializeWithFriendlySettings<List<PresetEntity>>();
-        if (presets == null)
+
+        if (presets == null || presets.Count == 0 || presets.All(p => p.Parameters == null))
+        {
+            presets = PresetConverter.ConvertJson(json);
+        }
+
+        if (presets == null || presets.Count == 0)
         {
             return ServiceResult.Failure("JSON反序列化失败", HttpStatusCode.BadRequest);
         }
@@ -152,5 +159,10 @@ public class PresetService(PresetRepository repository)
         }
 
         return await repository.SoftDeleteRangeAsync(idList);
+    }
+
+    public async Task<int> ClearAllAsync()
+    {
+        return await repository.SoftDeleteAllAsync();
     }
 }

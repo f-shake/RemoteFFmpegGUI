@@ -60,6 +60,11 @@ public class PresetRepository(FFmpegDbContext db)
             .Where(p => p.Id == id)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.IsDeleted, true));
 
+    public async Task<int> SoftDeleteAllAsync() =>
+        await db.Presets
+            .Where(p => !p.IsDeleted)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.IsDeleted, true));
+
     public async Task<int> SoftDeleteRangeAsync(IEnumerable<int> ids) =>
         await db.Presets
             .Where(p => ids.Contains(p.Id))

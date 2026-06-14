@@ -1,52 +1,57 @@
 <template>
-  <el-form label-position="top">
-    <el-form-item label="输入文件">
-      <el-collapse v-model="activeInput" style="width: 100%">
-        <el-collapse-item :name="index" v-for="(value, index) in inputFiles" :key="index">
-          <template #title>
-            <span class="file-title">
-              文件{{ index + 1 }}
-              <span v-if="value.name" class="file-name">{{ value.name }}</span>
-              <span v-if="value.enableFrom" class="file-clip">从{{ value.from }}s</span>
-              <span v-if="value.enableTo" class="file-clip">到{{ value.to }}s</span>
-              <span v-if="value.enableDuration" class="file-clip">经{{ value.duration }}s</span>
-            </span>
-          </template>
-          <div style="padding: 8px 0">
-            <file-select @update:file="(f: string) => updateFile(f, index)" :file="value.name" class="file-input" />
-            <div v-if="showClip" class="clip-section">
-              <time-input :enabled="value.enableFrom" label="开始" @update:enabled="(v: boolean) => value.enableFrom = v"
-                @update:time="(v: number) => value.from = v" :time="value.from" />
-              <time-input :enabled="value.enableTo" label="结束" @update:enabled="(v: boolean) => value.enableTo = v"
-                @update:time="(v: number) => value.to = v" :time="value.to" />
+  <div class="io-group">
+    <el-form label-position="top">
+      <el-form-item label="输入文件">
+        <el-collapse v-model="activeInput" style="width: 100%">
+          <el-collapse-item :name="index" v-for="(value, index) in inputFiles" :key="index">
+            <template #title>
+              <span class="file-title">
+                文件{{ index + 1 }}
+                <span v-if="value.name" class="file-name">{{ value.name }}</span>
+                <span v-if="value.enableFrom" class="file-clip">从{{ value.from }}s</span>
+                <span v-if="value.enableTo" class="file-clip">到{{ value.to }}s</span>
+                <span v-if="value.enableDuration" class="file-clip">经{{ value.duration }}s</span>
+              </span>
+            </template>
+            <div style="padding: 8px 0">
+              <file-select @update:file="(f: string) => updateFile(f, index)" :file="value.name" class="file-input" />
+              <div v-if="showClip" class="clip-section">
+                <time-input :enabled="value.enableFrom" label="开始" @update:enabled="(v: boolean) => value.enableFrom = v"
+                  @update:time="(v: number) => value.from = v" :time="value.from" />
+                <time-input :enabled="value.enableTo" label="结束" @update:enabled="(v: boolean) => value.enableTo = v"
+                  @update:time="(v: number) => value.to = v" :time="value.to" />
+              </div>
+              <div v-if="showMore" class="more-section">
+                <el-checkbox v-model="value.image2">输入为图片序列</el-checkbox>
+                <span v-show="value.image2" class="left12">输入帧率：</span>
+                <el-input-number v-show="value.image2" v-model="value.framerate" size="small" :precision="3" :min="1" :max="120" />
+              </div>
+              <div v-if="showMore" class="more-section">
+                <span>其他参数：</span>
+                <el-input v-model="value.extra" class="width240" />
+              </div>
             </div>
-            <div v-if="showMore" class="more-section">
-              <el-checkbox v-model="value.image2">输入为图片序列</el-checkbox>
-              <span v-show="value.image2" class="left12">输入帧率：</span>
-              <el-input-number v-show="value.image2" v-model="value.framerate" size="small" :precision="3" :min="1" :max="120" />
-            </div>
-            <div v-if="showMore" class="more-section">
-              <span>其他参数：</span>
-              <el-input v-model="value.extra" class="width240" />
-            </div>
-          </div>
-        </el-collapse-item>
-      </el-collapse>
-      <div class="file-actions">
-        <el-button @click="addFile" circle><el-icon><Plus /></el-icon></el-button>
-        <el-button @click="removeFile" circle v-if="inputFiles.length > min"><el-icon><Close /></el-icon></el-button>
-      </div>
-    </el-form-item>
+          </el-collapse-item>
+        </el-collapse>
+        <div class="file-actions">
+          <el-button @click="addFile" circle><el-icon><Plus /></el-icon></el-button>
+          <el-button @click="removeFile" circle v-if="inputFiles.length > min"><el-icon><Close /></el-icon></el-button>
+        </div>
+      </el-form-item>
+    </el-form>
 
-    <el-form-item label="输出文件名">
-      <el-input placeholder="留空则自动生成" v-model="outputFile"
-        :disabled="inputFiles.length > 1 && !singleOutput"
-        @change="(value: string) => emit('update:output', value)" class="output-input" />
-      <div v-if="inputFiles.length > 1 && !singleOutput" class="gray top12">
-        输入多个文件时，输出文件名为首个不重复的原文件名
+    <div class="output-row">
+      <label class="output-label">输出文件名</label>
+      <div class="output-control">
+        <el-input placeholder="留空则自动生成" v-model="outputFile"
+          :disabled="inputFiles.length > 1 && !singleOutput"
+          @change="(value: string) => emit('update:output', value)" class="output-input" />
+        <div v-if="inputFiles.length > 1 && !singleOutput" class="gray top12">
+          输入多个文件时，输出文件名为首个不重复的原文件名
+        </div>
       </div>
-    </el-form-item>
-  </el-form>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -159,7 +164,42 @@ defineExpose({ getArgs, outputFile })
 .clip-section, .more-section { margin-top: 12px; }
 .file-actions { margin-top: 12px; display: flex; gap: 8px; }
 .output-input { max-width: 400px; }
+
+.output-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 18px;
+}
+.output-label {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
+}
+.output-control {
+  flex: 1;
+  min-width: 0;
+}
+
 @media (max-width: 640px) {
+  .output-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding-top: 12px;
+  }
+  .output-label {
+    width: auto;
+    text-align: left;
+    padding: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
   .output-input { max-width: 100%; }
 }
 </style>

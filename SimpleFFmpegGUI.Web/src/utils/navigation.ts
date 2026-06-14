@@ -2,6 +2,7 @@ import { argKey, inputKey, outputKey } from '@/constants/encoding'
 import axios from 'axios'
 import { showError, showSuccess } from './ui'
 import { TaskType } from '@/models/TaskType'
+import router from '@/router'
 
 // 基准目录缓存，用于路径显示
 let inputDir: string | null = null
@@ -44,21 +45,23 @@ export function displayPath(path: string | null | undefined): string {
 }
 
 export function jump(url: string): void {
-  window.location.href = import.meta.env.BASE_URL + '#/' + url
+  router.push('/' + url).catch(() => {})
 }
 
 export function loadArgs(argsComponent: any): any {
-  if (argsComponent && localStorage.getItem(argKey) != null) {
-    const args = JSON.parse(localStorage.getItem(argKey) as string)
-    try {
-      argsComponent.updateFromArgs(args)
-      showSuccess('已加载参数')
-    } catch (error) {
-      showError('加载参数失败：' + error)
-      console.log('错误参数为', args)
-      throw error
-    } finally {
-      localStorage.removeItem(argKey)
+  if (argsComponent) {
+    const raw = localStorage.getItem(argKey)
+    if (raw != null) {
+      try {
+        const args = JSON.parse(raw)
+        argsComponent.updateFromArgs(args)
+        showSuccess('已加载参数')
+      } catch (error) {
+        showError('加载参数失败：' + error)
+        console.log('错误参数为', raw)
+      } finally {
+        localStorage.removeItem(argKey)
+      }
     }
   }
   const result: any = {}
@@ -66,7 +69,11 @@ export function loadArgs(argsComponent: any): any {
     result.output = localStorage.getItem(outputKey)
   }
   if (localStorage.getItem(inputKey) != null) {
-    result.inputs = JSON.parse(localStorage.getItem(inputKey) as string)
+    try {
+      result.inputs = JSON.parse(localStorage.getItem(inputKey) as string)
+    } catch {
+      // 忽略无效输入
+    }
   }
   localStorage.removeItem(argKey)
   localStorage.removeItem(outputKey)
@@ -75,8 +82,10 @@ export function loadArgs(argsComponent: any): any {
 }
 
 export function jumpByArgs(args: any, input: any[], output: string, type: number): void {
-  localStorage.setItem(argKey, JSON.stringify(args))
+  if (args != null) {
+    localStorage.setItem(argKey, JSON.stringify(args))
+  }
   localStorage.setItem(inputKey, JSON.stringify(input))
-  localStorage.setItem(outputKey, output)
+  localStorage.setItem(outputKey, output ?? '')
   jump('add/' + TaskType.GetByID(type).Route)
 }

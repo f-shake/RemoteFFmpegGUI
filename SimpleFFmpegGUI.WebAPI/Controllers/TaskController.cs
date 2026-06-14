@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Models.Entities;
+using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
@@ -127,6 +128,12 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync([FromBody] IEnumerable<int> ids)
         {
             return await taskService.ResetTasksAsync(ids);
+        }
+
+        [HttpPost("PreviewArguments")]
+        public ActionResult<string> PreviewArguments([FromBody] OutputParameters parameters)
+        {
+            return FFmpegTaskService.TestOutputArguments(parameters);
         }
 
         [HttpGet("Formats")]

@@ -32,29 +32,55 @@
       <el-table ref="table" :data="list" @selection-change="handleSelectionChange" size="small">
         <el-table-column type="expand">
           <template #default="props">
-            <el-form label-position="left" label-width="120px" class="expand-form">
-              <el-form-item label="输入">
-                <div v-for="file in (props.row.displayInputs ?? props.row.inputs)" :key="file.filePath">
-                  <a class="right24">
-                    {{ file.displayPath ?? file.filePath }}
-                    <br v-if="file.image2" />{{ file.image2 ? '图像序列，帧率为' + file.framerate : '' }}
-                    <br v-if="file.extra" />{{ file.extra ? '额外参数：' + file.extra : '' }}
-                  </a>
-                  <a v-if="file.from" class="right12">开始：{{ file.from }}s</a>
-                  <a v-if="file.to" class="right12">结束：{{ file.to }}s</a>
-                  <a v-if="file.duration" class="right12">经过：{{ file.duration }}s</a>
+            <div class="task-expand">
+              <div class="c-card c-card--thin">
+                <div class="c-card-header">
+                  <el-icon><InfoFilled /></el-icon>
+                  <span>任务详情</span>
                 </div>
-              </el-form-item>
-              <el-form-item label="输出">{{ props.row.output }}</el-form-item>
-              <el-form-item label="创建时间">{{ props.row.createTime }}</el-form-item>
-              <el-form-item label="开始时间">{{ props.row.startTime }}</el-form-item>
-              <el-form-item label="结束时间">{{ props.row.finishTime }}</el-form-item>
-              <el-form-item label="FFmpeg参数" class="mono">{{ props.row.fFmpegArguments }}</el-form-item>
-              <el-form-item label="信息" class="s">{{ props.row.message }}</el-form-item>
-              <el-form-item label="参数">
-                <CodeArgumentsDescription :type="props.row.type" :args="props.row.parameters" />
-              </el-form-item>
-            </el-form>
+                <div class="c-grid">
+                  <span class="c-label">输入</span>
+                  <span class="c-val">
+                    <div v-for="file in (props.row.displayInputs ?? props.row.inputs)" :key="file.filePath">
+                      <div>{{ file.displayPath ?? file.filePath }}</div>
+                      <div v-if="file.image2" class="c-hint">图像序列，帧率为 {{ file.framerate }}</div>
+                      <div v-if="file.extra" class="c-hint">额外参数：{{ file.extra }}</div>
+                      <div v-if="file.from || file.to || file.duration" class="c-hint">
+                        <span v-if="file.from">开始 {{ file.from }}s</span>
+                        <span v-if="file.to" class="left12">结束 {{ file.to }}s</span>
+                        <span v-if="file.duration" class="left12">经过 {{ file.duration }}s</span>
+                      </div>
+                    </div>
+                  </span>
+                  <span class="c-label">输出</span>
+                  <span class="c-val" :class="{ 'c-val--nil': !props.row.output }">{{ props.row.output || '自动生成' }}</span>
+                  <span class="c-label">创建时间</span>
+                  <span class="c-val">{{ props.row.createTime }}</span>
+                  <span class="c-label" v-if="props.row.startTime">开始时间</span>
+                  <span class="c-val" v-if="props.row.startTime">{{ props.row.startTime }}</span>
+                  <span class="c-label" v-if="props.row.finishTime">结束时间</span>
+                  <span class="c-val" v-if="props.row.finishTime">{{ props.row.finishTime }}</span>
+                </div>
+              </div>
+
+              <div v-if="props.row.fFmpegArguments" class="c-card">
+                <div class="c-card-header">
+                  <el-icon><Code /></el-icon>
+                  <span>FFmpeg 参数</span>
+                </div>
+                <pre class="c-ffmpeg">{{ props.row.fFmpegArguments }}</pre>
+              </div>
+
+              <div v-if="props.row.message" class="c-card">
+                <div class="c-card-header">
+                  <el-icon><ChatDotSquare /></el-icon>
+                  <span>信息</span>
+                </div>
+                <pre class="c-ffmpeg">{{ props.row.message }}</pre>
+              </div>
+
+              <CodeArgumentsDescription v-if="props.row.parameters" :type="props.row.type" :args="props.row.parameters" />
+            </div>
           </template>
         </el-table-column>
         <el-table-column type="selection" width="48" />
@@ -342,13 +368,82 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 展开详情 */
-.expand-form {
-  padding: 8px 0;
+/* 展开详情 — 卡片风格（与 CodeArgumentsDescription 一致） */
+.task-expand {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
 }
-.expand-form :deep(.el-form-item__label) {
+.task-expand :deep(.c-card) {
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  margin: 0 8px;
+}
+.task-expand :deep(.c-card-header) {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+.task-expand :deep(.c-card-header .el-icon) {
+  font-size: 14px;
+  color: var(--el-color-primary);
+}
+.task-expand :deep(.c-grid) {
+  display: grid;
+  gap: 2px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.task-expand :deep(.c-card:not(.c-card--thin) .c-grid) {
+  grid-template-columns: auto 1fr auto 1fr auto 1fr;
+}
+.task-expand :deep(.c-card:not(.c-card--thin) .c-grid.audio-grid) {
+  grid-template-columns: auto 1fr auto 1fr;
+}
+.task-expand :deep(.c-card--thin .c-grid) {
+  grid-template-columns: auto 1fr;
+}
+@media (max-width: 640px) {
+  .task-expand :deep(.c-card:not(.c-card--thin) .c-grid) {
+    grid-template-columns: auto 1fr;
+  }
+}
+.task-expand :deep(.c-label) {
   color: var(--text-secondary);
-  font-weight: 500;
+  white-space: nowrap;
+  text-align: right;
+}
+.task-expand :deep(.c-val) {
+  color: var(--text-primary);
+  word-break: break-all;
+  min-width: 0;
+}
+.task-expand :deep(.c-val--nil) {
+  color: var(--text-disabled);
+  font-style: italic;
+}
+.task-expand :deep(.c-hint) {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.c-ffmpeg {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-regular);
 }
 
 /* 状态徽标微调 */

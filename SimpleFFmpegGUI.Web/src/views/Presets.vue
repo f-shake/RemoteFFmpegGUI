@@ -2,6 +2,11 @@
   <div class="page-container-wide">
     <!-- 操作栏 -->
     <div class="presets-toolbar">
+      <div class="toolbar-left">
+        <el-popconfirm title="真的要清空所有预设吗？此操作不可撤销！" @confirm="clearPresets">
+          <template #reference><el-button size="default">清空</el-button></template>
+        </el-popconfirm>
+      </div>
       <div class="toolbar-right">
         <el-upload
           :headers="net.getHeader()"
@@ -31,13 +36,15 @@
             <el-tag size="small" effect="plain">{{ scope.row.typeText }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="200" class-name="ops-col">
           <template #default="scope">
-            <el-button text @click="remake(scope.row)">新建任务</el-button>
-            <el-button text @click="edit(scope.row)">编辑</el-button>
-            <el-popconfirm title="真的要删除预设吗？" style="margin-left: 8px" @confirm="deletePreset(scope.row)">
-              <template #reference><el-button text>删除</el-button></template>
-            </el-popconfirm>
+            <div class="ops-btns">
+              <el-button text size="small" @click="remake(scope.row)">新建任务</el-button>
+              <el-button text size="small" @click="edit(scope.row)">编辑</el-button>
+              <el-popconfirm title="真的要删除预设吗？" @confirm="deletePreset(scope.row)">
+                <template #reference><el-button text size="small">删除</el-button></template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
         <el-table-column align="right">
@@ -100,6 +107,10 @@ function edit(item: any) {
   dialogVisible.value = true
 }
 
+function clearPresets() {
+  net.postClearPresets().then(fillData).catch(showError)
+}
+
 function exportPresets() {
   net.downloadExportPresetsUrl()
 }
@@ -128,12 +139,19 @@ onMounted(() => {
 
 .presets-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin: 4px 0 12px;
+  align-items: center;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .toolbar-right {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .table-card {
@@ -141,12 +159,18 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.cell .el-button { margin-right: 6px; }
+.ops-btns { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
+.ops-btns .el-popconfirm { display: inline-flex; }
+.ops-btns .el-button { flex-shrink: 0; }
 
 @media (max-width: 640px) {
   .presets-toolbar {
-    justify-content: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
     margin: 8px 0 8px;
+  }
+  .toolbar-left {
+    order: 2;
   }
   .toolbar-right {
     width: 100%;

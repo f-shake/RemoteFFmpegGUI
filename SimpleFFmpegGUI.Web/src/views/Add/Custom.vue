@@ -10,7 +10,7 @@
       <CodeArguments ref="args" :type="99" />
     </el-card>
 
-    <AddToTaskButtons :addFunc="addTask" />
+    <AddToTaskButtons :addFunc="addTask" :getArgs="getArgs" />
   </div>
 </template>
 
@@ -33,6 +33,10 @@ function addTask(start: boolean) {
     output: null,
     parameter: taskArgs
   })
+}
+
+function getArgs() {
+  return args.value?.getArgs()
 }
 
 onMounted(() => {

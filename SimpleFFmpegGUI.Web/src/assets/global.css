@@ -89,8 +89,8 @@ html.dark {
   --text-disabled: #4e4e54;
   --text-placeholder: #6b6b72;
 
-  --border-color: #2a2a2e;
-  --border-color-light: #1e1e20;
+  --border-color: #404044;
+  --border-color-light: #303034;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);

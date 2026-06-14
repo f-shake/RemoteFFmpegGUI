@@ -21,8 +21,11 @@
     </div>
     <div v-if="type === 1">
       <h3>合并参数</h3>
-      <el-form-item label="音频比视频长">
-        <el-switch v-model="code.combine.shortest" active-text="裁剪到最短的媒体" inactive-text="最后部分静帧或黑屏" />
+      <el-form-item label="长度处理">
+        <el-radio-group v-model="code.combine.shortest">
+          <el-radio :value="true">裁剪到最短媒体的长度</el-radio>
+          <el-radio :value="false">结尾部分静帧或黑屏</el-radio>
+        </el-radio-group>
       </el-form-item>
     </div>
     <div v-if="showFormats">
@@ -40,13 +43,15 @@
       </el-form-item>
     </div>
     <div v-if="showVideosAndAudios">
-      <h3>视频编码</h3>
-      <el-form-item label="重编码">
-        <el-switch v-model="code.enableVideo" />
-        <span v-show="!code.enableVideo" class="right12 gray">不导出视频</span>
-        <el-switch v-show="!code.enableVideo" v-model="code.disableVideo" />
+      <h3>视频</h3>
+      <el-form-item label="视频输出">
+        <el-radio-group v-model="code.videoStrategy">
+          <el-radio-button value="Code">重新编码</el-radio-button>
+          <el-radio-button value="Copy">复制</el-radio-button>
+          <el-radio-button value="Disable">不导出</el-radio-button>
+        </el-radio-group>
       </el-form-item>
-      <div v-show="code.enableVideo">
+      <div v-show="code.videoStrategy === 'Code'">
         <el-form-item label="编码">
           <el-select v-model="code.video.code">
             <el-option v-for="c in videoCodes" :key="c" :label="c" :value="c" />
@@ -121,13 +126,15 @@
       </div>
     </div>
     <div v-if="showVideosAndAudios">
-      <h3>音频编码</h3>
-      <el-form-item label="重编码">
-        <el-switch v-model="code.enableAudio" />
-        <span v-show="!code.enableAudio" class="right12 gray">不导出音频</span>
-        <el-switch v-show="!code.enableAudio" v-model="code.disableAudio" />
+      <h3>音频</h3>
+      <el-form-item label="音频输出">
+        <el-radio-group v-model="code.audioStrategy">
+          <el-radio-button value="Code">重新编码</el-radio-button>
+          <el-radio-button value="Copy">复制</el-radio-button>
+          <el-radio-button value="Disable">不导出</el-radio-button>
+        </el-radio-group>
       </el-form-item>
-      <div v-show="code.enableAudio">
+      <div v-show="code.audioStrategy === 'Code'">
         <el-form-item label="编码">
           <el-select v-model="code.audio.code">
             <el-option v-for="c in audioCodes" :key="c" :label="c" :value="c" />
@@ -197,8 +204,8 @@ const preset = ref<any>(null)
 const newPresetName = ref('新预设')
 
 const code = reactive({
-  enableVideo: true,
-  enableAudio: true,
+  videoStrategy: 'Code',
+  audioStrategy: 'Code',
   enableFormat: true,
   format: 'mp4',
   video: {
@@ -212,8 +219,6 @@ const code = reactive({
     code: 'AAC', enableBitrate: true, bitrate: 128, enableSample: false, sample: 48000
   },
   combine: { shortest: false },
-  disableVideo: false,
-  disableAudio: false,
   extra: '',
   processedOptions: { syncModifiedTime: false, deleteInputFiles: false }
 })
@@ -279,10 +284,11 @@ function savePreset() {
 }
 
 function getArgs() {
+  const strats: Record<string, number> = { Code: 0, Copy: 1, Disable: 2 }
   const v = code.video
-  const videoArg = code.enableVideo
+  const videoArg = code.videoStrategy === 'Code'
     ? {
-        code: v.code, preset: v.preset,
+        codec: v.code, preset: v.preset, strategy: 0,
         crf: v.enableCrf ? v.crf : null, twoPass: v.twoPass,
         size: v.enableSize ? v.size : null,
         fps: v.enableFps ? v.fps : null,
@@ -292,29 +298,22 @@ function getArgs() {
         aspectRatio: v.enableAspectRatio ? v.aspectRatio : null,
         pixelFormat: v.enablePixelFormat ? v.pixelFormat : null
       }
-    : null
+    : { strategy: strats[code.videoStrategy] }
   const a = code.audio
-  const audioArg = code.enableAudio
+  const audioArg = code.audioStrategy === 'Code'
     ? {
-        code: a.code,
+        codec: a.code, strategy: 0,
         bitrate: a.enableBitrate ? a.bitrate : null,
         samplingRate: a.enableSample ? a.sample : null
       }
-    : null
+    : { strategy: strats[code.audioStrategy] }
   const arg = {
     video: videoArg,
     audio: audioArg,
-    input: null,
-    combine: props.type === 1 ? { shortest: code.combine.shortest } : null,
     extra: code.extra,
-    processedOptions: code.processedOptions,
-    disableVideo: videoArg == null && code.disableVideo,
-    disableAudio: audioArg == null && code.disableAudio,
-    format: code.enableFormat ? code.format : null
-  }
-  if (arg.disableVideo && arg.disableAudio) {
-    showError('不可同时禁用视频和音频')
-    return null
+    format: code.enableFormat ? code.format : null,
+    stream: { maps: [] },
+    processedOperationParameters: code.processedOptions
   }
   return arg
 }
@@ -323,36 +322,49 @@ function updateFromArgs(args: any) {
   const video = args.video
   const audio = args.audio
   const combine = args.combine
-  if (video != null && !args.disableVideo) {
-    code.enableVideo = true
-    const uiV = code.video
-    uiV.code = video.code
-    uiV.preset = video.preset
-    uiV.enableCrf = video.crf != null; if (video.crf != null) uiV.crf = video.crf
-    uiV.twoPass = video.twoPass
-    uiV.enableSize = video.size != null; if (video.size != null) uiV.size = video.size
-    uiV.enableFps = video.fps != null; if (video.fps != null) uiV.fps = video.fps
-    uiV.enableBitrate = video.averageBitrate != null; if (video.averageBitrate != null) uiV.bitrate = video.averageBitrate
-    uiV.enableMaxBitrate = video.maxBitrate != null
-    if (video.maxBitrate != null) { uiV.maxBitrate = video.maxBitrate; uiV.maxBitrateBuffer = video.maxBitrateBuffer }
-    uiV.enableAspectRatio = !!video.aspectRatio; if (video.aspectRatio) uiV.aspectRatio = video.aspectRatio
-    uiV.enablePixelFormat = !!video.pixelFormat; if (video.pixelFormat) uiV.pixelFormat = video.pixelFormat
+  if (video != null) {
+    const strat = video.strategy
+    if (strat === 0 || (strat == null && !args.disableVideo)) {
+      code.videoStrategy = 'Code'
+      const uiV = code.video
+      uiV.code = video.codec ?? video.code
+      uiV.preset = video.preset
+      uiV.enableCrf = video.crf != null; if (video.crf != null) uiV.crf = video.crf
+      uiV.twoPass = video.twoPass
+      uiV.enableSize = video.size != null; if (video.size != null) uiV.size = video.size
+      uiV.enableFps = video.fps != null; if (video.fps != null) uiV.fps = video.fps
+      uiV.enableBitrate = video.averageBitrate != null; if (video.averageBitrate != null) uiV.bitrate = video.averageBitrate
+      uiV.enableMaxBitrate = video.maxBitrate != null
+      if (video.maxBitrate != null) { uiV.maxBitrate = video.maxBitrate; uiV.maxBitrateBuffer = video.maxBitrateBuffer }
+      uiV.enableAspectRatio = !!video.aspectRatio; if (video.aspectRatio) uiV.aspectRatio = video.aspectRatio
+      uiV.enablePixelFormat = !!video.pixelFormat; if (video.pixelFormat) uiV.pixelFormat = video.pixelFormat
+    } else if (strat === 2 || args.disableVideo) {
+      code.videoStrategy = 'Disable'
+    } else {
+      code.videoStrategy = 'Copy'
+    }
   } else {
-    code.enableVideo = false
+    code.videoStrategy = args.disableVideo ? 'Disable' : 'Copy'
   }
-  if (audio != null && !args.disableAudio) {
-    const uiA = code.audio
-    uiA.code = audio.code
-    uiA.enableBitrate = audio.bitrate != null; if (audio.bitrate != null) uiA.bitrate = audio.bitrate
-    uiA.enableSample = audio.samplingRate != null; if (audio.samplingRate != null) uiA.sample = audio.samplingRate
+  if (audio != null) {
+    const strat = audio.strategy
+    if (strat === 0 || (strat == null && !args.disableAudio)) {
+      code.audioStrategy = 'Code'
+      const uiA = code.audio
+      uiA.code = audio.codec ?? audio.code
+      uiA.enableBitrate = audio.bitrate != null; if (audio.bitrate != null) uiA.bitrate = audio.bitrate
+      uiA.enableSample = audio.samplingRate != null; if (audio.samplingRate != null) uiA.sample = audio.samplingRate
+    } else if (strat === 2 || args.disableAudio) {
+      code.audioStrategy = 'Disable'
+    } else {
+      code.audioStrategy = 'Copy'
+    }
   } else {
-    code.enableAudio = false
+    code.audioStrategy = args.disableAudio ? 'Disable' : 'Copy'
   }
   if (props.type === 1 && combine != null) {
     code.combine = { shortest: combine.shortest }
   }
-  code.disableVideo = args.disableVideo
-  code.disableAudio = args.disableAudio
   code.enableFormat = args.format != null
   code.format = args.format
   code.extra = args.extra ?? args.Extra

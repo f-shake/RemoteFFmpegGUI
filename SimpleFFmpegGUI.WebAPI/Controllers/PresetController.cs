@@ -75,6 +75,13 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             return NoContent();
         }
 
+        [HttpPost("Clear")]
+        public async Task<IActionResult> ClearAsync()
+        {
+            await presetsService.ClearAllAsync();
+            return NoContent();
+        }
+
         [HttpGet("Export")]
         public async Task<FileResult> ExportAsync()
         {

@@ -71,6 +71,10 @@ export function getFormats(): Promise<AxiosResponse<any>> {
   return axios.get(getUrl('Task/Formats'))
 }
 
+export function previewArguments(parameters: any): Promise<AxiosResponse<string>> {
+  return axios.post(getUrl('Task/PreviewArguments'), parameters)
+}
+
 // ===== Queue =====
 
 export function getQueueStatus(): Promise<AxiosResponse<any>> {
@@ -121,6 +125,10 @@ export function postAddOrUpdatePreset(name: string, type: number, args: any): Pr
 
 export function postDeletePreset(id: number): Promise<AxiosResponse<any>> {
   return axios.post(getUrl(`Preset/${id}/Delete`))
+}
+
+export function postClearPresets(): Promise<AxiosResponse<any>> {
+  return axios.post(getUrl('Preset/Clear'))
 }
 
 export function getImportPresetsUrl(): string {

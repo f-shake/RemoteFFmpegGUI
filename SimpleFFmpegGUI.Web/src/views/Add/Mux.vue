@@ -14,11 +14,14 @@
         <el-form-item label="音频">
           <file-select :file="audio" @update:file="(v: string) => audio = v" style="width:100%" />
         </el-form-item>
-        <el-form-item label="输出文件名">
+      </el-form>
+      <div class="output-row">
+        <label class="output-label">输出文件名</label>
+        <div class="output-control">
           <el-input placeholder="留空则自动生成" v-model="output" class="output-input" />
           <div class="gray top12">输出文件名在处理时会自动重命名为首个不存在重复文件的文件名</div>
-        </el-form-item>
-      </el-form>
+        </div>
+      </div>
     </el-card>
 
     <el-card shadow="never" class="section-card">
@@ -31,7 +34,7 @@
       <CodeArguments :type="1" ref="args" />
     </el-card>
 
-    <AddToTaskButtons :addFunc="addTask" />
+    <AddToTaskButtons :addFunc="addTask" :getArgs="getArgs" />
   </div>
 </template>
 
@@ -65,6 +68,10 @@ function addTask(start: boolean) {
   })
 }
 
+function getArgs() {
+  return args.value?.getArgs()
+}
+
 onMounted(() => {
   const inputOutput = loadArgs(args.value)
   if (inputOutput.inputs) {
@@ -78,5 +85,42 @@ onMounted(() => {
 <style scoped>
 @import '@/assets/AddCommon.css';
 .output-input { max-width: 400px; }
-@media (max-width: 640px) { .output-input { max-width: 100%; } }
+
+.output-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 18px;
+}
+.output-label {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1;
+  padding: 0 12px 0 0;
+  box-sizing: border-box;
+}
+.output-control {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .output-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding-top: 12px;
+  }
+  .output-label {
+    width: auto;
+    text-align: left;
+    padding: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .output-input { max-width: 100%; }
+}
 </style>
