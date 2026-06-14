@@ -371,3 +371,6 @@ yarn-error.log*
 *.sw?
 
 db.sqlite*
+
+# Test assets (large files not tracked by git)
+test/

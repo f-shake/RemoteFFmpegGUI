@@ -23,7 +23,7 @@
         </div>
       </template>
       <el-descriptions :column="2" border size="small" class="info-descriptions">
-        <el-descriptions-item label="长度" width="80px">{{ formatDoubleTimeSpan(info.duration, true) }}</el-descriptions-item>
+        <el-descriptions-item label="长度" width="80px">{{ formatDoubleTimeSpan(info.Duration, true) }}</el-descriptions-item>
         <el-descriptions-item label="格式">{{ info.format }}</el-descriptions-item>
         <el-descriptions-item label="码率">{{ (info.overallBitRate / 1024 / 1024).toFixed(2) }} Mbps</el-descriptions-item>
       </el-descriptions>
@@ -39,7 +39,7 @@
       </template>
       <el-descriptions :column="2" border size="small" class="info-descriptions">
         <el-descriptions-item label="编码">{{ s.format }}</el-descriptions-item>
-        <el-descriptions-item label="编码预设">{{ s.format_Profile }}</el-descriptions-item>
+        <el-descriptions-item label="编码预设">{{ s.Format_Profile }}</el-descriptions-item>
         <el-descriptions-item label="码率">{{ s.bitRate == null ? '' : (s.bitRate / 1024 / 1024).toFixed(2) }} Mbps</el-descriptions-item>
         <el-descriptions-item label="帧率">{{ s.frameRate.toFixed(3) }} FPS</el-descriptions-item>
         <el-descriptions-item label="分辨率">{{ s.width }} × {{ s.height }}</el-descriptions-item>

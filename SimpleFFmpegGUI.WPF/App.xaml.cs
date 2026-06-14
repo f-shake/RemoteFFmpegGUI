@@ -5,6 +5,7 @@ using log4net.Layout;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using SimpleFFmpegGUI.Compatibility;
 using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.WPF.ViewModels;
@@ -54,6 +55,10 @@ namespace SimpleFFmpegGUI.WPF
                         [$"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}"] = "Data Source=db.sqlite"
                     })
                     .Build();
+
+                // 迁移 v1.1 → v2.0 数据库（如果检测到旧版）
+                DatabaseMigrator.MigrateIfNeeded(config.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey));
+
                 var tempServices = new ServiceCollection();
                 tempServices.AddSingleton<IConfiguration>(config);
                 tempServices.AddFFmpegServices();

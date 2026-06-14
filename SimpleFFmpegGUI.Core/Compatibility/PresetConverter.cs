@@ -50,6 +50,13 @@ public static class PresetConverter
         };
     }
 
+    /// <summary>
+    /// 公开入口：将旧版 v1.1 的 OutputArguments DTO 转换为新版 v2.0 的 OutputParameters。
+    /// 供 <see cref="DatabaseMigrator"/> 在数据库迁移时调用。
+    /// </summary>
+    public static OutputParameters ConvertFromV1_1(OldOutputArgumentsDto old)
+        => ConvertArguments(old);
+
     private static OutputParameters ConvertArguments(OldOutputArgumentsDto old)
     {
         var result = new OutputParameters

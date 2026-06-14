@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using SimpleFFmpegGUI.Compatibility;
 using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Converters;
 using SimpleFFmpegGUI.Data;
@@ -63,12 +64,12 @@ static void InitializeLogs(IServiceProvider services)
 void CreateWebApplication(string[] args)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-    MigrateDb();
     var builder = WebApplication.CreateBuilder(args);
     ConfigureAppsettings(builder);
     ConfigureServices(builder);
     app = builder.Build();
     ConfigureMiddleware(app);
+    MigrateDb(app.Configuration);
     InitializeDatabase(app);
     InitializeLogs(app.Services);
     app.Run();
@@ -173,15 +174,19 @@ void ConfigureMiddleware(WebApplication app)
     app.MapGet("/", () => "SimpleFFmpegGUI API is running!");
 }
 
-static void MigrateDb()
+static void MigrateDb(IConfiguration configuration)
 {
     try
     {
-        // FFmpegDbContext.Migrate();
+        var connStr = configuration.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey);
+        if (DatabaseMigrator.MigrateIfNeeded(connStr))
+        {
+            Console.WriteLine("数据库迁移完成");
+        }
     }
     catch (Exception ex)
     {
-        Log.Fatal(ex, "数据库迁移失败");
+        Console.Error.WriteLine($"数据库迁移失败: {ex.Message}");
         Environment.Exit(-1);
     }
 }

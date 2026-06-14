@@ -23,6 +23,9 @@ export function formatDateTime(
 }
 
 export function formatDoubleTimeSpan(seconds: number, includeMs = false): string {
+  if (seconds == null || isNaN(seconds)) {
+    return includeMs ? '00:00.0' : '00:00:00'
+  }
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds / 60) % 60)
   const s = seconds - m * 60 - h * 3600
