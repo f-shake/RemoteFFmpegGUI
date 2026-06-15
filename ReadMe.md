@@ -83,6 +83,8 @@ bin
 └── ffmpeg_FFME
     ├── ffmpeg.exe
     └── *.dll
+
+> `ffmpeg_FFME` 用于 WPF 的视频裁剪预览功能，需使用 **FFmpeg 7.0 或更高版本**（当前为 **8.0.1**），直接复制 `ffmpeg` 目录的文件即可。
 ```
 
 ### 自动构建

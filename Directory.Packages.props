@@ -33,7 +33,7 @@
     <PackageVersion Include="JKang.IpcServiceFramework.Client.NamedPipe" Version="3.2.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageVersion Include="zgabi.FFME.Windows" Version="6.0.2" />
+    <PackageVersion Include="zgabi.FFME.Windows" Version="7.0.361-beta.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
