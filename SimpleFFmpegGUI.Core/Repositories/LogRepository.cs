@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
@@ -10,11 +10,12 @@ using SimpleFFmpegGUI.Models.Entities;
 
 namespace SimpleFFmpegGUI.Repositories
 {
-    public class LogRepository(FFmpegDbContext db, DbLoggerService logger)
+    public class LogRepository(IDbContextFactory<FFmpegDbContext> dbFactory, DbLoggerService logger)
     {
         public async Task<PagedListResponse<LogEntity>> GetLogsAsync(LogQueryRequest request)
         {
             await logger.SaveAllAsync();
+            await using var db = await dbFactory.CreateDbContextAsync();
 
             IQueryable<LogEntity> logs = db.Logs;
             if (request.Type.HasValue)

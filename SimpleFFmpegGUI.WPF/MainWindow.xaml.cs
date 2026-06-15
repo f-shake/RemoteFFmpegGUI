@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using FzLib.WPF;
+using iNKORE.UI.WPF.Modern.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
@@ -117,6 +118,15 @@ namespace SimpleFFmpegGUI.WPF
                 return;
             }
             throw new ArgumentException();
+        }
+
+        private void TabControl_TabCloseRequested(object sender, iNKORE.UI.WPF.Modern.Controls.Helpers.TabViewTabCloseRequestedEventArgs e)
+        {
+            if (e.Tab != null && e.Tab.Content != null)
+            {
+                RemoveTab(e.Tab.Content);
+                e.Handled = true;
+            }
         }
 
         /// <summary>

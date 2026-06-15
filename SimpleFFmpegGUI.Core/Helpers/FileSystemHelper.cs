@@ -128,7 +128,8 @@ namespace SimpleFFmpegGUI.Helpers
             }
 
             //获取非重复文件名，确保输出不和任何输入文件冲突
-            var usedPaths = new HashSet<string>(task.Inputs?.Select(p => p.FilePath) ?? []);
+            //使用 OrdinalIgnoreCase 防止 Windows 大小写不敏感导致同名覆盖
+            var usedPaths = new HashSet<string>(task.Inputs?.Select(p => p.FilePath) ?? [], StringComparer.OrdinalIgnoreCase);
             task.RealOutput = FileNameHelper.GenerateUniquePath(output, usedPaths);
 
             //创建目录

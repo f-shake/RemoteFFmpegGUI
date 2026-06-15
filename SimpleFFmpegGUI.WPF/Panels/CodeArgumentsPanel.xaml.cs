@@ -71,6 +71,7 @@ namespace SimpleFFmpegGUI.WPF.Panels
                         var info = await mediaInfoService.GetMediaInfoAsync(file);
                         var videoArgs = mediaInfoService.ConvertToVideoArguments(info);
                         ViewModel.Video = videoArgs.Adapt<VideoArgumentsViewModel>();
+                        ViewModel.Video.Code = videoArgs.Codec;
                         if (videoArgs.Crf.HasValue)
                         {
                             ViewModel.Video.EnableCrf = true;

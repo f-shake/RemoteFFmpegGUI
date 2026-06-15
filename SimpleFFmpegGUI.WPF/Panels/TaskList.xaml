@@ -64,7 +64,7 @@
                                         <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource ListViewItemForegroundPointerOver}" />
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource ListViewItemForegroundSelected}" />
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ListViewItemBackgroundSelected}" />
                                         <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource ListViewItemForegroundSelected}" />
                                     </Trigger>
                                     <MultiTrigger>

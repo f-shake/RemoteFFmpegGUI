@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Services;
@@ -16,11 +16,12 @@ using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Repositories;
 
-public class TaskRepository(FFmpegDbContext db)
+public class TaskRepository(IDbContextFactory<FFmpegDbContext> dbFactory)
 {
     public async Task<TaskEntity> AddTaskAsync(TaskType type, List<InputParameters> path, string outputPath,
         OutputParameters arg)
     {
+        await using var db = await dbFactory.CreateDbContextAsync();
         var task = new TaskEntity()
         {
             Type = type,
@@ -33,28 +34,27 @@ public class TaskRepository(FFmpegDbContext db)
         return task;
     }
 
-    public async Task<List<TaskEntity>> GetCurrentTasksAsync(DateTime startTime)
+    public async Task<List<TaskEntity>> GetCurrentTasksAsync()
     {
-        var tasks = db.Tasks.Where(p => p.IsDeleted == false);
-        var runningTasks = await tasks.Where(p => p.Status == TaskStatus.Processing).ToListAsync();
-        var queueTasks = await tasks.Where(p => p.Status == TaskStatus.Queue).ToListAsync();
-        var doneTasks = await tasks.Where(p => p.Status == TaskStatus.Done).Where(p => p.StartTime > startTime)
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var runningTasks = await db.Tasks
+            .Where(p => !p.IsDeleted && p.Status == TaskStatus.Processing)
             .ToListAsync();
-        var errorTasks = await tasks.Where(p => p.Status == TaskStatus.Error).Where(p => p.StartTime > startTime)
+        var queueTasks = await db.Tasks
+            .Where(p => !p.IsDeleted && p.Status == TaskStatus.Queue)
             .ToListAsync();
-        var cancelTasks = await tasks.Where(p => p.Status == TaskStatus.Cancel).Where(p => p.StartTime > startTime)
-            .ToListAsync();
-        return [.. runningTasks, .. queueTasks, .. doneTasks, .. errorTasks, .. cancelTasks];
+        return [.. runningTasks, .. queueTasks];
     }
 
     public async Task<TaskEntity> GetTaskAsync(int id)
     {
-        var task = await db.Tasks.FindAsync(id);
-        return task;
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.Tasks.FindAsync(id);
     }
 
     public async Task<PagedListResponse<TaskEntity>> GetTasksAsync(TaskQueryDto query)
     {
+        await using var db = await dbFactory.CreateDbContextAsync();
         IQueryable<TaskEntity> tasks = db.Tasks
             .Where(p => p.IsDeleted == false);
         if (query.Status.HasValue)
@@ -91,18 +91,21 @@ public class TaskRepository(FFmpegDbContext db)
 
     public async Task<List<TaskEntity>> GetTasksAsync(ICollection<int> ids)
     {
+        await using var db = await dbFactory.CreateDbContextAsync();
         return await db.Tasks
             .Where(e => ids.Any(id => id == e.Id))
             .ToListAsync();
     }
 
-    public Task<bool> HasQueueTasksAsync()
+    public async Task<bool> HasQueueTasksAsync()
     {
-        return db.Tasks.AnyAsync(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.Tasks.AnyAsync(p => p.IsDeleted == false && p.Status == TaskStatus.Queue);
     }
 
     public async Task<int> SoftDeleteAsync(ICollection<int> ids)
     {
+        await using var db = await dbFactory.CreateDbContextAsync();
         switch (ids.Count)
         {
             case 0:
@@ -117,14 +120,16 @@ public class TaskRepository(FFmpegDbContext db)
         }
     }
 
-    public Task<int> UpdateStatusAsync(ICollection<int> ids, TaskStatus status)
+    public async Task<int> UpdateStatusAsync(ICollection<int> ids, TaskStatus status)
     {
-        return db.Tasks.Where(p => ids.Any(id => id == p.Id))
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.Tasks.Where(p => ids.Any(id => id == p.Id))
             .ExecuteUpdateAsync(p => p.SetProperty(t => t.Status, status));
     }
 
     internal async Task<ISet<int>> GetTaskIdsAsync()
     {
+        await using var db = await dbFactory.CreateDbContextAsync();
         return await db.Tasks.Select(p => p.Id).ToHashSetAsync();
     }
 }

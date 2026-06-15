@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using SimpleFFmpegGUI.Compatibility;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.WPF.ViewModels;
@@ -82,6 +83,7 @@ namespace SimpleFFmpegGUI.WPF
                 .Build();
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<IConfiguration>(config2);
+            serviceCollection.Configure<AppSettings>(_ => { });
             ConfigureServices(serviceCollection);
             ServiceProvider = serviceCollection.BuildServiceProvider();
 
@@ -210,7 +212,18 @@ namespace SimpleFFmpegGUI.WPF
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            App.ServiceProvider?.GetService<DbLoggerService>()?.SaveAllAsync();
+            var dbLogger = App.ServiceProvider?.GetService<DbLoggerService>();
+            if (dbLogger != null)
+            {
+                try
+                {
+                    Task.Run(() => dbLogger.SaveAllAsync()).GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // 日志写入失败不影响退出
+                }
+            }
         }
     }
 }

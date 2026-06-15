@@ -58,7 +58,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public override async Task RefreshAsync()
         {
-            var tasks = await taskManager.GetCurrentTasksAsync(App.AppStartTime);
+            var tasks = await taskManager.GetCurrentTasksAsync();
             Tasks = new ObservableCollection<TaskInfoViewModel>(tasks.Adapt<List<TaskInfoViewModel>>());
         }
 

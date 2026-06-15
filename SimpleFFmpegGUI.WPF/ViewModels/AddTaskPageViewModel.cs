@@ -33,6 +33,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
     {
         private readonly TaskRepository taskManager;
         private readonly CurrentTasksViewModel tasks;
+        private readonly QueueService queueService;
         [ObservableProperty]
         private bool allowChangeType = true;
 
@@ -40,10 +41,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [NotifyPropertyChangedFor(nameof(CanAddFile))]
         private TaskType type;
 
-        public AddTaskPageViewModel(TaskRepository taskManager, CurrentTasksViewModel tasks)
+        public AddTaskPageViewModel(TaskRepository taskManager, CurrentTasksViewModel tasks, QueueService queueService)
         {
             this.taskManager = taskManager;
             this.tasks = tasks;
+            this.queueService = queueService;
         }
 
         public bool CanAddFile => Type is TaskType.Transcode or TaskType.Concat;
@@ -51,18 +53,22 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         public FileIOPanelViewModel FileIOViewModel { get; set; }
         public PresetsPanelViewModel PresetsViewModel { get; set; }
         public IEnumerable TaskTypes => Enum.GetValues(typeof(TaskType));
+        private static readonly HttpClient httpClient = new HttpClient();
+
         public static async Task PostAsync(RemoteHost host, string subUrl, object data)
         {
-            HttpClient client = new HttpClient();
             string str = JsonConvert.SerializeObject(data);
             var content = new StringContent(str, Encoding.UTF8, "application/json");
             string url = host.Address.TrimEnd('/') + "/" + subUrl.TrimStart('/');
+            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = content
+            };
             if (!string.IsNullOrEmpty(host.Token))
             {
-                client.DefaultRequestHeaders.Add("Authorization", host.Token);
+                request.Headers.Add("Authorization", host.Token);
             }
-            var response = await client.PostAsync(url, content);
-
+            var response = await httpClient.SendAsync(request);
             var responseString = await response.Content.ReadAsStringAsync();
             if (response.StatusCode != System.Net.HttpStatusCode.OK)
             {
@@ -176,20 +182,20 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     case TaskEnqueueStrategy.EnqueueOnly:
                         break;
                     case TaskEnqueueStrategy.EnqueueAndRun:
-                        await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartQueue());
+                        await Task.Run(() => queueService.StartQueue());
                         QueueSuccessMessage("已开始队列");
                         break;
                     case TaskEnqueueStrategy.RunIndependently:
                         if (createdTasks.Count == 1)
                         {
-                            await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartStandalone(createdTasks[0].Id));
+                            await Task.Run(() => queueService.StartStandalone(createdTasks[0].Id));
                             QueueSuccessMessage("已开始独立执行");
                         }
                         else if (createdTasks.Count < 5)
                         {
                             foreach (var t in createdTasks)
                             {
-                                await Task.Run(() => App.ServiceProvider.GetService<QueueService>().StartStandalone(t.Id));
+                                await Task.Run(() => queueService.StartStandalone(t.Id));
 
                             }
                             QueueSuccessMessage($"已开始{createdTasks.Count}个任务的独立执行");
@@ -256,9 +262,13 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     Inputs = inputs,
                     Output = output,
                     Argument = args,
-                    Start = addToQueue
                 };
                 await PostAsync(host, "Task/Add/" + Type.ToString(), data);
+
+                if (addToQueue)
+                {
+                    await PostAsync(host, "Queue/Start", new { });
+                }
 
                 if (Config.Instance.ClearFilesAfterAddTask)
                 {

@@ -318,6 +318,8 @@ namespace SimpleFFmpegGUI.Services
 
                 thisDbTask.Status = task.Status;
                 thisDbTask.Message = task.Message;
+                thisDbTask.RealOutput = task.RealOutput;
+                thisDbTask.FFmpegArguments = task.FFmpegArguments;
                 thisDbTask.FinishTime = DateTime.Now;
                 db.Update(thisDbTask);
                 await db.SaveChangesAsync();

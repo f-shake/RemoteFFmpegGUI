@@ -40,11 +40,24 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public LogsPageViewModel(TaskRepository taskManager, LogRepository logManager)
         {
-            taskManager.GetTasksAsync(new TaskQueryDto { Page = 1, PageSize = 20 }).ContinueWith(data =>
-              {
-                  Tasks = data.Result.List.Adapt<List<TaskInfoViewModel>>();
-              });
+            LoadTasksAsync(taskManager);
             this.logManager = logManager;
+        }
+
+        private async void LoadTasksAsync(TaskRepository taskManager)
+        {
+            try
+            {
+                var data = await taskManager.GetTasksAsync(new TaskQueryDto { Page = 1, PageSize = 20 });
+                await App.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Tasks = data.List.Adapt<List<TaskInfoViewModel>>();
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"加载任务列表失败：{ex.Message}");
+            }
         }
         public char? Type => TypeIndex switch
         {
@@ -59,7 +72,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         public async Task FillLogsAsync()
         {
-            Logs = (await logManager.GetLogsAsync(new LogQueryRequest { Type = Type, TaskId = SelectedTask?.Id, From = From, To = To })).List;
+            Logs = (await logManager.GetLogsAsync(new LogQueryRequest { Type = Type, TaskId = SelectedTask?.Id, From = From, To = To, PageSize = 999999 })).List;
         }
     }
 }

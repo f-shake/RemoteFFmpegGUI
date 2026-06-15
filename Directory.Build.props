@@ -18,8 +18,8 @@
     <Nullable>disable</Nullable>
   </PropertyGroup>
 
-  <!--指定bin目录和obj目录位置-->
-  <PropertyGroup Condition="'$(SpecialOutputDir)' == 'true'">
+  <!--指定bin目录和obj目录位置，排除临时编译项目-->
+  <PropertyGroup Condition="'$(SpecialOutputDir)' == 'true' and !$(MSBuildProjectName.EndsWith('_wpftmp'))">
     <OutputPath>$(OutputDir)\bin\$(Configuration)\$(MSBuildProjectName)</OutputPath>
     <BaseIntermediateOutputPath>$(OutputDir)\obj\$(Configuration)\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>

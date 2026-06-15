@@ -119,7 +119,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 var preset = new PresetEntity { Name = name, Type = Type, Parameters = CodeArgumentsViewModel.GetArguments() };
                 await presetRepository.AddAsync(preset);
-                Presets.Add(preset);
+                int index = Presets.TakeWhile(p => string.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) <= 0).Count();
+                Presets.Insert(index, preset);
             }
             catch (Exception ex)
             {

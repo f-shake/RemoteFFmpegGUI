@@ -113,6 +113,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             if (VideoOutputStrategy == StreamStrategy.Transcode)
             {
                 Video.Adapt(videoParams);
+                videoParams.Codec = Video.Code; // Code → Codec，Mapster 按名字映射对不上
             }
 
             var audioParams = new AudioCodecParameters();
@@ -120,6 +121,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             if (AudioOutputStrategy == StreamStrategy.Transcode)
             {
                 Audio.Adapt(audioParams);
+                audioParams.Codec = Audio.Code; // Code → Codec，Mapster 按名字映射对不上
             }
 
             return new OutputParameters()
@@ -142,9 +144,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             if (argument != null)
             {
                 Video = argument.Video.Adapt<VideoArgumentsViewModel>();
+                Video.Code = argument.Video.Codec;
                 Video?.Update();
                 VideoOutputStrategy = argument.Video.Strategy;
                 Audio = argument.Audio.Adapt<AudioArgumentsViewModel>();
+                Audio.Code = argument.Audio.Codec;
                 Audio?.Update();
                 AudioOutputStrategy = argument.Audio.Strategy;
                 Format = new FormatArgumentViewModel() { Format = argument.Format };

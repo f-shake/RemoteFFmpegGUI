@@ -306,7 +306,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 try
                 {
-                    File.Delete(TestDir);
+                    Directory.Delete(TestDir, recursive: true);
                     QueueSuccessMessage("已删除测试目录");
                 }
                 catch (Exception ex)

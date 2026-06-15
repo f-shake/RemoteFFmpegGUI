@@ -33,6 +33,18 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class TaskInfoViewModel : ViewModelBase
     {
+        static TaskInfoViewModel()
+        {
+            TypeAdapterConfig<TaskEntity, TaskInfoViewModel>.NewConfig()
+                .IgnoreNullValues(true)
+                .Map(dest => dest.Arguments, src => src.Parameters)
+                .Map(dest => dest.FfmpegArguments, src => src.FFmpegArguments);
+            TypeAdapterConfig<TaskInfoViewModel, TaskEntity>.NewConfig()
+                .IgnoreNullValues(true)
+                .Map(dest => dest.Parameters, src => src.Arguments)
+                .Map(dest => dest.FFmpegArguments, src => src.FfmpegArguments);
+        }
+
         [ObservableProperty]
         private OutputParameters arguments;
 
@@ -117,6 +129,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             get
             {
+                if (Inputs == null || Inputs.Count == 0)
+                {
+                    return "无输入文件";
+                }
                 if (Inputs.Count != 1)
                 {
                     return string.Join(Environment.NewLine, Inputs.Select(p => Path.GetFileName(p.FilePath)));
@@ -133,9 +149,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             get
             {
-                if (Inputs.Count != 1)
+                if (Inputs == null || Inputs.Count != 1)
                 {
-                    return string.Join(Environment.NewLine, Inputs.Select(p => p.FilePath));
+                    return Inputs == null ? "无输入文件" : string.Join(Environment.NewLine, Inputs.Select(p => p.FilePath));
                 }
                 return InputDetailText;
             }
@@ -145,7 +161,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             get
             {
-                if (Inputs.Count == 0)
+                if (Inputs == null || Inputs.Count == 0)
                 {
                     return "未指定输入";
                 }
@@ -157,7 +173,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             get
             {
-                if (Inputs.Count == 0)
+                if (Inputs == null || Inputs.Count == 0)
                 {
                     return "未指定输入";
                 }
@@ -168,6 +184,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public string IOText => $"{InputText} → {OutputText}";
         public bool IsDeleted { get; set; }
+        private bool HasInputs => Inputs != null && Inputs.Count > 0;
         public bool IsIndeterminate => ProcessStatus == null || ProcessStatus.HasDetail == false || ProcessStatus.Progress.IsIndeterminate;
         public string OutputText
         {
@@ -245,7 +262,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             if (Snapshot.DisplayFrame == false
                 || Type != TaskType.Transcode //不是编码类型的任务
                 || ProcessStatus == null //没有状态
-                || !ProcessStatus.HasDetail) //状态无详情)
+                || !ProcessStatus.HasDetail //状态无详情
+                || !HasInputs) //没有输入文件
             {
                 Snapshot.DisplayFrame = false;
                 //取消执行并不显示缩略图
@@ -295,11 +313,29 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         private async void StartTimer()
         {
-            while (await timer.WaitForNextTickAsync())
+            try
             {
-                Stopwatch sw = Stopwatch.StartNew();
-                await UpdateSnapshotAsync();
-                sw.Stop();
+                while (await timer.WaitForNextTickAsync())
+                {
+                    try
+                    {
+                        Stopwatch sw = Stopwatch.StartNew();
+                        await UpdateSnapshotAsync();
+                        sw.Stop();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"缩略图更新失败：{ex.Message}");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 定时器被取消，正常退出
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"定时器异常退出：{ex.Message}");
             }
         }
     }

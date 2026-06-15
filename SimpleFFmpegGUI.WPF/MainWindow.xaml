@@ -149,6 +149,8 @@
             Grid.RowSpan="99"
             Grid.Column="2"
             ui:TabControlHelper.AddTabButtonCommand="{Binding ShowAddTaskCommand}"
+            ui:TabControlHelper.CloseButtonOverlayMode="Always"
+            ui:TabControlHelper.TabCloseRequested="TabControl_TabCloseRequested"
             Background="Transparent"
             SelectionChanged="Tab_SelectionChanged"
             Visibility="{Binding TabControlVisibility}">
