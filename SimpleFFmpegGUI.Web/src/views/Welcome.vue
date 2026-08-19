@@ -61,10 +61,7 @@
 <script setup lang="ts">
 import { jump } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
-import {
-  VideoCameraFilled, DocumentAdd, Plus, ArrowRight,
-  Search, Document, CopyDocument, FolderOpened, Setting, TakeawayBox, Share
-} from '@element-plus/icons-vue'
+import { VideoCameraFilled, Plus, ArrowRight, Share } from '@element-plus/icons-vue'
 
 const types = TaskType.Types
 

@@ -39,6 +39,14 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [Route("Snapshot")]
         public async Task<IActionResult> GetSnapshotAsync(string videoPath, double seconds)
         {
+            if (string.IsNullOrEmpty(videoPath))
+            {
+                return BadRequest("视频路径不能为空");
+            }
+            if (double.IsNaN(seconds) || double.IsInfinity(seconds) || seconds < 0)
+            {
+                return BadRequest("seconds 必须为非负数字");
+            }
             videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
             if (!System.IO.File.Exists(videoPath))
             {
@@ -47,7 +55,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
 
             string path = await mediaInfoService.GetSnapshotAsync(videoPath, TimeSpan.FromSeconds(seconds));
 
-            return PhysicalFile(path, "image/jpeg");
+            // 快照是临时文件，读入内存后删除，避免 %TEMP% 残留（P3-6）
+            var bytes = await System.IO.File.ReadAllBytesAsync(path);
+            System.IO.File.Delete(path);
+            return File(bytes, "image/jpeg");
         }
     }
 }

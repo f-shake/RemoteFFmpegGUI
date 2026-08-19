@@ -1,4 +1,4 @@
-﻿using iNKORE.UI.WPF.Modern.Controls;
+using iNKORE.UI.WPF.Modern.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,7 +14,7 @@ namespace iNKORE.Extension.CommonDialog
         public CommonDialog()
         {
             ResourceDictionary resources = new ResourceDictionary();
-            resources.Source = new Uri("pack://application:,,,/FzCoreLib.Windows;component/WPF/Converters/Converters.xaml", UriKind.RelativeOrAbsolute);
+            resources.Source = new Uri("pack://application:,,,/Inkore.Extension;component/FzLib/WPF/Converters/Converters.xaml", UriKind.RelativeOrAbsolute);
             Resources.MergedDictionaries.Add(resources);
         }
 

@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="SimpleFFmpegGUI.WPF.Pages.PresetsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,7 +7,6 @@
     xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Pages"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:n="clr-namespace:Enterwell.Clients.Wpf.Notifications.Controls;assembly=Enterwell.Clients.Wpf.Notifications"
     xmlns:panels="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
     x:Name="root"
@@ -69,7 +68,7 @@
                 </ListBox>
             </Grid>
             <ListView
-                xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+                xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
                 xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
                 x:Name="lvw"
                 Grid.Row="2"

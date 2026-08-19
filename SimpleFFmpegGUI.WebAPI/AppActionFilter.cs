@@ -1,6 +1,8 @@
 ﻿using FzLib.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using SimpleFFmpegGUI.WebAPI.Controllers;
 using System.Linq;
@@ -31,12 +33,11 @@ namespace SimpleFFmpegGUI.WebAPI
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(context.Exception.Message))
-                    {
-                        context.Result = new ObjectResult(context.Exception.Message) { StatusCode = 500 };
-                        context.ExceptionHandled = true;
-                    }
+                    // 不把异常详细信息直接返回给客户端（可能泄露 SQL/路径等），统一 500（P3-3）
+                    context.Result = new StatusCodeResult(500);
                     context.ExceptionHandled = true;
+                    var logger = context.HttpContext.RequestServices.GetService<ILogger<AppActionFilter>>();
+                    logger?.LogError(context.Exception, "控制器执行异常");
                 }
             }
         }
@@ -48,7 +49,8 @@ namespace SimpleFFmpegGUI.WebAPI
                 return;
             }
             var token = appSettings.Value.Token;
-            if (token != "")
+            // IsNullOrEmpty：显式配置为 null（JSON 中写 "Token": null）与空字符串等同为不鉴权，避免鉴权逻辑反转锁死服务
+            if (!string.IsNullOrEmpty(token))
             {
                 if (!context.HttpContext.Request.Headers.TryGetValue("Authorization", out StringValues value)
                     || StringValues.IsNullOrEmpty(value)

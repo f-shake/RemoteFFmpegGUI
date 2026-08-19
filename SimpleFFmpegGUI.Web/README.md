@@ -1,5 +1,16 @@
-# Vue 3 + TypeScript + Vite
+# SimpleFFmpegGUI.Web
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+远程 FFmpeg 工具箱的前端（Vue 3 + TypeScript + Element Plus + Vite）。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 开发
+
+```bash
+npm install
+npm run dev      # 开发服务器（API 直连 http://localhost:5001）
+npm run build    # 生产构建，输出到 dist/
+```
+
+## 说明
+
+- API 请求封装在 `src/api.ts`；开发环境通过 CORS 直连 `http://localhost:5001`，生产构建请求相对路径 `api/{controller}`。
+- 新增任务相关视图在 `src/views/Add/`。

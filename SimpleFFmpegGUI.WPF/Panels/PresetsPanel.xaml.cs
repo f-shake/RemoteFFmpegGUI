@@ -1,5 +1,4 @@
-﻿using FzLib;
-using Microsoft.DotNet.PlatformAbstractions;
+﻿using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.Enums;

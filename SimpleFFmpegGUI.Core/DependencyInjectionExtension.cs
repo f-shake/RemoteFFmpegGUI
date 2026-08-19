@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
+using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Helpers;
@@ -35,7 +37,17 @@ public static class DependencyInjectionExtension
             .AddTransient<TaskRepository>()
             .AddTransient<TaskService>()
             .AddSingleton<PowerService>()
-            .AddSingleton<ConfigService>(s => ConfigService.Create())
+            .AddSingleton<ConfigService>(s =>
+            {
+                var config = ConfigService.Create();
+                // config.json 未保存过配置时，用 appsettings.json 的默认值填充（如默认进程优先级）
+                if (!config.LoadedFromFile)
+                {
+                    var appSettings = s.GetRequiredService<IOptions<AppSettings>>().Value;
+                    config.DefaultProcessPriority = appSettings.DefaultProcessPriority;
+                }
+                return config;
+            })
             .AddSingleton<QueueService>()
             .AddTransient<MediaInfoService>()
             .AddTransient<IFFmpegTaskServiceFactory, FFmpegTaskServiceFactory>()

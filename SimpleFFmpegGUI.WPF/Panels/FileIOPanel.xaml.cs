@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
-using FzLib.WPF;
+using CommunityToolkit.Mvvm.Messaging;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Microsoft.DotNet.PlatformAbstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

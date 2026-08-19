@@ -1,7 +1,7 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
-using FzLib;
-using FzLib.WPF.Converters;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.WPF.Converters;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -282,7 +282,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             string path = null;
             try
             {
-                path = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetSnapshotAsync(Inputs[0].FilePath, time, Config.Instance.SnapshotSize);
+                // 不显式传 scale，由 MediaInfoService 统一使用 ConfigService.SnapshotSize（设置页保存后当前会话立即生效）
+                path = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetSnapshotAsync(Inputs[0].FilePath, time);
             }
             catch (Exception ex)
             {

@@ -1,15 +1,13 @@
 ﻿param(
     [Parameter()]
     [switch]$w,
-    [switch]$d,
-    [switch]$s,
-    [switch]$f
+    [switch]$d
 )
 try {
-    
-    Write-Output "-w：生成Web（Web、WebAPI、Host）"
+
+    Write-Output "-w：生成Web（Web、WebAPI）"
     Write-Output "-d：生成WPF"
-    Write-Output ""  
+    Write-Output ""
     
     Write-Output "请先阅读ReadMe"
     Write-Output "请确保："
@@ -17,8 +15,11 @@ try {
     Write-Output "已经安装.NET 10 SDK"
     Write-Output "已经将ffmpeg相关二进制文件、MediaInfo.exe、性能测试视频（若需要）放置到./bin中"
 
-    pause
-    Clear-Host
+    # 非交互/输入重定向（如 CI）时自动跳过 pause
+    if ($Host.UI.RawUI -and -not [Console]::IsInputRedirected) {
+        pause
+    }
+    if (-not [Console]::IsInputRedirected) { Clear-Host }
 
     
     if(!$w -and !$d){
@@ -28,6 +29,13 @@ try {
     
     if (!(Test-Path bin)) {
         throw "不存在bin目录"
+    }
+    # 校验 ffmpeg/MediaInfo 二进制就位，避免产出缺运行库的残缺发布包
+    if (!(Test-Path bin/ffmpeg/ffmpeg.exe)) {
+        throw "bin/ffmpeg/ffmpeg.exe 不存在：请先将 ffmpeg 共享库二进制放入 bin/ffmpeg"
+    }
+    if (!(Test-Path bin/MediaInfo.exe)) {
+        throw "bin/MediaInfo.exe 不存在：请先将 MediaInfo.exe 放入 bin/"
     }
     try {
         npm
@@ -43,7 +51,7 @@ try {
         throw "未安装.NET SDK"
     }
     
-    Clear-Host
+    if (-not [Console]::IsInputRedirected) { Clear-Host }
     if (Test-Path Generation/Publish) {
         Remove-Item Generation/Publish -Recurse
     }
@@ -51,10 +59,9 @@ try {
     if ($w) {
         mkdir -Force Generation/Publish/WebPackage
         mkdir -Force Generation/Publish/WebPackage/api
-        mkdir -Force Generation/Publish/WebPackage/host
 
-        Clear-Host
-        
+        if (-not [Console]::IsInputRedirected) { Clear-Host }
+
         Write-Output "正在发布Web"
         Set-Location SimpleFFmpegGUI.Web
         npm install
@@ -66,16 +73,13 @@ try {
         Write-Output "正在发布WebAPI"
         dotnet publish SimpleFFmpegGUI.WebAPI -c Release -o Generation/Publish/WebPackage/api
 
-        Write-Output "正在发布Host"
-        dotnet publish SimpleFFmpegGUI.Host -c Release -o Generation/Publish/WebPackage/host
-        dotnet publish SimpleFFmpegGUI.Host.Console -c Release -o Generation/Publish/WebPackage/host
-        dotnet publish SimpleFFmpegGUI.Host.WindowsService -c Release -o Generation/Publish/WebPackage/host
-        Copy-Item SimpleFFmpegGUI.Host.WindowsService/*.bat Generation/Publish/WebPackage/host
+        Write-Output "正在复制Windows服务安装脚本"
+        Copy-Item SimpleFFmpegGUI.WebAPI/CreateWindowsService.bat Generation/Publish/WebPackage/api
+        Copy-Item SimpleFFmpegGUI.WebAPI/DeleteWindowsService.bat Generation/Publish/WebPackage/api
 
-        
         Write-Output "正在复制二进制库"
-        Copy-Item bin/* Generation/Publish/WebPackage/host -Force -Recurse
-        
+        Copy-Item bin/* Generation/Publish/WebPackage/api -Force -Recurse
+
         Write-Output "正在清理"
         Remove-Item SimpleFFmpegGUI.Web/dist -Recurse
     }
@@ -92,18 +96,13 @@ try {
         Write-Output "正在复制二进制库"
         Copy-Item bin/* Generation/Publish/WPF_SelfContained -Force -Recurse
     }
-            
-            
-        
-
-    
-    Write-Output "正在清理"
-    Remove-Item Generation/Release -Recurse
 
     Write-Output "操作完成，生成的文件位于Generation/Publish"
 
-    Invoke-Item Generation/Publish
-    pause
+    if (-not [Console]::IsInputRedirected) {
+        Invoke-Item Generation/Publish
+        pause
+    }
 }
 catch {
     Write-Error $_

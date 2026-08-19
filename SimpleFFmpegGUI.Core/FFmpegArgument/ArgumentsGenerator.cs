@@ -170,6 +170,11 @@ namespace SimpleFFmpegGUI.FFmpegArgument
 
             extra = $"{extra} {p.Extra}";
 
+            if (p.Mux.Shortest)
+            {
+                extra = $"{extra} -shortest";
+            }
+
             return string.Join(' ', vg.GetArguments(), ag.GetArguments(), sg.GetArguments(), extra);
         }
 

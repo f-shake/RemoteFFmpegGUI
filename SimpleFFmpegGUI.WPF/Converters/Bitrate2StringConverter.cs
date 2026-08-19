@@ -1,4 +1,4 @@
-﻿using FzLib;
+﻿using SimpleFFmpegGUI.WPF.FzLib;
 using System;
 using System.Globalization;
 using System.Windows.Data;

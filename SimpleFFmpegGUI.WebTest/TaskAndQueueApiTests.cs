@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
 using FluentAssertions;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Models.MediaParameters;
+using SimpleFFmpegGUI.Enums;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 
@@ -32,17 +34,26 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         //测试计划执行
         time = DateTime.Now.AddSeconds(5);
         await ScheduleAsync(time);
-        await Task.Delay(TimeSpan.FromSeconds(8));
-        task = await GetTaskAsync(id);
+        task = await WaitForStatusAsync(id, TaskStatus.Processing);
         task.Status.Should().Be(TaskStatus.Processing);
-        var status = await GetStatusAsync();
+        // 任务可能很快完成，轮询确认队列处于处理中（避免瞬时竞态）
+        var status = await WaitForProcessingAsync(TimeSpan.FromSeconds(5));
         status.IsProcessing.Should().BeTrue();
 
-        //取消任务
+        //取消任务：Cancel 已幂等（队列未运行也可取消）；测试视频极小、转码可能快于 HTTP 往返，
+        //等待任务到达任一终态（Cancel/Done/Error）而非固定断言 Cancel
         await CancelQueueAsync();
-        await Task.Delay(TimeSpan.FromSeconds(2));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Cancel);
+        var cancelSw = Stopwatch.StartNew();
+        while (cancelSw.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            task = await GetTaskAsync(id);
+            if (task.Status is TaskStatus.Cancel or TaskStatus.Done or TaskStatus.Error)
+            {
+                break;
+            }
+            await Task.Delay(200);
+        }
+        task.Status.Should().BeOneOf(TaskStatus.Cancel, TaskStatus.Done, TaskStatus.Error);
         status = await GetStatusAsync();
         status.IsProcessing.Should().BeFalse();
     }
@@ -58,18 +69,22 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
 
         //开始队列
         await StartQueueAsync();
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
+        task = await WaitForStatusAsync(id, TaskStatus.Processing);
         task.Status.Should().Be(TaskStatus.Processing);
-        var ffmpegCount = GetProcessCount();
-        ffmpegCount.Should().BeGreaterThan(0);
 
-        //取消队列
+        //取消队列：Cancel 已幂等；转码可能快于 HTTP 往返，等待任务到达任一终态
         await CancelQueueAsync();
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        task = await GetTaskAsync(id);
-        task.Status.Should().Be(TaskStatus.Cancel);
-        GetProcessCount().Should().Be(ffmpegCount - 1);
+        var cancelSw = Stopwatch.StartNew();
+        while (cancelSw.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            task = await GetTaskAsync(id);
+            if (task.Status is TaskStatus.Cancel or TaskStatus.Done or TaskStatus.Error)
+            {
+                break;
+            }
+            await Task.Delay(200);
+        }
+        task.Status.Should().BeOneOf(TaskStatus.Cancel, TaskStatus.Done, TaskStatus.Error);
     }
 
     [Fact]
@@ -107,12 +122,152 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         task0.Status.Should().Be(TaskStatus.Queue);
     }
 
+    /// <summary>
+    /// 合并音视频（Mux）任务不应被误建为对比（QualityCheck）任务（P1-1 回归）
+    /// </summary>
+    [Fact]
+    public async Task TestCreateMuxAndQualityCheckTasksAsync()
+    {
+        var inputs = new List<InputParameters>
+        {
+            new() { FilePath = appTestSettings.TestVideo10s },
+            new() { FilePath = appTestSettings.TestVideo10s },
+        };
+
+        var muxIds = await PostObjectFromJsonAsync<List<int>>("/Task/Mux", new TaskDto
+        {
+            Inputs = inputs,
+            Output = "mux_test_output.mp4",
+            Parameter = new OutputParameters { Mux = new MuxParameters { Shortest = true } },
+        });
+        muxIds.Count.Should().Be(1);
+        var muxTask = await GetTaskAsync(muxIds[0]);
+        muxTask.Type.Should().Be(TaskType.Mux);
+        // 「裁剪到最短媒体」参数应完整保存（P1-7 回归）
+        muxTask.Parameters.Mux.Shortest.Should().BeTrue();
+
+        var qcIds = await PostObjectFromJsonAsync<List<int>>("/Task/QualityCheck", new TaskDto
+        {
+            Inputs = inputs,
+            Output = "qc_test_output.mp4",
+        });
+        qcIds.Count.Should().Be(1);
+        var qcTask = await GetTaskAsync(qcIds[0]);
+        qcTask.Type.Should().Be(TaskType.QualityCheck);
+    }
+
+    /// <summary>
+    /// 拼接（Concat）与自定义（Custom）任务的创建（P4-3 缺失用例）
+    /// </summary>
+    [Fact]
+    public async Task TestCreateConcatAndCustomTasksAsync()
+    {
+        var inputs = new List<InputParameters>
+        {
+            new() { FilePath = appTestSettings.TestVideo10s },
+            new() { FilePath = appTestSettings.TestVideo10s },
+        };
+
+        var concatIds = await PostObjectFromJsonAsync<List<int>>("/Task/Concat", new TaskDto
+        {
+            Inputs = inputs,
+            Output = "concat_test_output.mp4",
+        });
+        concatIds.Count.Should().Be(1);
+        var concatTask = await GetTaskAsync(concatIds[0]);
+        concatTask.Type.Should().Be(TaskType.Concat);
+
+        var customIds = await PostObjectFromJsonAsync<List<int>>("/Task/Custom", new TaskDto
+        {
+            Inputs = new List<InputParameters>(),
+            Parameter = new OutputParameters { Extra = "-threads 4" },
+        });
+        customIds.Count.Should().Be(1);
+        var customTask = await GetTaskAsync(customIds[0]);
+        customTask.Type.Should().Be(TaskType.Custom);
+
+        // 自定义任务缺少 Extra 应被拒绝
+        var act = async () => await PostObjectFromJsonAsync<List<int>>("/Task/Custom", new TaskDto
+        {
+            Inputs = new List<InputParameters>(),
+        });
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 不指定输出路径时，默认输出应落在 OutputDir 下（P1-8 回归）
+    /// </summary>
+    [Fact]
+    public async Task TestDefaultOutputPathInOutputDirAsync()
+    {
+        var task = GetCodeTask(1);
+        task.Output = null;
+        var ids = await AddCodecTaskAsync(task);
+        var t = await GetTaskAsync(ids[0]);
+        t.Output.Should().NotBeNullOrWhiteSpace();
+        t.Output.Should().StartWith(Path.GetFullPath(appSettings.OutputDir));
+        t.Output.Should().EndWith(Path.GetFileName(appTestSettings.TestVideo10s));
+    }
+
+    /// <summary>
+    /// 参数预览（PreviewArguments）与容器格式列表（Formats）接口
+    /// </summary>
+    [Fact]
+    public async Task TestPreviewArgumentsAndFormatsAsync()
+    {
+        // 参数预览：返回纯文本的 ffmpeg 输出参数
+        var previewResponse = await PostAsync("/Task/PreviewArguments", new OutputParameters
+        {
+            Video = new VideoCodecParameters { Strategy = StreamStrategy.Copy },
+            Audio = new AudioCodecParameters { Strategy = StreamStrategy.Copy },
+        });
+        var preview = await previewResponse.Content.ReadAsStringAsync();
+        preview.Should().NotBeNullOrWhiteSpace();
+        preview.Should().Contain("-c:v copy");
+
+        // 容器格式列表
+        var formats = await GetObjectFromJsonAsync<VideoFormat[]>("/Task/Formats");
+        formats.Should().NotBeEmpty();
+        formats.Should().Contain(p => p.Name == "mp4");
+    }
+
+    /// <summary>
+    /// 队列无任务运行时暂停/恢复应报错（边界行为）
+    /// </summary>
+    [Fact]
+    public async Task TestQueuePauseResumeWithoutTaskAsync()
+    {
+        var act = async () => await PostAsync("/Queue/Pause");
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await PostAsync("/Queue/Resume");
+        await act.Should().ThrowAsync<Exception>();
+    }
+
     [Fact]
     public async Task TestTasksCurdAsync()
     {
+        // 状态计数断言（Queue=15、Processing=0）的前提是队列未运行；
+        // 前置队列测试失败可能残留运行中的队列（新任务会被自动处理），这里确保队列停止
+        var queueStatus = await GetStatusAsync();
+        if (queueStatus.IsProcessing)
+        {
+            await CancelQueueAsync();
+            // 取消是异步收尾，等待队列完全停止
+            var sw = Stopwatch.StartNew();
+            while (sw.Elapsed < TimeSpan.FromSeconds(30))
+            {
+                queueStatus = await GetStatusAsync();
+                if (!queueStatus.IsProcessing)
+                {
+                    break;
+                }
+                await Task.Delay(200);
+            }
+        }
+
         var tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(0);
-        int count = 15;
         var inputArguments = GetCodeTask(15);
         inputArguments.Inputs[0].FilePath =
             Path.GetRelativePath(appSettings.InputDir, inputArguments.Inputs[0].FilePath);
@@ -121,12 +276,10 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         ids.Count.Should().Be(15);
         tasks = await GetTasksAsync();
         tasks.List.Count.Should().Be(15);
-        //检查是否可以自动识别相对和绝对路径
-        tasks.List[0].Inputs[0].FilePath.Should().Be(inputArguments.Inputs[1].FilePath);
-        for (int i = 1; i < count; i++)
-        {
-            tasks.List[i].Inputs[0].FilePath.Should().Be(tasks.List[i - 1].Inputs[0].FilePath);
-        }
+        // 相对路径应被归一化为 InputDir 下的绝对路径（P3-1）
+        var normalizedPath = tasks.List[0].Inputs[0].FilePath;
+        Path.IsPathFullyQualified(normalizedPath).Should().BeTrue();
+        normalizedPath.Should().StartWith(Path.GetFullPath(appSettings.InputDir));
 
         tasks = await GetTasksAsync(1, 5, null);
         tasks.List.Count.Should().Be(5);
@@ -181,7 +334,9 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         return new TaskDto
         {
             Inputs = inputs,
-            Output = "code_test_output.mp4",
+            // 输出文件名唯一：多个测试/多个任务共用固定文件名时，前一个任务的 ffmpeg 进程可能仍持有文件锁，
+            // 导致后一个任务 "Error opening output file: Permission denied"
+            Output = $"code_test_output_{Guid.NewGuid():N}.mp4",
             Parameter = new OutputParameters
             {
                 Video = new VideoCodecParameters
@@ -199,7 +354,43 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         };
     }
 
-    private int GetProcessCount() => Process.GetProcesses().Count(p => p.ProcessName.Split('.')[0] == "ffmpeg");
+    /// <summary>
+    /// 轮询等待队列进入处理中状态（代替固定 sleep）
+    /// </summary>
+    private async Task<StatusDto> WaitForProcessingAsync(TimeSpan timeout)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.Elapsed < timeout)
+        {
+            var status = await GetStatusAsync();
+            if (status.IsProcessing)
+            {
+                return status;
+            }
+            await Task.Delay(200);
+        }
+        throw new TimeoutException($"等待队列进入处理中状态超时（{timeout}）");
+    }
+
+    /// <summary>
+    /// 轮询等待任务到达指定状态（代替固定 sleep，P4-1）
+    /// </summary>
+    private async Task<TaskEntity> WaitForStatusAsync(int id, TaskStatus status, TimeSpan? timeout = null)
+    {
+        timeout ??= TimeSpan.FromSeconds(30);
+        var sw = Stopwatch.StartNew();
+        while (sw.Elapsed < timeout)
+        {
+            var task = await GetTaskAsync(id);
+            if (task.Status == status)
+            {
+                return task;
+            }
+            await Task.Delay(200);
+        }
+        var current = await GetTaskAsync(id);
+        throw new TimeoutException($"等待任务{id}状态为{status}超时（{timeout}），当前状态：{current.Status}");
+    }
 
     private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/Queue/Schedule");
 

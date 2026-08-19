@@ -263,11 +263,15 @@ function selectPreset(presetId: number) {
 function updatePreset() {
   const args = getArgs()
   if (args == null) return
-  const name = (presets.value.find((p: any) => p.id === preset.value) as any)?.name
-  net.postAddOrUpdatePreset(name, props.type, args)
-    .then((r) => {
+  const target = presets.value.find((p: any) => p.id === preset.value)
+  if (target == null) {
+    showError('选中的预设已不存在，请刷新后重试')
+    return
+  }
+  net.updatePreset(preset.value, target.name, props.type, args)
+    .then(() => {
       showSuccess('更新预设成功')
-      fillPresetsAnd(() => { preset.value = r.data })
+      fillPresetsAnd(() => {})
     })
     .catch(showError)
 }
@@ -313,6 +317,8 @@ function getArgs() {
     extra: code.extra,
     format: code.enableFormat ? code.format : null,
     stream: { maps: [] },
+    // 合并参数仅对合并任务（type=1）有意义，其他类型不携带
+    ...(props.type === 1 ? { mux: { shortest: code.combine.shortest } } : {}),
     processedOperationParameters: code.processedOptions
   }
   return arg
@@ -321,7 +327,7 @@ function getArgs() {
 function updateFromArgs(args: any) {
   const video = args.video
   const audio = args.audio
-  const combine = args.combine
+  const combine = args.mux ?? args.combine
   if (video != null) {
     const strat = video.strategy
     if (strat === 0 || (strat == null && !args.disableVideo)) {
@@ -368,7 +374,7 @@ function updateFromArgs(args: any) {
   code.enableFormat = args.format != null
   code.format = args.format
   code.extra = args.extra ?? args.Extra
-  code.processedOptions = args.processedOptions
+  code.processedOptions = args.processedOperationParameters
 }
 
 onMounted(() => {

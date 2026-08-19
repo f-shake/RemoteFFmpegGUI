@@ -12,7 +12,6 @@ public class AppSettings
     public int OutputFtpPort { get; set; }
     public string Token { get; set; } = string.Empty;
 
-    public string LocalSqlite { get; set; } = string.Empty;
     public int DefaultProcessPriority { get; set; } = 2;
     public string FFmpegDir { get; set; } = "ffmpeg";
     public string FFmpegFfmeDir { get; set; } = "ffmpeg_FFME";

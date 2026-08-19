@@ -9,7 +9,7 @@ let inputDir: string | null = null
 let outputDir: string | null = null
 
 function getApiUrl(controller: string): string {
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     return `api/${controller}`
   }
   return `http://localhost:5001/${controller}`
@@ -58,7 +58,6 @@ export function loadArgs(argsComponent: any): any {
         showSuccess('已加载参数')
       } catch (error) {
         showError('加载参数失败：' + error)
-        console.log('错误参数为', raw)
       } finally {
         localStorage.removeItem(argKey)
       }

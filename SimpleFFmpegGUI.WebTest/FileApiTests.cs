@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.WebAPI;
 
 // 建议安装这个包，断言更丝滑
@@ -16,15 +17,27 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     [Fact]
     public async Task TestDownloadAsync()
     {
-        var outputDir = (await GetDirsAsync()).OutputDir;
         var fileName = Path.GetFileName(appTestSettings.TestOutputVideo10s);
         if (fileName == null)
         {
             throw new Exception("测试输出视频不存在");
         }
-        var filePath = Uri.EscapeDataString(Path.Combine(outputDir, fileName));
-        await DownloadAsync(filePath);
         await DownloadAsync(fileName);
+    }
+
+    /// <summary>
+    /// 路径穿越（..\）与绝对路径访问应被拒绝（P3-1 回归）
+    /// </summary>
+    [Fact]
+    public async Task TestPathTraversalRejectedAsync()
+    {
+        var act = async () => await DownloadAsync(Uri.EscapeDataString("..\\..\\Windows\\win.ini"));
+        await act.Should().ThrowAsync<Exception>();
+
+        var outputDir = (await GetDirsAsync()).OutputDir;
+        var absolutePath = Path.Combine(outputDir, "any.mp4");
+        act = async () => await DownloadAsync(Uri.EscapeDataString(absolutePath));
+        await act.Should().ThrowAsync<Exception>();
     }
 
     [Fact]
@@ -34,6 +47,40 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         await FtpInputOffAsync();
         await FtpOutputOnAsync();
         await FtpOutputOffAsync();
+    }
+
+    /// <summary>
+    /// FTP 状态查询接口
+    /// </summary>
+    [Fact]
+    public async Task TestFtpStatusAsync()
+    {
+        var status = await GetObjectFromJsonAsync<FtpStatusDto>("/File/Ftp");
+        status.InputOn.Should().BeFalse();
+        status.OutputOn.Should().BeFalse();
+
+        await FtpInputOnAsync();
+        status = await GetObjectFromJsonAsync<FtpStatusDto>("/File/Ftp");
+        status.InputOn.Should().BeTrue();
+        status.InputPort.Should().BeGreaterThan(0);
+        await FtpInputOffAsync();
+    }
+
+    /// <summary>
+    /// FTP 边界：重复启动 / 未启动时关闭应报错而非静默（P4-3）
+    /// </summary>
+    [Fact]
+    public async Task TestFtpEdgeCasesAsync()
+    {
+        // 重复启动应失败
+        await FtpInputOnAsync();
+        var act = async () => await FtpInputOnAsync();
+        await act.Should().ThrowAsync<Exception>();
+        await FtpInputOffAsync();
+
+        // 未启动时关闭应失败（Input/Output 都处于关闭状态时）
+        var act2 = async () => await FtpInputOffAsync();
+        await act2.Should().ThrowAsync<Exception>();
     }
 
     [Fact]

@@ -11,16 +11,12 @@
         <None Remove="obj\**"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true'">
-        <Reference Include="FzLib">
-            <HintPath>$(LocalFzLibPath)</HintPath>
-        </Reference>
-    </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FzLib" Condition="! ('$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true')"/>
+        <PackageReference Include="FzLib"/>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices"/>
         <PackageReference Include="Serilog"/>
+        <PackageReference Include="Serilog.Extensions.Logging"/>
         <PackageReference Include="Serilog.Sinks.Console"/>
         <PackageReference Include="Serilog.Sinks.File"/>
         <PackageReference Include="Swashbuckle.AspNetCore"/>

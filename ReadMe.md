@@ -1,19 +1,23 @@
 # 远程 FFmpeg 工具箱
 
-使用 Vue 3 + Element Plus + ASP.NET Core 构建的远程 FFmpeg Web GUI 程序，支持视频转码、拼接、合并、媒体信息查询等功能。
+使用 Vue 3 + Element Plus + ASP.NET Core 构建的 FFmpeg Web GUI 程序，支持视频转码、拼接、合并、媒体信息查询、编码性能测试等功能；另有 WPF 桌面客户端（进程内直连 Core，也可向远程 WebAPI 提交任务）。
 
 ## 架构
 
-| 项目名                 | 说明                                       |
-| ---------------------- | ------------------------------------------ |
-| Core                   | 核心库 — 实体模型、DTO、服务接口、日志等   |
-| Host                   | 主机 — 通过 NamedPipe 向 WebAPI 提供服务    |
-| Host.Console           | 主机（控制台入口）                          |
-| Host.WindowsService    | 主机（Windows 服务入口）                    |
-| WebAPI                 | 后端 API — ASP.NET Core 控制器              |
-| Web                    | 前端 — Vue 3 + Element Plus + Vite          |
+| 项目名                 | 说明                                                   |
+| ---------------------- | ------------------------------------------------------ |
+| Core                   | 核心库 — 实体模型、DTO、服务、FFmpeg 参数生成、数据库  |
+| WebAPI                 | 后端 API — ASP.NET Core 控制器（直接执行 ffmpeg）      |
+| Web                    | 前端 — Vue 3 + Element Plus + Vite                     |
+| WPF                    | 桌面客户端（进程内直连 Core；支持提交到远程 WebAPI）   |
+| WebTest                | WebAPI 集成测试（xUnit + WebApplicationFactory）       |
+| Inkore.Extension       | WPF 用 iNKORE.UI.WPF.Modern 扩展与通用对话框           |
 
-> WPF 桌面客户端已从当前分支移除。
+```
+Web (Vue3) ──HTTP──> WebAPI ──执行──> ffmpeg
+WPF ──（进程内直连 Core，自带队列与数据库）
+WPF ──HTTP──> 远程 WebAPI（提交任务）
+```
 
 ## 截图
 
@@ -29,28 +33,26 @@
 
 在 [GitHub Releases](https://github.com/f-shake/RemoteFFmpegGUI/releases) 下载最新的发布包。
 
-### 部署基于 Windows + IIS 的 Web 版本
+### 部署 Web 版本
 
 1. 进入 `Generation/Publish/WebPackage`
-2. 编辑 `api` 的 `appsettings.json`，主要修改 `InputDir` 和 `OutputDir` 项，指定输入和输出目录。其它修改项详见文件内的注释。
+2. 编辑 `api` 的 `appsettings.json`，主要修改 `InputDir` 和 `OutputDir` 项（相对部署目录），指定输入和输出目录。**建议设置 `Token` 为强口令**（留空则不鉴权）。其它修改项详见文件内的注释。
 3. 在合适的位置新建一个网站文件夹，将 `Generation/Publish/WebPackage` 内的所有内容复制到新建的文件夹之中。
-4. 确保安装了 .NET 10 Hosting Bundle，并在 Windows 中启用了 IIS。
-5. 在 IIS 中新建网站，指定物理目录为之前新建的目录。右键其中的 `api` 目录，设置为虚拟应用程序。
-6. 启动 Host。共有两种方式：
-   - 运行 `SimpleFFmpegGUI.Host.Console.exe`，将打开一个控制台程序。
-   - 在 Windows 系统中，可以运行 `CreateWindowsService.bat`（将自动申请管理员权限），将 Host 注册为自启动服务并立即启动。
-7. 打开 IIS 中设置的 URL，检查网站运行是否正常。
+4. 运行方式二选一：
+   - 直接运行 `api/SimpleFFmpegGUI.WebAPI.exe`（控制台窗口）。
+   - 在 Windows 系统中，右键 `api/CreateWindowsService.bat` 以管理员身份运行（将自动申请管理员权限），把 WebAPI 注册为自启动的 Windows 服务。
+5. 打开浏览器访问 `http://localhost:5001`，检查服务是否正常（首页显示 "SimpleFFmpegGUI API is running!"）。
+6. 前端页面为 `WebPackage` 根目录下的静态文件，需自行部署到 Web 服务器（如 IIS/Nginx），并把 API 请求代理到后端地址；或将前后端部署在同一个站点下（前端生产构建默认请求相对路径 `api/{controller}`）。
 
 **注意：**
 
-- 若输入或输出文件夹位于网络位置等 IIS 无权限的位置，则需要：
-  1. 设置 `appsettings.json` 中的 `InputDirAccessable` 和/或 `OutputDirAccessable` 为 `false`，告知程序无权限访问，那么后端将通过 Host 对文件进行访问。
-  2. 这种模式下，HTTP 上传和下载功能将不可用。
+- WebAPI 与 WPF 单文件版均为 framework-dependent：目标机器需安装对应的 .NET 10 Runtime（WebAPI 需要 .NET 10 Runtime，WPF 单文件版需要 .NET 10 Desktop Runtime）；WPF 自包含版无需安装。
+- FTP 服务（输入/输出目录的文件上传下载通道）默认关闭，可在前端文件服务页手动开启。FTP 采用匿名认证，请仅在可信网络环境中使用，或自行修改 `appsettings.json` 中的 `InputFtpPort`/`OutputFtpPort` 端口。
 
-### 直接运行
+### 直接运行（开发）
 
 ```bash
-# 启动后端 API
+# 启动后端 API（默认 http://localhost:5001）
 cd SimpleFFmpegGUI.WebAPI
 dotnet run
 
@@ -60,7 +62,11 @@ npm install
 npm run dev
 ```
 
-前端开发服务器默认代理 API 请求到 `http://localhost:5001`。
+前端开发环境通过 CORS 直连 `http://localhost:5001`。
+
+### WPF 桌面客户端
+
+运行 `SimpleFFmpegGUI.WPF.exe`（发布包内含 ffmpeg 运行库）。可在设置页配置远程主机（地址 + Token），将任务提交到远程 WebAPI 服务器执行。
 
 ## 构建
 
@@ -92,10 +98,10 @@ bin
 执行 PowerShell：`./build.ps1`
 
 参数：
-- `-w`：生成 Web（Web + WebAPI + Host）
-- `-d`：生成 WPF（标准、单文件、自包含）— 仅 `master` 分支可用
+- `-w`：生成 Web（Web 前端 + WebAPI）
+- `-d`：生成 WPF（单文件版、自包含版）
 
-生成文件位于 `Generation/Publish` 下，其中 `WebPackage` 为 Web 部署包。
+不加参数时两者都执行。生成文件位于 `Generation/Publish` 下，其中 `WebPackage` 为 Web 部署包。
 
 ### 前端手动构建
 
@@ -118,10 +124,11 @@ npm run build      # 生产构建，输出到 dist/
 - Element Plus 图标（全局注册）
 
 **后端：**
-- ASP.NET Core
+- ASP.NET Core 10（minimal hosting）
 - Entity Framework Core + SQLite
-- NamedPipe IPC（Host ↔ WebAPI）
-- Token 认证
+- Serilog（文件日志）
+- Token 认证（`Authorization: Bearer {Token}`，Token 为空时不鉴权）
+- FubarDev.FtpServer（FTP 文件服务，默认关闭）
 
 ### 前端项目结构
 
@@ -149,16 +156,14 @@ SimpleFFmpegGUI.Web/src/
 │   ├── Tasks.vue
 │   └── Welcome.vue
 ├── router/          # 路由配置
-├── common.ts        # 通用工具函数
-├── net.ts           # HTTP 请求封装
-├── parameters.ts    # 固定参数
+├── api.ts           # HTTP 请求封装
 └── main.ts          # 入口文件
 ```
 
 ### API 设计
 
-所有 API 仅使用 GET（查询）和 POST（写入）两种方法，路由统一风格。
+所有 API 仅使用 GET（查询）和 POST（写入）两种方法，路由统一风格。文件操作（下载、上传、媒体信息）只接受相对 `InputDir`/`OutputDir` 的路径，绝对路径与 `..` 穿越将被拒绝。
 
 ### 注意事项
 
-- `libs` 目录中的二进制文件来自于 [FzLib](https://github.com/autodotua/FzLib) 和 [Wpf.Notifications](https://github.com/autodotua/Wpf.Notifications)，均已开源。
+- 第三方库均已内化源码，`libs` 目录已移除：[FzLib](https://github.com/autodotua/FzLib) 老版源码在 `SimpleFFmpegGUI.WPF/FzLib/`（其余项目通过 NuGet 引用新版）；[Wpf.Notifications](https://github.com/f-shake/Wpf.Notifications)（Enterwell 通知控件修改版，MIT，Copyright (c) 2017 Enterwell，许可证见 `SimpleFFmpegGUI.WPF/Enterwell/LICENSE`）在 `SimpleFFmpegGUI.WPF/Enterwell/`。

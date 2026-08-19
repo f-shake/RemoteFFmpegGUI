@@ -1,8 +1,8 @@
-﻿<UserControl
+<UserControl
     x:Class="SimpleFFmpegGUI.WPF.Panels.TaskList"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+    xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
     xmlns:converters="clr-namespace:SimpleFFmpegGUI.WPF.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
@@ -25,7 +25,7 @@
             <RowDefinition Height="2*" />
         </Grid.RowDefinitions>
         <ListView
-            xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+            xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
             xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
             x:Name="lvwTasks"
             c:SmoothScrollViewerHelper.SmoothScroll="{Binding Source={x:Static r:Config.Instance}, Path=SmoothScroll}"

@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
-using FzLib.WPF;
+using CommunityToolkit.Mvvm.Messaging;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using iNKORE.UI.WPF.Modern.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -44,7 +44,7 @@ namespace SimpleFFmpegGUI.WPF
         private bool hasShownTrayMessage = false;
         private StatusPanel statusPanel;
         private TaskList taskPanel;
-        private FzLib.Program.Runtime.TrayIcon tray;
+        private SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.TrayIcon tray;
         private bool isUiCompressMode;
 
         public MainWindow(QueueService queue)
@@ -182,7 +182,7 @@ namespace SimpleFFmpegGUI.WPF
                     var thumb = (Bitmap)bmp.GetThumbnailImage(64, 64, null, IntPtr.Zero);
                     thumb.MakeTransparent();
                     var icon = System.Drawing.Icon.FromHandle(thumb.GetHicon());
-                    tray = new FzLib.Program.Runtime.TrayIcon(icon, FzLib.Program.App.ProgramName);
+                    tray = new SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.TrayIcon(icon, SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramName);
 
                     tray.MouseLeftClick += (s, e) =>
                     {

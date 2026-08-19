@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Models;
 
@@ -9,10 +9,10 @@ public interface IFFmpegProcessServiceFactory
     FFmpegProcessService Create(string argument);
 }
 
-public class FFmpegProcessServiceFactory(IOptionsSnapshot<AppSettings> appSettings) : IFFmpegProcessServiceFactory
+public class FFmpegProcessServiceFactory(IOptionsSnapshot<AppSettings> appSettings, ConfigService configService) : IFFmpegProcessServiceFactory
 {
     public FFmpegProcessService Create(string argument)
     {
-        return new FFmpegProcessService(appSettings, argument);
+        return new FFmpegProcessService(appSettings, configService, argument);
     }
 }

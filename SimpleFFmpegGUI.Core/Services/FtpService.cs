@@ -18,6 +18,7 @@ public class FtpService : IDisposable
 
     private ServiceProvider serviceProvider;
 
+    // 终结器兜底释放（正常路径由 Dispose 显式调用并 SuppressFinalize）
     ~FtpService()
     {
         Dispose();
@@ -38,6 +39,7 @@ public class FtpService : IDisposable
     public void Dispose()
     {
         serviceProvider?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public Task StartAsync(string path, int port)
@@ -70,7 +72,7 @@ public class FtpService : IDisposable
     {
         if (ftpServerHost == null)
         {
-            throw new NullReferenceException("请先初始化");
+            throw new InvalidOperationException("Ftp服务尚未启动");
         }
         var server = ftpServerHost;
         ftpServerHost = null;

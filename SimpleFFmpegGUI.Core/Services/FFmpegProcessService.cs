@@ -57,9 +57,12 @@ public partial class FFmpegProcessService
         return string.Join(Environment.NewLine, errorLogs);
     }
 
-    public FFmpegProcessService(IOptionsSnapshot<AppSettings> appSettings, string argument)
+    public FFmpegProcessService(IOptionsSnapshot<AppSettings> appSettings, ConfigService configService, string argument)
     {
-        Priority = appSettings.Value.DefaultProcessPriority;
+        // 默认进程优先级：优先取 ConfigService（Web 设置页写入的内存值），未设置时回退 appsettings.json
+        Priority = configService?.DefaultProcessPriority >= 0
+            ? configService.DefaultProcessPriority
+            : appSettings.Value.DefaultProcessPriority;
         string ffmpegProgram = "ffmpeg";
         var ffmpegDir = appSettings.Value.FFmpegDir;
         if (!string.IsNullOrEmpty(ffmpegDir))

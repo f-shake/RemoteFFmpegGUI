@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Data.Sqlite;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Models.MediaParameters;
@@ -60,6 +63,7 @@ public static class DatabaseMigrator
             MigrateTasksParameters(conn);
             MigratePresetsParameters(conn);
             MigrateTaskTypeCustom(conn);
+            MigrateConfigs(conn);
             DropConfigsTable(conn);
             WriteMigrationHistory(conn);
             tx.Commit();
@@ -187,6 +191,83 @@ public static class DatabaseMigrator
         var affected2 = cmd2.ExecuteNonQuery();
         if (affected2 > 0)
             Console.WriteLine($"已修复 {affected2} 个预设的 TaskType (Custom 3→99)");
+    }
+
+    /// <summary>
+    /// 迁移前读出 v1 Configs 表中的用户配置（DefaultProcessPriority、SnapshotSize），
+    /// 写入当前目录的 config.json（v2 配置存储），避免 DROP 丢失用户设置（P1-11）。
+    /// v1 的 Configs.Value 为 JSON 序列化字符串。
+    /// </summary>
+    private static void MigrateConfigs(SqliteConnection conn)
+    {
+        var configs = new Dictionary<string, string>();
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText =
+                "SELECT Key, Value FROM Configs WHERE Key IN ('DefaultProcessPriority', 'SnapshotSize')";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                configs[reader.GetString(0)] = reader.GetString(1);
+            }
+        }
+
+        if (configs.Count == 0)
+        {
+            return;
+        }
+
+        string path = Path.Combine(Environment.CurrentDirectory, "config.json");
+        Dictionary<string, JsonNode> config = new();
+        if (File.Exists(path))
+        {
+            try
+            {
+                var parsed = JsonNode.Parse(File.ReadAllText(path))?.AsObject();
+                if (parsed != null)
+                {
+                    config = parsed.ToDictionary(p => p.Key, p => p.Value);
+                }
+            }
+            catch
+            {
+                // config.json 损坏时忽略，重新生成
+            }
+        }
+
+        if (configs.TryGetValue("DefaultProcessPriority", out var priorityJson))
+        {
+            try
+            {
+                config["DefaultProcessPriority"] = JsonSerializer.Deserialize<int>(priorityJson);
+            }
+            catch
+            {
+                // 忽略无法解析的旧值
+            }
+        }
+
+        if (configs.TryGetValue("SnapshotSize", out var snapshotJson))
+        {
+            try
+            {
+                var size = JsonSerializer.Deserialize<string>(snapshotJson);
+                if (size != null)
+                {
+                    config["SnapshotSize"] = size;
+                }
+            }
+            catch
+            {
+                // 忽略无法解析的旧值
+            }
+        }
+
+        File.WriteAllText(path, JsonSerializer.Serialize(config, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        }));
+        Console.WriteLine($"已迁移 {configs.Count} 项用户配置到 config.json");
     }
 
     /// <summary>

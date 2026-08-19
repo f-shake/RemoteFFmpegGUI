@@ -1,9 +1,8 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FzLib;
+using SimpleFFmpegGUI.WPF.FzLib;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
-using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.WPF.ViewModels;

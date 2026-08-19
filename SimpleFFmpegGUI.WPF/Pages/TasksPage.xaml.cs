@@ -1,8 +1,8 @@
-﻿using Enterwell.Clients.Wpf.Notifications;
+using Enterwell.Clients.Wpf.Notifications;
 using FFMpegCore;
 using FFMpegCore.Enums;
 using FFMpegCore.Pipes;
-using FzLib.WPF;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Dto;

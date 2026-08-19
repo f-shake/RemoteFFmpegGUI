@@ -19,14 +19,18 @@ public class TokenController(IOptionsSnapshot<AppSettings> appSettings) : FFmpeg
             return true;
         }
 
-        if (token == realToken)
-        {
-            return true;
-        }
+        // 仅接受明文，与 AppActionFilter 的 "Bearer {token}" 鉴权保持一致；
+        // 不再接受 SHA256 哈希（旧语义会造成「校验通过但全部 API 401」的误导）；用恒时比较避免时序侧信道
+        return token != null && FixedTimeEquals(token, realToken);
+    }
 
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(realToken));
-        var hashString = BitConverter.ToString(hash).Replace("-", "");
-        return hashString == token;
+    private static bool FixedTimeEquals(string a, string b)
+    {
+        if (a.Length != b.Length)
+        {
+            return false;
+        }
+        return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(a), Encoding.UTF8.GetBytes(b));
     }
 
     [HttpGet("Need")]

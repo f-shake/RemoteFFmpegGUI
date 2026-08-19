@@ -1,8 +1,8 @@
-﻿using Enterwell.Clients.Wpf.Notifications;
+using Enterwell.Clients.Wpf.Notifications;
 using FFMpegCore.Exceptions;
-using FzLib;
-using FzLib.Collection;
-using FzLib.WPF;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.Collection;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;

@@ -28,7 +28,6 @@ const router = createRouter({
     { path: '/add/' + TaskType.GetByID(2).Route, name: TaskType.GetByID(2).Name, component: QualityCheck },
     { path: '/add/' + TaskType.GetByID(99).Route, name: TaskType.GetByID(99).Name, component: Custom },
     { path: '/add/' + TaskType.GetByID(4).Route, name: TaskType.GetByID(4).Name, component: Concat },
-    { path: '/password', redirect: '/tasks' },
     {
       path: '/about',
       name: 'About',

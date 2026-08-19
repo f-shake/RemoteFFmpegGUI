@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Compatibility;
 using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Converters;
@@ -28,7 +29,10 @@ FzLib.Application.UnhandledExceptionCatcher.WithCatcher(() => { CreateWebApplica
     .Run();
 
 
-static void InitializeLogs(IServiceProvider services)
+/// <summary>
+/// 初始化 Serilog 文件日志。须在 MigrateDb 等可能失败的步骤之前调用（P3-7）。
+/// </summary>
+static void InitializeFileLogger()
 {
     int processId = Process.GetCurrentProcess().Id;
     Log.Logger = new LoggerConfiguration()
@@ -40,7 +44,10 @@ static void InitializeLogs(IServiceProvider services)
             rollingInterval: RollingInterval.Day)
         .CreateLogger();
     Log.Information("程序启动");
+}
 
+static void InitializeLogs(IServiceProvider services)
+{
     //数据库日志
     services.GetRequiredService<DbLoggerService>().Log += Logger_Log;
     services.GetRequiredService<DbLoggerService>().LogSaveFailed += Logger_LogSaveFailed;
@@ -64,7 +71,11 @@ static void InitializeLogs(IServiceProvider services)
 void CreateWebApplication(string[] args)
 {
     Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+    // 提前初始化文件日志，使 MigrateDb 等早期步骤的异常也能落盘（P3-7）
+    InitializeFileLogger();
     var builder = WebApplication.CreateBuilder(args);
+    builder.Logging.ClearProviders();
+    builder.Logging.AddSerilog();
     ConfigureAppsettings(builder);
     ConfigureServices(builder);
     app = builder.Build();
@@ -156,6 +167,11 @@ void ConfigureMiddleware(WebApplication app)
         app.UseSwagger();
         app.UseSwaggerUI();
     }
+    else
+    {
+        // 生产环境统一异常处理（P3-7）
+        app.UseExceptionHandler();
+    }
 
     app.UseHttpsRedirection();
 
@@ -186,7 +202,7 @@ static void MigrateDb(IConfiguration configuration)
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine($"数据库迁移失败: {ex.Message}");
+        Log.Error(ex, "数据库迁移失败");
         Environment.Exit(-1);
     }
 }

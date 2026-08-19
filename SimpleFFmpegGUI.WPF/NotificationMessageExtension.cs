@@ -1,6 +1,6 @@
-﻿using Enterwell.Clients.Wpf.Notifications;
+using Enterwell.Clients.Wpf.Notifications;
 using Enterwell.Clients.Wpf.Notifications.Controls;
-using FzLib.WPF;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.WPF;
 using System;

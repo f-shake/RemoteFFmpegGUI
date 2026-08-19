@@ -1,6 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FzLib;
+using SimpleFFmpegGUI.WPF.FzLib;
 using Mapster;
 using Microsoft.Win32;
 using SimpleFFmpegGUI.Services;
@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
@@ -38,6 +39,15 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             set => configManager.DefaultProcessPriority = value;
         }
 
+        /// <summary>
+        /// 快照尺寸（v1 的 SnapshotSize 配置，P1-12）
+        /// </summary>
+        public string SnapshotSize
+        {
+            get => configManager.SnapshotSize;
+            set => configManager.SnapshotSize = value;
+        }
+
         public ObservableCollection<RemoteHost> ObservableRemoteHosts { get; set; }
         [RelayCommand]
         private void AddRemoteHost()
@@ -64,11 +74,13 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
         [RelayCommand]
-        private void Save()
+        private async Task Save()
         {
             Configs.RemoteHosts = ObservableRemoteHosts.ToList();
             Configs.Adapt(Config.Instance);
             Config.Instance.Save();
+            // 持久化 ConfigService 配置（默认进程优先级、快照尺寸）
+            await configManager.SaveAsync();
             RequestToClose?.Invoke(this, EventArgs.Empty);
         }
     }

@@ -8,14 +8,9 @@
     <EmbeddedResource Remove="obj\**" />
     <None Remove="obj\**" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true'">
-    <Reference Include="FzLib">
-      <HintPath>$(LocalFzLibPath)</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
-    <PackageReference Include="FzLib" Condition="! ('$(Configuration)' == 'Debug' and '$(UseLocalFzLib)' == 'true')" />
+    <PackageReference Include="FzLib" />
     <PackageReference Include="FFMpegCore" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />

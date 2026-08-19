@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="SimpleFFmpegGUI.WPF.Panels.PresetsPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -20,7 +20,7 @@
     </UserControl.Resources>
 
     <ScrollViewer
-        xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+        xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
         xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
         Padding="0,0,18,0"
         c:SmoothScrollViewerHelper.SmoothScroll="{Binding Source={x:Static r:Config.Instance}, Path=SmoothScroll}"

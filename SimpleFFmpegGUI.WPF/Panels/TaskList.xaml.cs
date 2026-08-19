@@ -1,4 +1,4 @@
-﻿using FzLib.WPF;
+﻿using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;

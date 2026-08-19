@@ -6,6 +6,7 @@ using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -29,7 +30,8 @@ namespace SimpleFFmpegGUI.Services
         private Timer queueTimer; // 定时器
         private int runningFlag = 0;
         private DateTime? scheduleTime = null;
-        private List<FFmpegTaskService> taskProcessManagers = new List<FFmpegTaskService>();
+        // 并发集合：队列与独立任务可能并行执行，避免并发修改 List 抛 InvalidOperationException（P2-3）
+        private readonly ConcurrentDictionary<int, FFmpegTaskService> taskProcessManagers = new();
 
         public QueueService(IDbContextFactory<FFmpegDbContext> dbFactory,
             DbLoggerService logger,
@@ -39,17 +41,20 @@ namespace SimpleFFmpegGUI.Services
             this.dbFactory = dbFactory;
             this.logger = logger;
             this.scopeFactory = scopeFactory;
+            // Release 下 10 秒 tick：计划任务启动精度从约 1 分钟提升到约 10 秒，
+            // 且保证 Release 构建下运行集成测试（计划任务 +5s、轮询超时 30s）不会超时
             queueTimer = new Timer(QueueTimerCallback, null,
 #if DEBUG
                 TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)
 #else
-                TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60)
+                TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10)
 #endif
             );
         }
 
         /// <summary>
-        /// 任务发生改变
+        /// 任务发生改变。
+        /// 注意：事件可能在任意线程（队列/独立任务执行线程）触发，订阅方需自行编组（如 WPF 的 Dispatcher）。
         /// </summary>
         public event NotifyCollectionChangedEventHandler TaskManagersChanged;
 
@@ -64,18 +69,18 @@ namespace SimpleFFmpegGUI.Services
         public TaskEntity MainQueueTask { get; private set; }
 
         /// <summary>
-        /// 所有任务
+        /// 所有任务（快照）
         /// </summary>
-        public IReadOnlyList<FFmpegTaskService> Managers => taskProcessManagers.AsReadOnly();
+        public IReadOnlyList<FFmpegTaskService> Managers => taskProcessManagers.Values.ToList();
 
         /// <summary>
-        /// 独立任务
+        /// 独立任务（快照）
         /// </summary>
         public IEnumerable<TaskEntity> StandaloneTasks =>
             Managers.Where(p => p.Task != MainQueueTask).Select(p => p.Task);
 
         /// <summary>
-        /// 所有任务
+        /// 所有任务（快照）
         /// </summary>
         public IEnumerable<TaskEntity> Tasks => Managers.Select(p => p.Task);
 
@@ -84,10 +89,10 @@ namespace SimpleFFmpegGUI.Services
         /// </summary>
         public void Cancel()
         {
-            CheckMainQueueProcessingTaskManager();
+            // 幂等：队列未运行或任务恰好完成时取消不报错（原实现抛 500）。
+            // 标志使运行中的队列循环在任务边界退出；残留标志由下次 RunQueueAsync 启动时复位
             cancelQueue = true;
-
-            MainQueueManager.Cancel();
+            MainQueueManager?.Cancel();
         }
 
         /// <summary>
@@ -95,10 +100,10 @@ namespace SimpleFFmpegGUI.Services
         /// </summary>
         public Task CancelAsync()
         {
-            CheckMainQueueProcessingTaskManager();
+            // 幂等：与 Cancel() 一致，队列未运行或任务恰好完成时不报错
             cancelQueue = true;
-
-            return MainQueueManager.CancelAsync();
+            var manager = MainQueueManager;
+            return manager == null ? Task.CompletedTask : manager.CancelAsync();
         }
 
         /// <summary>
@@ -128,6 +133,10 @@ namespace SimpleFFmpegGUI.Services
                 return;
             }
 
+            // 复位取消标志：上次队列结束后调用过 Cancel（队列已停止）会残留 true，防止阻止本次启动
+            cancelQueue = false;
+
+            bool cancelManually = false;
             try
             {
                 scheduleTime = null;
@@ -146,18 +155,48 @@ namespace SimpleFFmpegGUI.Services
                             .OrderBy(p => p.CreateTime).FirstOrDefaultAsync();
                     }
 
-                    Debug.Assert(task != null, "task != null");
-                    await ProcessTaskAsync(task, true);
+                    if (task == null)
+                    {
+                        // 查询结果在取任务时被并发删除，结束本轮
+                        break;
+                    }
+
+                    try
+                    {
+                        await ProcessTaskAsync(task, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 单任务异常不终止队列：记日志并把任务标记为错误，避免队列卡死
+                        logger.Error(task, $"队列执行任务异常：{ex}");
+                        try
+                        {
+                            await using var errorDb = await dbFactory.CreateDbContextAsync();
+                            // 状态可能已改为 Processing（ProcessTaskAsync 开头已落库），放宽条件确保异常任务能被标记为错误而非永久卡住
+                            await errorDb.Tasks.Where(t => t.Id == task.Id
+                                    && (t.Status == TaskStatus.Queue || t.Status == TaskStatus.Processing))
+                                .ExecuteUpdateAsync(s => s
+                                    .SetProperty(t => t.Status, TaskStatus.Error)
+                                    .SetProperty(t => t.Message, ex.Message)
+                                    .SetProperty(t => t.FinishTime, DateTime.Now));
+                        }
+                        catch (Exception ex2)
+                        {
+                            // 连错误标记都无法落库，说明数据库异常，终止队列防止死循环
+                            logger.Error($"标记任务失败异常：{ex2}");
+                            break;
+                        }
+                    }
                 }
+                cancelManually = cancelQueue;
             }
             finally
             {
+                cancelQueue = false;
                 Interlocked.Exchange(ref runningFlag, 0);
+                logger.Info("队列完成");
             }
 
-            bool cancelManually = cancelQueue;
-            cancelQueue = false;
-            logger.Info("队列完成");
             using var scope = scopeFactory.CreateScope();
             var power = scope.ServiceProvider.GetRequiredService<PowerService>();
             if (!cancelManually && power.ShutdownAfterQueueFinished)
@@ -243,7 +282,11 @@ namespace SimpleFFmpegGUI.Services
 
         private void AddManager(TaskEntity task, FFmpegTaskService ffmpegManager, bool main)
         {
-            taskProcessManagers.Add(ffmpegManager);
+            if (!taskProcessManagers.TryAdd(task.Id, ffmpegManager))
+            {
+                throw new Exception($"任务{task.Id}的管理器已存在");
+            }
+
             if (main)
             {
                 MainQueueTask = task;
@@ -288,44 +331,50 @@ namespace SimpleFFmpegGUI.Services
             AddManager(task, ffmpegManager, main);
             try
             {
-                await ffmpegManager.RunAsync();
-                task.Status = TaskStatus.Done;
+                try
+                {
+                    await ffmpegManager.RunAsync();
+                    task.Status = TaskStatus.Done;
+                }
+                catch (Exception ex)
+                {
+                    if (task.Status != TaskStatus.Cancel)
+                    {
+                        logger.Error(task, "运行错误：" + ex.ToString());
+                        task.Status = TaskStatus.Error;
+                        task.Message = ex is FFmpegArgumentException
+                            ? ex.Message
+                            : ffmpegManager.Process?.GetErrorMessage() ?? ex.Message;
+                    }
+                    else
+                    {
+                        logger.Warn(task, "任务被取消");
+                    }
+                }
+
+                await using (var db = await dbFactory.CreateDbContextAsync())
+                {
+                    var thisDbTask = await db.Tasks.FindAsync(task.Id);
+                    if (thisDbTask == null)
+                    {
+                        logger.Warn($"找不到数据库中ID为{task.Id}的任务");
+                        return;
+                    }
+
+                    thisDbTask.Status = task.Status;
+                    thisDbTask.Message = task.Message;
+                    thisDbTask.RealOutput = task.RealOutput;
+                    thisDbTask.FFmpegArguments = task.FFmpegArguments;
+                    thisDbTask.FinishTime = DateTime.Now;
+                    db.Update(thisDbTask);
+                    await db.SaveChangesAsync();
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                if (task.Status != TaskStatus.Cancel)
-                {
-                    logger.Error(task, "运行错误：" + ex.ToString());
-                    task.Status = TaskStatus.Error;
-                    task.Message = ex is FFmpegArgumentException
-                        ? ex.Message
-                        : ffmpegManager.Process?.GetErrorMessage() ?? ex.Message;
-                }
-                else
-                {
-                    logger.Warn(task, "任务被取消");
-                }
+                // 无论结果如何都移除管理器，避免 DB 保存失败等异常路径导致管理器泄漏
+                RemoveManager(task, ffmpegManager, main);
             }
-
-            await using (var db = await dbFactory.CreateDbContextAsync())
-            {
-                var thisDbTask = await db.Tasks.FindAsync(task.Id);
-                if (thisDbTask == null)
-                {
-                    logger.Warn($"找不到数据库中ID为{task.Id}的任务");
-                    return;
-                }
-
-                thisDbTask.Status = task.Status;
-                thisDbTask.Message = task.Message;
-                thisDbTask.RealOutput = task.RealOutput;
-                thisDbTask.FFmpegArguments = task.FFmpegArguments;
-                thisDbTask.FinishTime = DateTime.Now;
-                db.Update(thisDbTask);
-                await db.SaveChangesAsync();
-            }
-
-            RemoveManager(task, ffmpegManager, main);
         }
 
         private void QueueTimerCallback(object state)
@@ -339,7 +388,7 @@ namespace SimpleFFmpegGUI.Services
 
         private void RemoveManager(TaskEntity task, FFmpegTaskService ffmpegManager, bool main)
         {
-            if (!taskProcessManagers.Remove(ffmpegManager))
+            if (!taskProcessManagers.TryRemove(task.Id, out _))
             {
                 throw new Exception("管理器未在管理器集合中");
             }

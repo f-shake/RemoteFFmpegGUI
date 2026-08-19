@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { loadArgs } from '@/utils/navigation'
 import * as net from '@/api'
 import { useAddTask } from '@/composables/useAddTask'

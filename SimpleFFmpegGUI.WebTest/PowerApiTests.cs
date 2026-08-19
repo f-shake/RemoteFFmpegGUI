@@ -15,7 +15,8 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
         cpuUsages.Length.Should().BeGreaterThan(0);
         cpuUsages.Should().AllSatisfy(c =>
         {
-            c.Usage.Should().BeInRange(0, 100);
+            // PowerService.CalculateCpuUsage 返回 0..1 的占用分数（前端再 ×100）
+            c.Usage.Should().BeInRange(0, 1);
         });
         // CpuIndex/CoreIndex 在某些环境中可能为 -1，不强制断言
     }
@@ -46,5 +47,17 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
 
         var afterOff = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
         afterOff.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// 中止关机（AbortShutdown）无副作用，可安全调用。
+    /// 注意：Shutdown 会真实关机，不写测试。
+    /// </summary>
+    [Fact]
+    public async Task TestAbortShutdownAsync()
+    {
+        await PostAsync("/Power/AbortShutdown");
+        var shutdownQueue = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
+        shutdownQueue.Should().BeFalse();
     }
 }

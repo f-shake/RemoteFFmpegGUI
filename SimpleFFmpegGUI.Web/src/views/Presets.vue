@@ -87,7 +87,9 @@ function remake(item: any) {
 function savePreset() {
   saving.value = true
   const item = editingPreset.value
-  net.postAddOrUpdatePreset(item.name, item.type, args.value?.getArgs())
+  // 对话框只能从表格行打开，行对象必含 id，不存在新建分支
+  const saveOp = net.updatePreset(item.id, item.name, item.type, args.value?.getArgs())
+  saveOp
     .then(() => {
       showSuccess('保存成功')
       dialogVisible.value = false
@@ -105,6 +107,10 @@ function edit(item: any) {
   editingPreset.value = item
   type.value = item.type
   dialogVisible.value = true
+  // 把原预设参数灌入表单，避免未修改直接保存时用表单默认值覆盖原预设（destroy-on-close 下组件在对话框渲染后挂载，延迟到渲染完成）
+  setTimeout(() => {
+    args.value?.updateFromArgs(item.parameters ?? item.arguments)
+  })
 }
 
 function clearPresets() {

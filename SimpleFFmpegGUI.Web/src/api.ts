@@ -3,7 +3,7 @@ import type { AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
 
 function getUrl(controller: string): string {
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     return `api/${controller}`
   }
   return `http://localhost:5001/${controller}`
@@ -121,6 +121,10 @@ export function getPresets(type: number | null = null): Promise<AxiosResponse<an
 
 export function postAddOrUpdatePreset(name: string, type: number, args: any): Promise<AxiosResponse<any>> {
   return axios.post(getUrl('Preset'), { name, type, parameters: args })
+}
+
+export function updatePreset(id: number, name: string, type: number, args: any): Promise<AxiosResponse<any>> {
+  return axios.post(getUrl(`Preset/${id}`), { name, type, parameters: args })
 }
 
 export function postDeletePreset(id: number): Promise<AxiosResponse<any>> {
@@ -262,7 +266,13 @@ export function getCheckToken(token: string): Promise<AxiosResponse<any>> {
 // ===== Auth Helpers =====
 
 export function setHeader(): void {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${Cookies.get('token')}`
+  const token = Cookies.get('token')
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  } else {
+    // 未登录时不设置 Authorization 头，避免发送 "Bearer undefined" 触发鉴权错误
+    delete axios.defaults.headers.common['Authorization']
+  }
 }
 
 export function getHeader(): Record<string, string> {

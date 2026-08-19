@@ -10,6 +10,7 @@ using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.Models;
 using SimpleFFmpegGUI.Repositories;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -59,6 +60,11 @@ public class FFmpegTaskService(TaskEntity task,
     /// 用于取消任务的token源
     /// </summary>
     private CancellationTokenSource cancel;
+
+    /// <summary>
+    /// 准备窗口内（RunAsync 创建 cancel 前）已请求取消的标记（P2-5）
+    /// </summary>
+    private volatile bool cancelRequested = false;
 
     /// <summary>
     /// 任务是否已经开始运行或已经完成
@@ -149,7 +155,9 @@ public class FFmpegTaskService(TaskEntity task,
     {
         logger.Info(task, "取消当前任务");
         task.Status = TaskStatus.Cancel;
-        cancel.Cancel();
+        // 任务可能仍在「准备中」（RunAsync 尚未创建 cancel），置标志让 RunAsync 启动前检查（P2-5）
+        cancelRequested = true;
+        cancel?.Cancel();
     }
 
     /// <summary>
@@ -159,14 +167,19 @@ public class FFmpegTaskService(TaskEntity task,
     {
         logger.Info(task, "取消当前任务");
         task.Status = TaskStatus.Cancel;
-        cancel.Cancel();
+        cancelRequested = true;
+        cancel?.Cancel();
         try
         {
-            await Process.WaitForExitAsync();
+            if (Process != null)
+            {
+                await Process.WaitForExitAsync();
+            }
         }
-        catch (TaskCanceledException)
+        catch
         {
-
+            // 进程异常退出（如输出文件被占用导致的 Permission denied）不影响取消语义：
+            // 取消端点不应因此返回 500
         }
     }
 
@@ -219,6 +232,11 @@ public class FFmpegTaskService(TaskEntity task,
         }
         hasRun = true;
         cancel = new CancellationTokenSource();
+        if (cancelRequested)
+        {
+            // 启动前已被取消（准备窗口内点了取消），直接终止（P2-5）
+            throw new OperationCanceledException("任务在启动前已被取消");
+        }
         try
         {
             logger.Info(task, "开始任务");
@@ -237,7 +255,9 @@ public class FFmpegTaskService(TaskEntity task,
                 Debug.Assert(false);
             }
 
-            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Parameters?.ProcessedOperationParameters?.SyncModifiedTime == true)
+            // Custom 等任务可能没有输入文件，取最后输入前需判空（P2-4）
+            if (task.RealOutput != null && File.Exists(task.RealOutput) && task.Inputs.Count > 0
+                && task.Parameters?.ProcessedOperationParameters?.SyncModifiedTime == true)
             {
                 try
                 {
@@ -536,9 +556,22 @@ public class FFmpegTaskService(TaskEntity task,
         Progress = GetProgress(true);
         GenerateOutputPath(task);
 
-        var outputArgs = ArgumentsGenerator.GetOutputArguments(v => v.Copy(), a => a.Copy(),
-            s => (video.AudioStreams.Count != 0 || audio.VideoStreams.Count != 0) ? s.Map(0, StreamChannel.Video, 0).Map(0, StreamChannel.Audio, 0) : s);
-        string arg = ArgumentsGenerator.GetArguments(task.Inputs, outputArgs, task.RealOutput);
+        // 合并音视频：视频/音频一律复制，流映射按输入是否含对应流决定；
+        // 使用完整 OutputParameters 链路生成，使「裁剪到最短媒体」(-shortest) 等参数生效
+        // 参数为空时用默认参数兜底，并避免原地修改 DB 加载出的原对象
+        var p = task.Parameters ?? new OutputParameters();
+        p.Video.Strategy = StreamStrategy.Copy;
+        p.Audio.Strategy = StreamStrategy.Copy;
+        p.Stream.Maps = (video.AudioStreams.Count != 0 || audio.VideoStreams.Count != 0)
+            ? new List<StreamMapParameters>
+            {
+                new() { InputIndex = 0, Channel = StreamChannel.Video, StreamIndex = 0 },
+                new() { InputIndex = 0, Channel = StreamChannel.Audio, StreamIndex = 0 },
+            }
+            : new List<StreamMapParameters>();
+        task.Parameters = p;
+
+        string arg = ArgumentsGenerator.GetArguments(task, 0, task.RealOutput);
 
         await RunAsync(arg, "正在合并音视频", cancellationToken);
     }

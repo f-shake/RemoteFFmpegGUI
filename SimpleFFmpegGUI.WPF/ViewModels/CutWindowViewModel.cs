@@ -1,6 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using FzLib;
+using SimpleFFmpegGUI.WPF.FzLib;
 using System;
 using System.ComponentModel;
 using System.Windows;

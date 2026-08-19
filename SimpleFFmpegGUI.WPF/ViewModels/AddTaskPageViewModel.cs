@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using FzLib;
+using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleFFmpegGUI.WPF.FzLib;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.WPF.Enums;
@@ -16,7 +16,7 @@ using System.Windows.Threading;
 using System.Windows;
 using SimpleFFmpegGUI.FFmpegArgument;
 using SimpleFFmpegGUI.WPF.Messages;
-using FzLib.Collection;
+using SimpleFFmpegGUI.WPF.FzLib.Collection;
 using CommunityToolkit.Mvvm.Input;
 using System.Linq;
 using iNKORE.Extension.CommonDialog;
@@ -66,11 +66,17 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             };
             if (!string.IsNullOrEmpty(host.Token))
             {
-                request.Headers.Add("Authorization", host.Token);
+                // v2 WebAPI 校验 "Bearer {token}" 格式；兼容 v1 已保存带 "Bearer " 前缀的 Token
+                var token = host.Token.Trim();
+                if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    token = token["Bearer ".Length..];
+                }
+                request.Headers.Add("Authorization", $"Bearer {token}");
             }
             var response = await httpClient.SendAsync(request);
             var responseString = await response.Content.ReadAsStringAsync();
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            if (!response.IsSuccessStatusCode)
             {
                 if (string.IsNullOrWhiteSpace(responseString))
                 {
@@ -249,21 +255,17 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 List<InputParameters> inputs = FileIOViewModel.GetInputs().Adapt<List<InputParameters>>();
                 foreach (var i in inputs)
                 {
-                    //绝对路径，仅保留文件名
-                    if (i.FilePath.Contains(':'))
-                    {
-                        i.FilePath = System.IO.Path.GetFileName(i.FilePath);
-                    }
-                    i.FilePath = ":" + i.FilePath;
+                    // v2 相对路径约定：仅保留文件名，由远程主机按 InputDir 解析（不再使用 v1 的 ":" 前缀）
+                    i.FilePath = System.IO.Path.GetFileName(i.FilePath);
                 }
                 string output = FileIOViewModel.GetOutputFileName();
                 var data = new
                 {
                     Inputs = inputs,
                     Output = output,
-                    Argument = args,
+                    Parameter = args,
                 };
-                await PostAsync(host, "Task/Add/" + Type.ToString(), data);
+                await PostAsync(host, "Task/" + Type.ToString(), data);
 
                 if (addToQueue)
                 {

@@ -86,12 +86,16 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         public async Task<FileResult> ExportAsync()
         {
             string json = await presetsService.ExportAsync();
-            return File(Encoding.UTF8.GetBytes(json), "application/octet-stream", "presetsService.json");
+            return File(Encoding.UTF8.GetBytes(json), "application/octet-stream", "presets.json");
         }
 
         [HttpPost("Import")]
         public async Task<IActionResult> ImportAsync(IFormFile file)
         {
+            if (file == null)
+            {
+                return BadRequest("文件不能为空");
+            }
             await using var s = file.OpenReadStream();
             byte[] buffer = new byte[s.Length];
             await s.ReadExactlyAsync(buffer);

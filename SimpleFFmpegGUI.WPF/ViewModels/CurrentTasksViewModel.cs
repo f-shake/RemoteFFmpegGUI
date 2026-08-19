@@ -1,5 +1,5 @@
-﻿using FzLib;
-using FzLib.Collection;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.Collection;
 using Mapster;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Models.Entities;
@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System;
+using System.Windows;
 using System.Windows.Shell;
 using System.Threading.Tasks;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
@@ -107,6 +108,12 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         /// <param name="e"></param>
         private async void Queue_TaskManagersChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            // 事件可能在任务线程触发，操作 UI 集合前先编组到 UI 线程（P2-3）
+            if (!Application.Current.Dispatcher.CheckAccess())
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() => Queue_TaskManagersChanged(sender, e));
+                return;
+            }
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)//新增任务
             {
                 var manager = e.NewItems[0] as FFmpegTaskService;

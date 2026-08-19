@@ -18,7 +18,7 @@ using SimpleFFmpegGUI.Models.MediaParameters;
 
 namespace SimpleFFmpegGUI.Services
 {
-    public class MediaInfoService(IFFmpegProcessServiceFactory ffmpegProcessServiceFactory)
+    public class MediaInfoService(IFFmpegProcessServiceFactory ffmpegProcessServiceFactory, ConfigService configService)
     {
         public VideoCodecParameters ConvertToVideoArguments(MediaInfoGeneral mediaInfo)
         {
@@ -44,27 +44,33 @@ namespace SimpleFFmpegGUI.Services
                 var settings = video.EncodingSettings.ToDictionary(p => p.Name, p => p.Value);
                 try
                 {
-                    if (settings["rc"].Equals("crf"))
+                    if (settings.TryGetValue("rc", out var rc) && rc.Equals("crf"))
                     {
-                        if (settings.ContainsKey("crf"))
+                        if (settings.TryGetValue("crf", out var crf))
                         {
-                            arguments.Crf = Convert.ToInt32(settings["crf"]);
+                            arguments.Crf = Convert.ToInt32(crf);
                         }
                     }
-                    else if (settings["rc"].Equals("abr"))
+                    else if (rc?.Equals("abr") == true)
                     {
-                        arguments.AverageBitrate = Convert.ToDouble(settings["bitrate"]) / 1000;
-                        if (Convert.ToDouble(settings["stats-read"]) > 0)
+                        if (settings.TryGetValue("bitrate", out var bitrate))
+                        {
+                            arguments.AverageBitrate = Convert.ToDouble(bitrate) / 1000;
+                        }
+                        if (settings.TryGetValue("stats-read", out var statsRead) && Convert.ToDouble(statsRead) > 0)
                         {
                             arguments.TwoPass = true;
                         }
                     }
 
-                    if (settings.ContainsKey("vbv-maxrate"))
+                    if (settings.TryGetValue("vbv-maxrate", out var vbvMaxrate))
                     {
-                        arguments.MaxBitrate = Convert.ToDouble(settings["vbv-maxrate"]) / 1000;
-                        arguments.MaxBitrateBuffer =
-                            Convert.ToDouble(settings["vbv-bufsize"]) / 1000 / arguments.MaxBitrate;
+                        arguments.MaxBitrate = Convert.ToDouble(vbvMaxrate) / 1000;
+                        if (settings.TryGetValue("vbv-bufsize", out var vbvBufsize))
+                        {
+                            arguments.MaxBitrateBuffer =
+                                Convert.ToDouble(vbvBufsize) / 1000 / arguments.MaxBitrate;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -73,38 +79,43 @@ namespace SimpleFFmpegGUI.Services
                 }
 
                 int preset = 0;
+                // 编码设置缺键时跳过对应预设推断，不再抛 KeyNotFoundException
+                settings.TryGetValue("cabac", out var cabac);
+                settings.TryGetValue("subme", out var subme);
+                settings.TryGetValue("ref", out var refValue);
+                settings.TryGetValue("max-merge", out var maxMerge);
 
                 if (arguments.Codec == VideoCodec.X264.Name)
                 {
-                    if (settings["cabac"].Equals(0))
+                    if (cabac?.Equals(0) == true)
                     {
                         preset = 8;
                     }
-                    else if (settings["subme"].Equals(1))
+                    else if (subme?.Equals(1) == true)
                     {
                         preset = 7;
                     }
-                    else if (settings["subme"].Equals(2))
+                    else if (subme?.Equals(2) == true)
                     {
                         preset = 6;
                     }
-                    else if (settings["subme"].Equals(4))
+                    else if (subme?.Equals(4) == true)
                     {
                         preset = 5;
                     }
-                    else if (settings["subme"].Equals(6))
+                    else if (subme?.Equals(6) == true)
                     {
                         preset = 4;
                     }
-                    else if (settings["subme"].Equals(7))
+                    else if (subme?.Equals(7) == true)
                     {
                         preset = 3;
                     }
-                    else if (settings["subme"].Equals(8))
+                    else if (subme?.Equals(8) == true)
                     {
                         preset = 2;
                     }
-                    else if (settings["subme"].Equals(9))
+                    else if (subme?.Equals(9) == true)
                     {
                         preset = 1;
                     }
@@ -119,27 +130,27 @@ namespace SimpleFFmpegGUI.Services
                     {
                         preset = 7;
                     }
-                    else if (settings["subme"].Equals(1))
+                    else if (subme?.Equals(1) == true)
                     {
                         preset = 6;
                     }
-                    else if (settings["ref"].Equals(2))
+                    else if (refValue?.Equals(2) == true)
                     {
                         preset = 5;
                     }
-                    else if (settings["max-merge"].Equals(2))
+                    else if (maxMerge?.Equals(2) == true)
                     {
                         preset = 4;
                     }
-                    else if (settings["ref"].Equals(3))
+                    else if (refValue?.Equals(3) == true)
                     {
                         preset = 3;
                     }
-                    else if (settings["ref"].Equals(4))
+                    else if (refValue?.Equals(4) == true)
                     {
                         preset = 2;
                     }
-                    else if (settings["max-merge"].Equals(4))
+                    else if (maxMerge?.Equals(4) == true)
                     {
                         preset = 1;
                     }
@@ -174,9 +185,11 @@ namespace SimpleFFmpegGUI.Services
             return mediaInfo;
         }
 
-        public async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale = "-1:1080",
+        public async Task<string> GetSnapshotAsync(string path, TimeSpan time, string scale = null,
             string format = "jpg")
         {
+            // 未显式指定时使用配置的快照尺寸（P1-12）
+            scale ??= configService.SnapshotSize;
             Debug.WriteLine("正在采集截图");
             string tempPath = $"{FileSystemHelper.GetTempFileName("snapshot")}.{format}";
 

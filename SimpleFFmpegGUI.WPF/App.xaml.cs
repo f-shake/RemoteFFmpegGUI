@@ -1,4 +1,4 @@
-﻿using FzLib.Program.Runtime;
+using SimpleFFmpegGUI.WPF.FzLib.Program.Runtime;
 using log4net;
 using log4net.Appender;
 using log4net.Layout;
@@ -24,6 +24,7 @@ using System.Windows;
 using static SimpleFFmpegGUI.DependencyInjectionExtension;
 using System.Windows.Interop;
 using FFMpegCore;
+using Microsoft.Extensions.Hosting;
 using SimpleFFmpegGUI.Services;
 
 [assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
@@ -57,14 +58,17 @@ namespace SimpleFFmpegGUI.WPF
                     })
                     .Build();
 
-                // 迁移 v1.1 → v2.0 数据库（如果检测到旧版）
+                // 迁移 v1.1 → v2.0 数据库（如果检测到旧版），必须在 EnsureCreated 之前
                 DatabaseMigrator.MigrateIfNeeded(config.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey));
 
-                var tempServices = new ServiceCollection();
-                tempServices.AddSingleton<IConfiguration>(config);
-                tempServices.AddFFmpegServices();
-                var sp = tempServices.BuildServiceProvider();
-                var factory = sp.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
+                var serviceCollection = new ServiceCollection();
+                serviceCollection.AddSingleton<IConfiguration>(config);
+                serviceCollection.Configure<AppSettings>(_ => { });
+                ConfigureServices(serviceCollection);
+                ServiceProvider = serviceCollection.BuildServiceProvider();
+
+                // 创建数据库
+                var factory = ServiceProvider.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
                 using var context = factory.CreateDbContext();
                 context.Database.EnsureCreated();
             }
@@ -73,19 +77,23 @@ namespace SimpleFFmpegGUI.WPF
                 throw new Exception("数据库初始化失败", ex);
             }
 
-            Unosquare.FFME.Library.FFmpegDirectory = Path.Combine(FzLib.Program.App.ProgramDirectoryPath,"ffmpeg_FFME");
-            GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(FzLib.Program.App.ProgramDirectoryPath, "ffmpeg") });
-            var config2 = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
+            Unosquare.FFME.Library.FFmpegDirectory = Path.Combine(SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramDirectoryPath,"ffmpeg_FFME");
+            GlobalFFOptions.Configure(new FFOptions { BinaryFolder = Path.Combine(SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramDirectoryPath, "ffmpeg") });
+
+            // WPF 未使用 Host 管线，AddFFmpegServices 注册的托管服务（DbLoggerService 日志保存循环、
+            // AppLifetimeService 遗留任务复位/ffmpeg 目录配置）不会自动启动，这里手动启动（P2-1）
+            foreach (var hostedService in ServiceProvider.GetServices<IHostedService>())
+            {
+                try
                 {
-                    [$"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}"] = "Data Source=db.sqlite"
-                })
-                .Build();
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton<IConfiguration>(config2);
-            serviceCollection.Configure<AppSettings>(_ => { });
-            ConfigureServices(serviceCollection);
-            ServiceProvider = serviceCollection.BuildServiceProvider();
+                    hostedService.StartAsync(CancellationToken.None).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    // 单个托管服务启动失败（如数据库异常）不阻断应用启动，记录日志
+                    AppLog.Error($"托管服务 {hostedService.GetType().Name} 启动失败", ex);
+                }
+            }
 
             // 订阅数据库日志事件
             var dbLogger = ServiceProvider.GetService<DbLoggerService>();
@@ -191,14 +199,14 @@ namespace SimpleFFmpegGUI.WPF
             AppLog.Error(e.Exception.Message, e.Exception);
         }
 
-        private void UnhandledException_UnhandledExceptionCatched(object sender, FzLib.Program.Runtime.UnhandledExceptionEventArgs e)
+        private void UnhandledException_UnhandledExceptionCatched(object sender, SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.UnhandledExceptionEventArgs e)
         {
             try
             {
                 AppLog.Error(e.Exception);
                 Dispatcher.Invoke(() =>
                 {
-                    var result = MessageBox.Show("程序发生异常，可能出现数据丢失等问题。是否关闭？" + Environment.NewLine + Environment.NewLine + e.Exception.ToString(), FzLib.Program.App.ProgramName + " - 未捕获的异常", MessageBoxButton.YesNo, MessageBoxImage.Error);
+                    var result = MessageBox.Show("程序发生异常，可能出现数据丢失等问题。是否关闭？" + Environment.NewLine + Environment.NewLine + e.Exception.ToString(), SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramName + " - 未捕获的异常", MessageBoxButton.YesNo, MessageBoxImage.Error);
                     if (result == MessageBoxResult.Yes)
                     {
                         Shutdown(-1);
@@ -222,6 +230,22 @@ namespace SimpleFFmpegGUI.WPF
                 catch
                 {
                     // 日志写入失败不影响退出
+                }
+            }
+
+            // 停止托管服务（P2-1）
+            if (App.ServiceProvider != null)
+            {
+                foreach (var hostedService in App.ServiceProvider.GetServices<IHostedService>())
+                {
+                    try
+                    {
+                        hostedService.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
+                        // 停止失败不影响退出
+                    }
                 }
             }
         }

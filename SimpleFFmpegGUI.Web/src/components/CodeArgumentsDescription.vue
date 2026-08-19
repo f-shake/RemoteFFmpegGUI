@@ -90,14 +90,14 @@
     </div>
 
     <!-- 其他参数 -->
-    <div v-if="showOtherSection && (args.extra || args.processedOptions)" class="c-card c-card--thin">
+    <div v-if="showOtherSection && (args.extra || args.processedOperationParameters)" class="c-card c-card--thin">
       <div class="c-grid">
         <span v-if="args.extra" class="c-label">额外参数</span>
         <span v-if="args.extra" class="c-val c-val--mono">{{ args.extra }}</span>
         <span class="c-label">同步时间</span>
-        <span class="c-val">{{ args.processedOptions?.syncModifiedTime ? '是' : '否' }}</span>
+        <span class="c-val">{{ args.processedOperationParameters?.syncModifiedTime ? '是' : '否' }}</span>
         <span class="c-label">删除输入</span>
-        <span class="c-val">{{ args.processedOptions?.deleteInputFiles ? '是' : '否' }}</span>
+        <span class="c-val">{{ args.processedOperationParameters?.deleteInputFiles ? '是' : '否' }}</span>
       </div>
     </div>
   </div>

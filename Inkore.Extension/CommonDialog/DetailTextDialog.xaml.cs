@@ -1,4 +1,4 @@
-﻿using FzLib;
+﻿using iNKORE.Extension.FzLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;

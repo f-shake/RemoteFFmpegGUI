@@ -1,4 +1,4 @@
-﻿<UserControl
+<UserControl
     x:Class="SimpleFFmpegGUI.WPF.Pages.MediaInfoPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,7 +7,6 @@
     xmlns:ixt="clr-namespace:iNKORE.Extension;assembly=Inkore.Extension"
     xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:n="clr-namespace:Enterwell.Clients.Wpf.Notifications.Controls;assembly=Enterwell.Clients.Wpf.Notifications"
     xmlns:panels="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
     Margin="0,0,0,42"
@@ -48,7 +47,7 @@
             </Button>
         </Grid>
         <ScrollViewer
-            xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+            xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
             xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
             Grid.Row="2"
             c:SmoothScrollViewerHelper.SmoothScroll="{Binding Source={x:Static r:Config.Instance}, Path=SmoothScroll}"
@@ -289,7 +288,7 @@
             </ikw:SimpleStackPanel>
         </ScrollViewer>
         <ScrollViewer
-            xmlns:c="clr-namespace:FzLib.WPF.Controls;assembly=FzCoreLib.Windows"
+            xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
             xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
             Grid.Row="2"
             Grid.Column="2"

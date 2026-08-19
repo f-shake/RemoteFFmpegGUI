@@ -81,6 +81,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("Batch/Cancel")]
         public async Task<ActionResult<TaskStatusChangeResult>> CancelTasksAsync([FromBody] ICollection<int> ids)
         {
+            if (ids == null)
+            {
+                return BadRequest("任务ID列表不能为空");
+            }
             return await taskService.CancelTasksAsync(ids);
         }
 
@@ -104,6 +108,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("Batch/Delete")]
         public async Task<ActionResult<TaskStatusChangeResult>> DeleteTasksAsync([FromBody] ICollection<int> ids)
         {
+            if (ids == null)
+            {
+                return BadRequest("任务ID列表不能为空");
+            }
             return await taskService.DeleteTasksAsync(ids);
         }
 
@@ -127,6 +135,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("Batch/Reset")]
         public async Task<ActionResult<TaskStatusChangeResult>> ResetTasksAsync([FromBody] IEnumerable<int> ids)
         {
+            if (ids == null)
+            {
+                return BadRequest("任务ID列表不能为空");
+            }
             return await taskService.ResetTasksAsync(ids);
         }
 

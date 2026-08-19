@@ -1,0 +1,14 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Converters">
+    <c:Bool2VisibilityConverter x:Key="Bool2VisibilityConverter" />
+    <c:Bool2StringConverter x:Key="Bool2StringConverter" />
+    <c:CountMoreThanZeroConverter x:Key="CountMoreThanZeroConverter" />
+    <c:StringReplaceConverter x:Key="StringReplaceConverter" />
+    <c:EqualConverter x:Key="EqualConverter" />
+    <c:InverseBoolConverter x:Key="InverseBoolConverter" />
+    <c:NotNullConverter x:Key="NotNullConverter" />
+    <c:DescriptionConverter x:Key="DescriptionConverter" />
+    <c:TimeSpanConverter x:Key="TimeSpanConverter" />
+</ResourceDictionary>

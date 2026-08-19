@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using FzLib;
+using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleFFmpegGUI.WPF.FzLib;
 using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System.ComponentModel;

@@ -1,6 +1,6 @@
-﻿using Enterwell.Clients.Wpf.Notifications;
-using FzLib;
-using FzLib.WPF;
+using Enterwell.Clients.Wpf.Notifications;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;

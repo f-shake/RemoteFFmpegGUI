@@ -1,6 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using FzLib;
-using FzLib.Collection;
+using CommunityToolkit.Mvvm.ComponentModel;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.Collection;
 using Mapster;
 using Newtonsoft.Json.Linq;
 using SimpleFFmpegGUI.Dto;

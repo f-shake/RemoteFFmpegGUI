@@ -84,7 +84,7 @@
       <el-main class="app-main">
         <router-view v-slot="{ Component }">
           <transition name="page-fade" mode="out-in">
-            <component :is="Component" :status="status" @statusChanged="delayGetStatus" />
+            <component :is="Component" :status="status" />
           </transition>
         </router-view>
       </el-main>
@@ -103,11 +103,9 @@ import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
   Fold, Expand, HomeFilled, DocumentAdd, CirclePlus, VideoCamera,
-  Search, Document, CopyDocument, FolderOpened, Setting, TakeawayBox,
   Monitor, Sunny, Moon, UserFilled
 } from '@element-plus/icons-vue'
 import Cookies from 'js-cookie'
-import { showError } from '@/utils/ui'
 import { jump, loadDirs } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
 import * as net from './api'
@@ -193,10 +191,6 @@ window.addEventListener('resize', resizeMenu)
 function resizeMenu() {
   windowWidth.value = window.innerWidth
   menuCollapse.value = window.innerWidth < 640
-}
-
-function delayGetStatus() {
-  setTimeout(getStatus, 500)
 }
 
 function logout() {

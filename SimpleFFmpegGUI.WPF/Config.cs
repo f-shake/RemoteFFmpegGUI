@@ -1,6 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using FzLib;
-using FzLib.DataStorage.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -51,9 +49,6 @@ namespace SimpleFFmpegGUI.WPF
 
         [ObservableProperty]
         private bool smoothScroll = true;
-
-        [ObservableProperty]
-        private string snapshotSize = "-1:1080";
 
         [ObservableProperty]
         private bool startQueueAfterAddTask = true;

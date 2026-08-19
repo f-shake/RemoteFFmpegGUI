@@ -34,7 +34,7 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 for (int i = 0; i < inputCount; i++)
                 {
                     var file = inputs[i];
-                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath, allowAbsolute: true);
                     if (!File.Exists(file.FilePath))
                     {
                         return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
@@ -53,14 +53,14 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 ValidateInputs(request, exact: 2);
                 foreach (var file in inputs)
                 {
-                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath, allowAbsolute: true);
                     if (!File.Exists(file.FilePath))
                     {
                         return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
                     }
                 }
 
-                var taskType = type.ToLower() == "combine" ? TaskType.Mux : TaskType.QualityCheck;
+                var taskType = type.ToLower() == "mux" ? TaskType.Mux : TaskType.QualityCheck;
                 var output = taskType == TaskType.Mux ? GetOutputByInput(request, 0) : null;
                 var arg = taskType == TaskType.Mux ? request.Parameter : null;
 
@@ -72,7 +72,7 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 ValidateInputs(request, min: 2);
                 foreach (var file in inputs)
                 {
-                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath);
+                    file.FilePath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FilePath, allowAbsolute: true);
                     if (!File.Exists(file.FilePath))
                     {
                         return ServiceResult<List<int>>.Failure($"输入文件不存在: {file.FilePath}", HttpStatusCode.NotFound);
@@ -108,7 +108,8 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
     {
         TaskStatusChangeResult result = new TaskStatusChangeResult();
         var allIds = await taskRepository.GetTaskIdsAsync();
-        var requestIdToTask = (await taskRepository.GetTasksAsync(ids)).ToDictionary(p => p.Id);
+        // ids 去重：重复 id 会导致 ToDictionary 抛异常（P3-5）
+        var requestIdToTask = (await taskRepository.GetTasksAsync(ids.Distinct().ToList())).ToDictionary(p => p.Id);
         List<int> processingIds = new List<int>();
         foreach (var id in ids)
         {
@@ -200,18 +201,17 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                 return output;
             }
 
-            //如果没有输出文件名，则使用输入文件名
+            //如果没有输出文件名，则使用输入文件名；输入为绝对路径时仅取文件名，确保输出落在 OutputDir 下
             var input = request.Inputs[inputIndex];
             if (input?.FilePath != null)
             {
-                output = filePathHelper.GetFullPath(RootDirType.OutputDir, input.FilePath);
+                output = Path.Combine(filePathHelper.OutputDir, Path.GetFileName(input.FilePath));
             }
         }
         else
         {
-            //如果是相对路径，补充为绝对路径
-            var outputDir = filePathHelper.GetFullPath(RootDirType.OutputDir, output);
-            output = Path.IsPathFullyQualified(output) ? output : Path.Combine(outputDir, output);
+            // 相对路径补充为 OutputDir 下的完整路径（含文件名）；绝对路径由 GetFullPath 拒绝（P3-1 路径安全）
+            output = filePathHelper.GetFullPath(RootDirType.OutputDir, output);
         }
 
         return output;

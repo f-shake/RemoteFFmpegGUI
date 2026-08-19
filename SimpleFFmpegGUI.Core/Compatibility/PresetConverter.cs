@@ -41,10 +41,12 @@ public static class PresetConverter
 
     private static PresetEntity ConvertToNew(OldPresetDto old)
     {
+        // v1 的 Custom 枚举值为 3，v2 为 99（与 DatabaseMigrator.MigrateTaskTypeCustom 一致）
+        var type = (int)old.Type == 3 ? TaskType.Custom : old.Type;
         return new PresetEntity
         {
             Name = old.Name,
-            Type = old.Type,
+            Type = type,
             Default = old.Default,
             Parameters = ConvertArguments(old.Arguments)
         };

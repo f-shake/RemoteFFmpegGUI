@@ -92,6 +92,11 @@ public class FileController(
     [Route("List/Input")]
     public ActionResult<List<FileInfoDto>> GetInputFiles()
     {
+        // 目录尚未创建时返回空列表而非 500（P3-2 相对目录出厂值）
+        if (!Directory.Exists(appSettings.Value.InputDir))
+        {
+            return new List<FileInfoDto>();
+        }
         return Directory.EnumerateFiles(appSettings.Value.InputDir, "*", SearchOption.AllDirectories)
             .Select(p => new FileInfoDto(p, filePathHelper.InputDir)).ToList();
     }
@@ -100,6 +105,10 @@ public class FileController(
     [Route("List/Output")]
     public ActionResult<List<FileInfoDto>> GetOutputFiles()
     {
+        if (!Directory.Exists(appSettings.Value.OutputDir))
+        {
+            return new List<FileInfoDto>();
+        }
         return Directory.EnumerateFiles(appSettings.Value.OutputDir, "*", SearchOption.AllDirectories)
             .Select(p => new FileInfoDto(p, filePathHelper.OutputDir)).ToList();
     }
@@ -124,10 +133,16 @@ public class FileController(
     [DisableRequestSizeLimit]
     public async Task<IActionResult> UploadFile(IFormFile file)
     {
+        if (file == null)
+        {
+            return BadRequest("文件不能为空");
+        }
         if (file.Length > 0)
         {
             string name = filePathHelper.GetFullPath(RootDirType.InputDir, file.FileName);
             name = FileNameHelper.GenerateUniquePath(name, new HashSet<string>());
+            // 输入目录可能尚未创建（列表端点对目录不存在返回空列表是正常状态），上传时先确保目录存在
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(name));
             await using var stream = System.IO.File.Create(name);
             await file.CopyToAsync(stream);
             return Ok(name);

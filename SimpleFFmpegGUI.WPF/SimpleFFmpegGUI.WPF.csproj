@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.18362.0</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>SimpleFFmpegGUI.WPF</RootNamespace>
     <SatelliteResourceLanguages>zh-cn</SatelliteResourceLanguages>
     <ApplicationIcon>icon.ico</ApplicationIcon>
@@ -31,23 +32,8 @@
     <ProjectReference Include="..\SimpleFFmpegGUI.Core\SimpleFFmpegGUI.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Enterwell.Clients.Wpf.Notifications">
-      <HintPath>..\libs\Enterwell.Clients.Wpf.Notifications.dll</HintPath>
-    </Reference>
-    <Reference Include="FzCoreLib.Windows">
-      <HintPath>..\libs\FzCoreLib.Windows.dll</HintPath>
-    </Reference>
-    <Reference Include="FzStandardLib">
-      <HintPath>..\libs\FzStandardLib.dll</HintPath>
-    </Reference>
-    <Reference Include="FzLib">
-      <HintPath>..\libs\FzLib.dll</HintPath>
-    </Reference>
-    <Reference Include="FzLib">
-      <HintPath>..\libs\FzLib.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  <!-- Enterwell 通知控件已内化源码（SimpleFFmpegGUI.WPF/Enterwell/，保留原命名空间，
+       来自 https://github.com/f-shake/Wpf.Notifications 修改版 v1.4.2） -->
 
   <ItemGroup>
     <Compile Update="Panels\PresetsPanel.xaml.cs">

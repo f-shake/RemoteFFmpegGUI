@@ -372,5 +372,8 @@ yarn-error.log*
 
 db.sqlite*
 
-# Test assets (large files not tracked by git)
-test/
+# Test assets (large files not tracked by git；根目录 test/ 忽略，WebTest/test/ 下的固定测试资产需提交)
+/test/
+
+# FzLib / Wpf.Notifications 源码临时目录（仅本地查看用）
+temp/

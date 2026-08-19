@@ -1,4 +1,4 @@
-﻿using FzLib.WPF.Converters;
+﻿using SimpleFFmpegGUI.WPF.FzLib.WPF.Converters;
 using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.WPF.Converters;
 using SimpleFFmpegGUI.WPF.ViewModels;

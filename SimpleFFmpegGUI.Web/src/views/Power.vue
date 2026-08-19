@@ -91,7 +91,7 @@ const cpuColors = [
   { color: '#e6a23c', percentage: 80 },
   { color: '#f56c6c', percentage: 100 }
 ]
-const processPriorities = {
+const processPriorities: Record<number, string> = {
   0: '空闲',
   1: '低于正常',
   2: '正常',

@@ -1,8 +1,8 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using FzLib;
-using FzLib.WPF.Converters;
+using SimpleFFmpegGUI.WPF.FzLib;
+using SimpleFFmpegGUI.WPF.FzLib.WPF.Converters;
 using Mapster;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
@@ -350,7 +350,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 {
                     StartInfo = new ProcessStartInfo()
                     {
-                        FileName = FzLib.Program.App.ProgramFilePath,
+                        FileName = SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramFilePath,
                         RedirectStandardOutput = true,
                     }
                 };

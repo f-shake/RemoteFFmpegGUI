@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net;
 using FzLib.Web;
 using Microsoft.Extensions.Options;
@@ -22,13 +23,36 @@ public class FilePathHelper(IOptionsSnapshot<AppSettings> appSettings)
 
     public string OutputDir => outputDir;
 
-    public string GetFullPath(RootDirType type, string relPathOrFullPath)
+    public string GetFullPath(RootDirType type, string relPathOrFullPath, bool allowAbsolute = false)
     {
-        var rootDir = type == RootDirType.InputDir ? inputDir : outputDir;
-        string path = Path.IsPathFullyQualified(relPathOrFullPath)
-            ? relPathOrFullPath
-            : Path.Combine(rootDir, relPathOrFullPath);
+        var rootDir = Path.GetFullPath(type == RootDirType.InputDir ? inputDir : outputDir);
+        string fullPath;
+        if (Path.IsPathFullyQualified(relPathOrFullPath))
+        {
+            // 默认拒绝绝对路径：v2 约定文件服务只接受相对路径（防任意路径读写，P3-1）。
+            // 任务创建（allowAbsolute=true）允许绝对路径输入，但同样必须落在 rootDir 内。
+            if (!allowAbsolute)
+            {
+                throw new HttpStatusCodeException($"不支持绝对路径：{relPathOrFullPath}",
+                    HttpStatusCode.BadRequest);
+            }
 
-        return path;
+            fullPath = Path.GetFullPath(relPathOrFullPath);
+        }
+        else
+        {
+            fullPath = Path.GetFullPath(Path.Combine(rootDir, relPathOrFullPath));
+        }
+
+        // 规范化后必须仍在 rootDir 内，拒绝 ..\ 逃逸（P3-1）
+        var rootWithSeparator = rootDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new HttpStatusCodeException($"路径越界：{relPathOrFullPath}",
+                HttpStatusCode.BadRequest);
+        }
+
+        return fullPath;
     }
 }
