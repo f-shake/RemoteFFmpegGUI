@@ -22,12 +22,12 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
 
-    public partial class SettingPage : UserControl, ICloseablePage
+    public partial class SettingView : UserControl, ICloseableView
     {
-        public SettingPage()
+        public SettingView()
         {
             ViewModel = this.SetDataContext<SettingPageViewModel>();
             InitializeComponent();

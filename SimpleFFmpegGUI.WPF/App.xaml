@@ -13,9 +13,16 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="FzLib/WPF/Converters/Converters.xaml" />
                 <ResourceDictionary Source="Styles.xaml" />
-                <ui:ThemeResources />
+                <ui:ThemeResources RequestedTheme="Dark" />
                 <ui:XamlControlsResources />
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type Window}">
+                <Setter Property="ui:WindowHelper.SystemBackdropType" Value="None" />
+                <Setter Property="ui:WindowHelper.UseModernWindowStyle" Value="True" />
+                <Setter Property="ui:TitleBar.IsIconVisible" Value="True" />
+                <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeBlackHighBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+            </Style>
             <converters:NameDescriptionAttributeValueConverter x:Key="NameDescriptionAttributeValueConverter" />
             <converters:HourMinSecTimeSpanConverter x:Key="HourMinSecTimeSpanConverter" />
             <converters:Bitrate2StringConverter x:Key="Bitrate2StringConverter" />

@@ -29,16 +29,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
 
     /// <summary>
-    /// Interaction logic for AddTaskPage.xaml
+    /// Interaction logic for AddTaskView.xaml
     /// </summary>
-    public partial class AddTaskPage : UserControl
+    public partial class AddTaskView : UserControl
     {
         private bool canInitializeType = true;
-        public AddTaskPage()
+        public AddTaskView()
         {
             DataContext = ViewModel;
             ViewModel = this.SetDataContext<AddTaskPageViewModel>();

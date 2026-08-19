@@ -30,17 +30,17 @@ using System.Windows.Shapes;
 using Path = System.IO.Path;
 using Size = System.Drawing.Size;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
 
     /// <summary>
-    /// Interaction logic for TasksPage.xaml
+    /// Interaction logic for TasksView.xaml
     /// </summary>
-    public partial class TasksPage : UserControl
+    public partial class TasksView : UserControl
     {
         public TasksPageViewModel ViewModel { get; set; }
 
-        public TasksPage()
+        public TasksView()
         {
             InitializeComponent();
             ViewModel = this.SetDataContext<TasksPageViewModel>();

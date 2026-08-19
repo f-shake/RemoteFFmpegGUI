@@ -1,14 +1,11 @@
 using CommunityToolkit.Mvvm.Input;
 using SimpleFFmpegGUI.WPF.FzLib;
-using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.WPF.Messages;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using System;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.Repositories;
 
@@ -18,8 +15,6 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
     {
         public QueueService queue;
         private readonly TaskRepository taskManager;
-        private bool isTabControlVisiable = true;
-
         public MainWindowViewModel(QueueService queue, TaskRepository taskManager)
         {
             this.queue = queue;
@@ -29,15 +24,6 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public Visibility StartMainQueueButtonVisibility => queue.MainQueueTask == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility StopMainQueueButtonVisibility => queue.MainQueueTask == null ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility TabControlVisibility => isTabControlVisiable ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility TopTabVisibility => isTabControlVisiable ? Visibility.Collapsed : Visibility.Visible;
-
-        public void SetTabVisiable(bool isTabControlVisiable)
-        {
-            this.isTabControlVisiable = isTabControlVisiable;
-            this.Notify(nameof(TabControlVisibility), nameof(TopTabVisibility));
-        }
-
         [RelayCommand]
         private async Task StartQueueAsync()
         {
@@ -73,26 +59,26 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         }
 
 
-        private void ShowPage<T>(bool top = false, bool showWindow = false)
+        private void ShowView<T>(bool modal = false, bool window = false)
         {
-            SendMessage(new AddNewTabMessage(typeof(T), top, showWindow));
+            SendMessage(new OpenViewMessage(typeof(T), modal, window));
         }
         [RelayCommand]
-        private void ShowTasks() => ShowPage<TasksPage>();
+        private void ShowTasks() => ShowView<TasksView>();
         [RelayCommand]
-        private void ShowPresets() => ShowPage<PresetsPage>();
+        private void ShowPresets() => ShowView<PresetsView>();
         [RelayCommand]
-        private void ShowSettings() => ShowPage<SettingPage>(true);
+        private void ShowSettings() => ShowView<SettingView>(modal: true);
         [RelayCommand]
-        private void ShowAddTask() => ShowPage<AddTaskPage>();
+        private void ShowAddTask() => ShowView<AddTaskView>();
         [RelayCommand]
-        private void ShowFFmpegOutputs() => ShowPage<FFmpegOutputPage>();
+        private void ShowFFmpegOutputs() => ShowView<FFmpegOutputView>();
         [RelayCommand]
-        private void ShowLogs() => ShowPage<LogsPage>();
+        private void ShowLogs() => ShowView<LogsView>();
         [RelayCommand]
-        private void ShowMediaInfo() => ShowPage<MediaInfoPage>();
+        private void ShowMediaInfo() => ShowView<MediaInfoView>();
         [RelayCommand]
-        private void ShowTests() => ShowPage<TestWindow>(showWindow: true);
+        private void ShowTests() => ShowView<TestWindow>(window: true);
 
     }
 }

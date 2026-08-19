@@ -8,7 +8,6 @@ using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.MediaParameters;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
-using SimpleFFmpegGUI.WPF.Pages;
 using System;
 using System.Collections;
 using System.Collections.Generic;

@@ -21,7 +21,7 @@ using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services
 {
-    public class QueueService
+    public class QueueService : IDisposable
     {
         private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
         private readonly DbLoggerService logger;
@@ -400,6 +400,11 @@ namespace SimpleFFmpegGUI.Services
 
             TaskManagersChanged?.Invoke(this,
                 new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, ffmpegManager));
+        }
+
+        public void Dispose()
+        {
+            queueTimer?.Dispose();
         }
     }
 }

@@ -102,6 +102,21 @@ public partial class FFmpegProcessService
 
     public event EventHandler<FFmpegOutputEventArgs> Output;
 
+    public bool IsRunning
+    {
+        get
+        {
+            try
+            {
+                return started && !process.HasExited;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+    }
+
     /// <summary>
     /// CPU使用率
     /// </summary>

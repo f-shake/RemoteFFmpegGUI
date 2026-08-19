@@ -1,13 +1,13 @@
-﻿using SimpleFFmpegGUI.WPF.ViewModels;
+using SimpleFFmpegGUI.WPF.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
-    public partial class MediaInfoPage : UserControl
+    public partial class MediaInfoView : UserControl
     {
-        public MediaInfoPage()
+        public MediaInfoView()
         {
             ViewModel = this.SetDataContext<MediaInfoPageViewModel>();
             InitializeComponent();
@@ -23,9 +23,10 @@ namespace SimpleFFmpegGUI.WPF.Pages
         protected override void OnDragOver(DragEventArgs e)
         {
             base.OnDragOver(e);
-            if (e.Data.GetDataPresent(DataFormats.FileDrop)
-                && (e.Data.GetData(DataFormats.FileDrop) as string[]).Length == 1
-                && System.IO.File.Exists((e.Data.GetData(DataFormats.FileDrop) as string[])[0]))
+            var files = e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? e.Data.GetData(DataFormats.FileDrop) as string[]
+                : null;
+            if (files?.Length == 1 && System.IO.File.Exists(files[0]))
             {
                 e.Effects = DragDropEffects.Link;
             }
@@ -34,11 +35,12 @@ namespace SimpleFFmpegGUI.WPF.Pages
         protected override void OnDrop(DragEventArgs e)
         {
             base.OnDrop(e);
-            if (e.Data.GetDataPresent(DataFormats.FileDrop)
-            && (e.Data.GetData(DataFormats.FileDrop) as string[]).Length == 1
-            && System.IO.File.Exists((e.Data.GetData(DataFormats.FileDrop) as string[])[0]))
+            var files = e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? e.Data.GetData(DataFormats.FileDrop) as string[]
+                : null;
+            if (files?.Length == 1 && System.IO.File.Exists(files[0]))
             {
-                ViewModel.FilePath = (e.Data.GetData(DataFormats.FileDrop) as string[])[0];
+                ViewModel.FilePath = files[0];
             }
         }
 

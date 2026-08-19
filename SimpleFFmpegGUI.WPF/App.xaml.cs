@@ -10,7 +10,7 @@ using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Data;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.WPF.ViewModels;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -147,25 +147,25 @@ namespace SimpleFFmpegGUI.WPF
             services.AddTransient<TestWindow>();
             services.AddTransient<TestWindowViewModel>();
 
-            services.AddTransient<AddTaskPage>();
+            services.AddTransient<AddTaskView>();
             services.AddTransient<AddTaskPageViewModel>();
 
-            services.AddTransient<MediaInfoPage>();
+            services.AddTransient<MediaInfoView>();
             services.AddTransient<MediaInfoPageViewModel>();
 
-            services.AddTransient<LogsPage>();
+            services.AddTransient<LogsView>();
             services.AddTransient<LogsPageViewModel>();
 
-            services.AddTransient<TasksPage>();
+            services.AddTransient<TasksView>();
             services.AddTransient<TasksPageViewModel>();
 
-            services.AddTransient<SettingPage>();
+            services.AddTransient<SettingView>();
             services.AddTransient<SettingPageViewModel>();
 
-            services.AddTransient<PresetsPage>();
+            services.AddTransient<PresetsView>();
             services.AddTransient<PresetsPageViewModel>();
 
-            services.AddTransient<FFmpegOutputPage>();
+            services.AddTransient<FFmpegOutputView>();
             services.AddSingleton<FFmpegOutputPageViewModel>();
 
             services.AddTransient<CutWindowViewModel>();
@@ -220,23 +220,28 @@ namespace SimpleFFmpegGUI.WPF
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            var dbLogger = App.ServiceProvider?.GetService<DbLoggerService>();
-            if (dbLogger != null)
+            var provider = App.ServiceProvider;
+            if (provider == null)
             {
-                try
-                {
-                    Task.Run(() => dbLogger.SaveAllAsync()).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    // 日志写入失败不影响退出
-                }
+                return;
             }
 
-            // 停止托管服务（P2-1）
-            if (App.ServiceProvider != null)
+            try
             {
-                foreach (var hostedService in App.ServiceProvider.GetServices<IHostedService>())
+                var dbLogger = provider.GetService<DbLoggerService>();
+                if (dbLogger != null)
+                {
+                    try
+                    {
+                        Task.Run(() => dbLogger.SaveAllAsync()).GetAwaiter().GetResult();
+                    }
+                    catch
+                    {
+                        // 日志写入失败不影响退出
+                    }
+                }
+
+                foreach (var hostedService in provider.GetServices<IHostedService>())
                 {
                     try
                     {
@@ -247,6 +252,11 @@ namespace SimpleFFmpegGUI.WPF
                         // 停止失败不影响退出
                     }
                 }
+            }
+            finally
+            {
+                provider.Dispose();
+                App.ServiceProvider = null;
             }
         }
     }

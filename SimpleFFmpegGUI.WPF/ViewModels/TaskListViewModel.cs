@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
 using System.ComponentModel;
@@ -68,7 +68,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private async Task CancelAsync()
         {
-            var tasks = currentTasks.SelectedTasks;
+            var tasks = Tasks.SelectedTasks;
             Debug.Assert(tasks.Count > 0);
             if (tasks.Any(p => p.Status == TaskStatus.Processing))
             {
@@ -101,8 +101,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private void Clone()
         {
-            (SendMessage(new AddNewTabMessage(typeof(AddTaskPage))).Page as AddTaskPage)
-                .SetAsClone(Tasks.SelectedTask.ToTask());
+            var task = Tasks.SelectedTask.ToTask();
+            SendMessage(new OpenViewMessage(typeof(AddTaskView), initialize: view => ((AddTaskView)view).SetAsClone(task)));
         }
 
         private void OpenFileOrFolder(string path, bool folder)
@@ -167,7 +167,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private async Task ResetAsync()
         {
-            var tasks = currentTasks.SelectedTasks;
+            var tasks = Tasks.SelectedTasks;
             Debug.Assert(tasks.Count > 0);
             foreach (var task in tasks)
             {
@@ -184,7 +184,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             var task = Tasks.SelectedTask;
             Debug.Assert(task != null);
-            (SendMessage(new AddNewTabMessage(typeof(LogsPage))).Page as LogsPage).FillLogs(task.Id);
+            SendMessage(new OpenViewMessage(typeof(LogsView), initialize: view => ((LogsView)view).FillLogs(task.Id)));
         }
 
         [RelayCommand]

@@ -1,20 +1,19 @@
 <UserControl
-    x:Class="SimpleFFmpegGUI.WPF.Pages.PresetsPage"
+    x:Class="SimpleFFmpegGUI.WPF.Views.PresetsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
-    xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Pages"
+    xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Views"
     xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:panels="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:ui="http://schemas.inkore.net/lib/ui/wpf/modern"
     x:Name="root"
     mc:Ignorable="d">
-    <DockPanel>
+    <DockPanel LastChildFill="True">
 
         <ui:CommandBar
-            Grid.Row="99"
             DockPanel.Dock="Bottom">
             <ui:AppBarButton
                 Command="{Binding DeleteAllCommand}"

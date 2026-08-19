@@ -1,4 +1,4 @@
-﻿using Enterwell.Clients.Wpf.Notifications;
+using Enterwell.Clients.Wpf.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
@@ -17,13 +17,13 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
-    public partial class LogsPage : UserControl
+    public partial class LogsView : UserControl
     {
         public LogsPageViewModel ViewModel { get; set; }
 
-        public LogsPage()
+        public LogsView()
         {
             ViewModel = this.SetDataContext<LogsPageViewModel>();
             InitializeComponent();

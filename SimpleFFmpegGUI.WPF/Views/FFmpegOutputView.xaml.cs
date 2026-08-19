@@ -1,14 +1,14 @@
-﻿using SimpleFFmpegGUI.WPF.ViewModels;
+using SimpleFFmpegGUI.WPF.ViewModels;
 using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
-    public partial class FFmpegOutputPage : UserControl
+    public partial class FFmpegOutputView : UserControl, IDisposable
     {
-        public FFmpegOutputPage()
+        public FFmpegOutputView()
         {
             ViewModel = this.SetDataContext<FFmpegOutputPageViewModel>();
             InitializeComponent();
@@ -16,6 +16,14 @@ namespace SimpleFFmpegGUI.WPF.Pages
         }
 
         public FFmpegOutputPageViewModel ViewModel { get; set; }
+
+        /// <summary>
+        /// ViewModel 为单例且全局事件通知（输出日志变化），窗口关闭时必须取消订阅，避免残留引用与重复处理
+        /// </summary>
+        public void Dispose()
+        {
+            ViewModel.Outputs.CollectionChanged -= Outputs_CollectionChanged;
+        }
 
         private void Outputs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {

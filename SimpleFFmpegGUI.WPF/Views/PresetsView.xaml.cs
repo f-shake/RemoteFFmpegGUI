@@ -27,11 +27,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SimpleFFmpegGUI.WPF.Pages
+namespace SimpleFFmpegGUI.WPF.Views
 {
-    public partial class PresetsPage : UserControl
+    public partial class PresetsView : UserControl
     {
-        public PresetsPage()
+        public PresetsView()
         {
             ViewModel = this.SetDataContext<PresetsPageViewModel>();
             InitializeComponent();

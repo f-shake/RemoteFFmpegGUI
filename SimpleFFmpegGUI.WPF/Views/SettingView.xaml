@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="SimpleFFmpegGUI.WPF.Pages.SettingPage"
+    x:Class="SimpleFFmpegGUI.WPF.Views.SettingView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
@@ -7,7 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ikw="http://schemas.inkore.net/lib/ui/wpf"
     xmlns:ixt="clr-namespace:iNKORE.Extension;assembly=Inkore.Extension"
-    xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Pages"
+    xmlns:local="clr-namespace:SimpleFFmpegGUI.WPF.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:panels="clr-namespace:SimpleFFmpegGUI.WPF.Panels"
     xmlns:r="clr-namespace:SimpleFFmpegGUI.WPF"
@@ -146,7 +146,7 @@
             </DataGrid>
         </GroupBox>
         <ui:CommandBar
-            Grid.Row="6"
+            Grid.Row="4"
             Margin="-8"
             MouseEnter="CommandBar_MouseEnter">
             <ui:AppBarButton

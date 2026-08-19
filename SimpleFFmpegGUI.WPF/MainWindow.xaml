@@ -11,12 +11,11 @@
     Title="FFmpeg 工具箱"
     Width="1400"
     Height="720"
-    MinWidth="1400"
-    MinHeight="600"
+    MinWidth="1000"
+    MinHeight="400"
     ui:WindowHelper.SystemBackdropType="None"
     ui:WindowHelper.UseModernWindowStyle="True"
     AllowDrop="True"
-    Closing="Window_Closing"
     Loaded="Window_Loaded"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
@@ -25,156 +24,64 @@
     </Window.TaskbarItemInfo>
     <Grid x:Name="grdMain">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition
-                Width="480"
-                MinWidth="480" />
-            <ColumnDefinition Width="04" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="480" MinWidth="320" />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="*" MinWidth="420" />
         </Grid.ColumnDefinitions>
         <Grid x:Name="grdLeft">
             <Grid.RowDefinitions>
-                <RowDefinition Height="3*" />
-                <RowDefinition Height="16" />
-                <RowDefinition
-                    Height="384"
-                    MinHeight="384" />
-                <RowDefinition Height="8" />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
-
-            <GridSplitter
-                x:Name="leftSplitter"
-                Grid.Row="1"
-                Height="2"
-                Margin="36,0"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Center"
-                Background="{DynamicResource TextControlBorderBrush}" />
-            <ui:CommandBar
-                Grid.Row="4"
-                Grid.ColumnSpan="99">
-
-                <ui:AppBarButton
-                    Command="{Binding ShowMediaInfoCommand}"
-                    Label="查询媒体信息">
-
+            <ContentControl x:Name="taskHost" Margin="8,8,0,0" />
+            <ui:CommandBar Grid.Row="1">
+                <ui:AppBarButton Command="{Binding ShowMediaInfoCommand}" Label="查询媒体信息">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Zoom}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-
                 <ui:AppBarSeparator />
-                <ui:AppBarButton
-                    Command="{Binding StartQueueCommand}"
-                    Label="开始队列"
-                    Visibility="{Binding StartMainQueueButtonVisibility}">
-
+                <ui:AppBarButton Command="{Binding StartQueueCommand}" Label="开始队列" Visibility="{Binding StartMainQueueButtonVisibility}">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Play}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton
-                    Command="{Binding StopQueueCommand}"
-                    Label="终止队列"
-                    Visibility="{Binding StopMainQueueButtonVisibility}">
+                <ui:AppBarButton Command="{Binding StopQueueCommand}" Label="终止队列" Visibility="{Binding StopMainQueueButtonVisibility}">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stop}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton
-                    Command="{Binding ShowAddTaskCommand}"
-                    Label="创建任务">
+                <ui:AppBarButton Command="{Binding ShowAddTaskCommand}" Label="创建任务">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Add}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
                 <ui:CommandBar.SecondaryCommands>
-                    <ui:AppBarButton
-                        Command="{Binding ShowSettingsCommand}"
-                        Label="设置">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowSettingsCommand}" Label="设置">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowTasksCommand}"
-                        Label="查看所有任务">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowTasksCommand}" Label="查看所有任务">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowPresetsCommand}"
-                        Label="查看预设">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowPresetsCommand}" Label="查看预设">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowLogsCommand}"
-                        Label="查看日志">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowLogsCommand}" Label="查看日志">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowTestsCommand}"
-                        Label="编码性能测试">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowTestsCommand}" Label="编码性能测试">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowFFmpegOutputsCommand}"
-                        Label="FFmpeg输出命令行">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" />
-                        </ui:AppBarButton.Icon>
+                    <ui:AppBarButton Command="{Binding ShowFFmpegOutputsCommand}" Label="FFmpeg输出命令行">
+                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" /></ui:AppBarButton.Icon>
                     </ui:AppBarButton>
                 </ui:CommandBar.SecondaryCommands>
             </ui:CommandBar>
         </Grid>
-        <Border
-            Grid.Column="1"
-            Height="40"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Bottom"
-            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}" />
-        <ui:CommandBar
-            Grid.Column="2"
-            VerticalAlignment="Bottom" />
-        <TabControl
-            x:Name="tab"
-            Grid.RowSpan="99"
-            Grid.Column="2"
-            ui:TabControlHelper.AddTabButtonCommand="{Binding ShowAddTaskCommand}"
-            ui:TabControlHelper.CloseButtonOverlayMode="Always"
-            ui:TabControlHelper.TabCloseRequested="TabControl_TabCloseRequested"
-            Background="Transparent"
-            SelectionChanged="Tab_SelectionChanged"
-            Visibility="{Binding TabControlVisibility}">
-            <TabItem
-                Header="任务状态"
-                Tag="status" />
-        </TabControl>
-        <ContentControl
-            x:Name="topTab"
-            Grid.RowSpan="99"
-            Grid.Column="2"
-            Background="{DynamicResource SystemControlBackgroundChromeBlackHighBrush}"
-            Visibility="{Binding TopTabVisibility}" />
-        <GridSplitter
-            Grid.Column="1"
-            Width="4"
-            Margin="0,32,0,-36"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Stretch"
-            Background="{DynamicResource TabViewItemHeaderBackgroundSelected}" />
-
+        <Border Grid.Column="1" Background="#33000000" />
+        <ContentControl x:Name="statusHost" Grid.Column="2" Margin="12" />
         <ixt:ProgressRingOverlay
             x:Name="ring"
-            Grid.RowSpan="99"
             Grid.ColumnSpan="99"
             Margin="-8" />
     </Grid>

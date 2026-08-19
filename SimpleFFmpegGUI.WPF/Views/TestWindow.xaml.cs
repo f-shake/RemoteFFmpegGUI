@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using static SimpleFFmpegGUI.WPF.ViewModels.PerformanceTestLine;
 
-namespace SimpleFFmpegGUI.WPF
+namespace SimpleFFmpegGUI.WPF.Views
 {
     public partial class TestWindow : Window
     {

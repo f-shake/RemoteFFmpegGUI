@@ -114,6 +114,12 @@ public class DbLoggerService : BackgroundService
         }
     }
 
+    public override void Dispose()
+    {
+        timer?.Dispose();
+        base.Dispose();
+    }
+
     private void AddLog(char type, string message, TaskEntity task = null)
     {
         LogEntity log = new LogEntity()

@@ -1,5 +1,5 @@
 <Window
-    x:Class="SimpleFFmpegGUI.WPF.TestWindow"
+    x:Class="SimpleFFmpegGUI.WPF.Views.TestWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"
@@ -16,6 +16,7 @@
     Width="1400"
     Height="800"
     ui:TitleBar.IsIconVisible="True"
+    ui:WindowHelper.SystemBackdropType="None"
     ui:WindowHelper.UseModernWindowStyle="True"
     AllowDrop="True"
     Closing="Window_Closing"

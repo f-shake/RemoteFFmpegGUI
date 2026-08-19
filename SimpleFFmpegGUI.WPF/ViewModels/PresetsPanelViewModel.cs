@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Enterwell.Clients.Wpf.Notifications;
 using Mapster;
@@ -9,7 +9,7 @@ using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
 using System.Collections.ObjectModel;

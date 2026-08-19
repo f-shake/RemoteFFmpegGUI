@@ -1,10 +1,10 @@
-﻿using SimpleFFmpegGUI.WPF.FzLib.WPF;
+using SimpleFFmpegGUI.WPF.FzLib.WPF;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.WPF;
 using SimpleFFmpegGUI.WPF.ViewModels;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -51,15 +51,9 @@ namespace SimpleFFmpegGUI.WPF.Panels
                 ViewModel.ShowAllTasks = (bool)e.NewValue;
             }
         }
-        private void UpdateDetailHeight()
-        {
-            bdDetail.Height = App.ServiceProvider.GetService<MainWindow>().IsUiCompressMode && !ShowAllTasks ? 108 : double.NaN;
-        }
-
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            UpdateDetailHeight();
-            this.GetWindow<MainWindow>().IsUiCompressModeChanged += (s, e) => UpdateDetailHeight();
+            bdDetail.Height = double.NaN;
         }
     }
 }

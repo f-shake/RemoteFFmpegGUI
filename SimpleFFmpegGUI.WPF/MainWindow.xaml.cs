@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
 using SimpleFFmpegGUI.WPF.FzLib.WPF;
-using iNKORE.UI.WPF.Modern.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using iNKORE.Extension.CommonDialog;
@@ -9,7 +8,7 @@ using SimpleFFmpegGUI.Enums;
 using SimpleFFmpegGUI.WPF.Converters;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.ViewModels;
-using SimpleFFmpegGUI.WPF.Pages;
+using SimpleFFmpegGUI.WPF.Views;
 using SimpleFFmpegGUI.WPF.Panels;
 using System;
 using System.Collections.Generic;
@@ -33,7 +32,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using CommonDialog = iNKORE.Extension.CommonDialog.CommonDialog;
 using Task = System.Threading.Tasks.Task;
-using iNKORE.UI.WPF.Modern.Controls.Helpers;
 using SimpleFFmpegGUI.Services;
 
 namespace SimpleFFmpegGUI.WPF
@@ -42,10 +40,11 @@ namespace SimpleFFmpegGUI.WPF
     {
         private readonly QueueService queue;
         private bool hasShownTrayMessage = false;
-        private StatusPanel statusPanel;
-        private TaskList taskPanel;
+        private bool isShuttingDown;
         private SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.TrayIcon tray;
-        private bool isUiCompressMode;
+        private readonly ChildWindowManager childWindows;
+        private TaskList taskPanel;
+        private StatusPanel statusPanel;
 
         public MainWindow(QueueService queue)
         {
@@ -57,151 +56,52 @@ namespace SimpleFFmpegGUI.WPF
             InitializeComponent();
             RegisterMessages();
             this.queue = queue;
+            childWindows = new ChildWindowManager(this, App.ServiceProvider);
         }
-
-        public bool IsUiCompressMode
-        {
-            get => isUiCompressMode;
-            private set
-            {
-                if (isUiCompressMode != value)
-                {
-                    isUiCompressMode = value;
-                    IsUiCompressModeChanged?.Invoke(this, EventArgs.Empty);
-                }
-            }
-        }
-
-        public event EventHandler IsUiCompressModeChanged;
 
         public MainWindowViewModel ViewModel { get; set; }
 
-        /// <summary>
-        /// 新增一个Tab项
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="title"></param>
-        /// <param name="beforeLoad"></param>
-        public T AddNewTab<T>(string title = null) where T : UserControl
-        {
-            return AddNewTab(typeof(T), title) as T;
-        }
-
-        /// <summary>
-        /// 新增一个Tab项
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="title"></param>
-        /// <param name="beforeLoad"></param>
-        public object AddNewTab(Type type, string title = null)
-        {
-            title ??= PageHelper.GetTitle(type);
-            object page = App.ServiceProvider.GetService(type);
-            //beforeLoad?.Invoke(panel);
-            var tabItem = new TabItem() { Header = title, Content = page };
-            tab.Items.Add(tabItem);
-            tab.SelectedIndex = tab.Items.Count - 1;
-            return page;
-        }
-
-        /// <summary>
-        /// 移除一项Tab
-        /// </summary>
-        /// <param name="content">TabItem的内容，页面</param>
-        /// <exception cref="ArgumentException"></exception>
-        public void RemoveTab(object content)
-        {
-            var tabItem = tab.Items.Cast<TabItem>().Where(p => p.Content == content).FirstOrDefault();
-            if (tabItem != null)
-            {
-                tab.Items.Remove(tabItem);
-                return;
-            }
-            throw new ArgumentException();
-        }
-
-        private void TabControl_TabCloseRequested(object sender, iNKORE.UI.WPF.Modern.Controls.Helpers.TabViewTabCloseRequestedEventArgs e)
-        {
-            if (e.Tab != null && e.Tab.Content != null)
-            {
-                RemoveTab(e.Tab.Content);
-                e.Handled = true;
-            }
-        }
-
-        /// <summary>
-        /// 显示顶级对话框级别的页面，并等待其关闭
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="beforeLoad"></param>
-        /// <returns></returns>
-        public async Task<T> ShowTopTabAsync<T>(Func<T, Task> beforeLoad = null) where T : UserControl, ICloseablePage
-        {
-            if (beforeLoad == null)
-            {
-                return await ShowTopTabAsync(typeof(T)) as T;
-            }
-            else
-            {
-                return await ShowTopTabAsync(typeof(T), o => beforeLoad(o as T)) as T;
-            }
-        }
-
-        public async Task<object> ShowTopTabAsync(Type type, Func<object, Task> beforeLoad = null)
-        {
-            grdLeft.IsEnabled = false;
-            ICloseablePage panel = App.ServiceProvider.GetService(type) as ICloseablePage;
-            if (beforeLoad != null)
-            {
-                await beforeLoad(panel);
-            }
-            topTab.Content = panel;
-            ViewModel.SetTabVisiable(false);
-            ResetUI();
-            TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
-            panel.RequestToClose += (s, e) =>
-            {
-                topTab.Content = null;
-                ResetUI();
-                ViewModel.SetTabVisiable(true);
-                tcs.SetResult(panel);
-                grdLeft.IsEnabled = true;
-            };
-            return await tcs.Task;
-        }
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            base.OnClosing(e);
-            if (queue.Managers.Any())
+            if (!isShuttingDown && queue.Managers.Any(manager => manager.Process?.IsRunning == true))
             {
                 e.Cancel = true;
-                if (tray == null)
-                {
-                    var bmp = Bitmap.FromFile("icon.png");
-                    var thumb = (Bitmap)bmp.GetThumbnailImage(64, 64, null, IntPtr.Zero);
-                    thumb.MakeTransparent();
-                    var icon = System.Drawing.Icon.FromHandle(thumb.GetHicon());
-                    tray = new SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.TrayIcon(icon, SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramName);
+                ShowTrayAndHide();
+                return;
+            }
 
-                    tray.MouseLeftClick += (s, e) =>
-                    {
-                        Show();
-                        tray.Hide();
-                    };
-                    tray.ReShowWhenDisplayChanged = true;
-                    Closed += (s, e) =>
-                    {
-                        tray.Dispose();
-                    };
-                }
-                tray.Show();
-                Hide();
-                if (!hasShownTrayMessage)
+            isShuttingDown = true;
+            Config.Instance.Save();
+            childWindows.CloseAll();
+            base.OnClosing(e);
+        }
+
+        private void ShowTrayAndHide()
+        {
+            if (tray == null)
+            {
+                using var bmp = Bitmap.FromFile("icon.png");
+                using var thumb = (Bitmap)bmp.GetThumbnailImage(64, 64, null, IntPtr.Zero);
+                thumb.MakeTransparent();
+                var icon = System.Drawing.Icon.FromHandle(thumb.GetHicon());
+                tray = new SimpleFFmpegGUI.WPF.FzLib.Program.Runtime.TrayIcon(icon, SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramName);
+
+                tray.MouseLeftClick += (s, e) =>
                 {
-                    hasShownTrayMessage = true;
-                    tray.ShowMessage("任务将在后台继续执行");
-                }
+                    Show();
+                    tray.Hide();
+                };
+                tray.ReShowWhenDisplayChanged = true;
+                Closed += (s, e) => tray.Dispose();
+            }
+
+            tray.Show();
+            Hide();
+            if (!hasShownTrayMessage)
+            {
+                hasShownTrayMessage = true;
+                tray.ShowMessage("任务将在后台继续执行");
             }
         }
 
@@ -240,11 +140,12 @@ namespace SimpleFFmpegGUI.WPF
         protected override async void OnDrop(DragEventArgs e)
         {
             base.OnDrop(e);
-            if (e.GetPosition(this).X > (Content as Grid).ColumnDefinitions[0].ActualWidth && tab.SelectedIndex > 0)
+            var droppedFiles = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (droppedFiles == null)
             {
                 return;
             }
-            IEnumerable<string> files = e.Data.GetData(DataFormats.FileDrop) as string[];
+            IEnumerable<string> files = droppedFiles;
             files = files.Where(File.Exists);
             if (files.Any())
             {
@@ -263,12 +164,11 @@ namespace SimpleFFmpegGUI.WPF
                 }
                 if (index < typeCount)
                 {
-                    var panel = AddNewTab<AddTaskPage>();
-                    panel.SetFiles(files, (TaskType)index);
+                    childWindows.Show<AddTaskView>(view => view.SetFiles(files, (TaskType)index));
                 }
                 else if (index == typeCount)
                 {
-                    AddNewTab<MediaInfoPage>().SetFile(files.First());
+                    childWindows.Show<MediaInfoView>(view => view.SetFile(files.First()));
                 }
             }
         }
@@ -311,24 +211,19 @@ namespace SimpleFFmpegGUI.WPF
             });
 
 
-            WeakReferenceMessenger.Default.Register<AddNewTabMessage>(this, (_, m) =>
+            WeakReferenceMessenger.Default.Register<OpenViewMessage>(this, (_, m) =>
             {
-                if (m.ShowWindow)
+                if (m.Window)
                 {
-                    var win = App.ServiceProvider.GetRequiredService(m.Type) as Window;
-                    win.Owner = this;
-                    win.Show();
+                    childWindows.ShowWindow(m.Type);
+                }
+                else if (m.Modal)
+                {
+                    childWindows.ShowModal(m.Type, m.Initialize);
                 }
                 else
                 {
-                    if (m.Top)
-                    {
-                        m.Page = ShowTopTabAsync(m.Type);
-                    }
-                    else
-                    {
-                        m.Page = AddNewTab(m.Type);
-                    }
+                    childWindows.Show(m.Type, m.Initialize);
                 }
             });
 
@@ -374,65 +269,15 @@ namespace SimpleFFmpegGUI.WPF
             });
         }
 
-        private void ResetUI(bool force = false)
-        {
-            if (tab.SelectedIndex == 0 //选中了第一个标签页
-                && "status".Equals((tab.Items[0] as FrameworkElement).Tag)//第一个标签页没被移除
-                && !topTab.HasContent//没有在显示顶部页面
-                && (IsUiCompressMode || force)) //左侧和右侧
-            {
-                RemoveFromGrid();
-                grdLeft.Children.Add(taskPanel);
-                grdMain.Children.Add(statusPanel);
-                Grid.SetColumn(statusPanel, 2);
-                IsUiCompressMode = false;
-            }
-            else if (!IsUiCompressMode || force)//全部在左侧
-            {
-                RemoveFromGrid();
-                grdLeft.Children.Add(taskPanel);
-                grdLeft.Children.Add(statusPanel);
-                Grid.SetRow(statusPanel, 2);
-                IsUiCompressMode = true;
-            }
-            SendSnapshotEnabledMessage();
-
-            grdLeft.RowDefinitions[2].Height = new GridLength(IsUiCompressMode ? 316 : 0);
-            grdLeft.RowDefinitions[2].MinHeight = IsUiCompressMode ? 316 : 0;
-            leftSplitter.Visibility = IsUiCompressMode ? Visibility.Visible : Visibility.Collapsed;
-            statusPanel.Margin = new Thickness(12, IsUiCompressMode ? 12 : 44, 12, IsUiCompressMode ? 12 : 42);
-
-            void RemoveFromGrid()
-            {
-                if (taskPanel.Parent != null)
-                {
-                    (taskPanel.Parent as Grid).Children.Remove(taskPanel);
-                }
-                if (statusPanel.Parent != null)
-                {
-                    (statusPanel.Parent as Grid).Children.Remove(statusPanel);
-                }
-            }
-        }
-
         private void SendSnapshotEnabledMessage()
         {
             WeakReferenceMessenger.Default.Send(new SnapshotEnabledMessage(
                 new SnapshotViewModel
                 {
-                    DisplayFrame = IsUiCompressMode == false,
-                    CanUpdate = IsUiCompressMode == false
-                                    && WindowState is WindowState.Maximized or WindowState.Normal
+                    DisplayFrame = true,
+                    CanUpdate = WindowState is WindowState.Maximized or WindowState.Normal
                                     && Visibility == Visibility.Visible
                 }));
-        }
-
-        private void Tab_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (IsLoaded)
-            {
-                ResetUI();
-            }
         }
 
         protected override void OnStateChanged(EventArgs e)
@@ -442,16 +287,13 @@ namespace SimpleFFmpegGUI.WPF
             SendSnapshotEnabledMessage();
         }
 
-        private void Window_Closing(object sender, CancelEventArgs e)
-        {
-            Config.Instance.Save();
-        }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            taskPanel = new TaskList() { Margin = new Thickness(8, 0, 0, 0) };
-            statusPanel = new StatusPanel() { Margin = new Thickness(12) };
-            ResetUI(true);
+            taskPanel = new TaskList { ShowAllTasks = false };
+            statusPanel = new StatusPanel();
+            taskHost.Content = taskPanel;
+            statusHost.Content = statusPanel;
+            SendSnapshotEnabledMessage();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Input;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Models.Entities;
 using SimpleFFmpegGUI.Services;
