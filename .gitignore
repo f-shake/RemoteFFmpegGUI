@@ -377,3 +377,5 @@ db.sqlite*
 
 # FzLib / Wpf.Notifications 源码临时目录（仅本地查看用）
 temp/
+# 运行时生成的本机配置文件（WPF/WebAPI 各工作目录下，含 RemoteHosts 等用户设置，不入库）
+config.json
