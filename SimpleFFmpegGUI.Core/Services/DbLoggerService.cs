@@ -78,10 +78,10 @@ public class DbLoggerService : BackgroundService
                 return;
             }
 
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync().ConfigureAwait(false);
             var logs = oldBag.ToList();
             db.Logs.AddRange(logs);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -108,9 +108,11 @@ public class DbLoggerService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        // ConfigureAwait(false)：WPF 启动时 StartAsync 在 UI 线程执行，若不释放同步上下文，
+        // 循环延续会被 post 回 Dispatcher，而退出时 UI 线程正被 StopAsync 同步阻塞 → 死锁无法退出
+        while (await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false))
         {
-            await SaveAllAsync();
+            await SaveAllAsync().ConfigureAwait(false);
         }
     }
 

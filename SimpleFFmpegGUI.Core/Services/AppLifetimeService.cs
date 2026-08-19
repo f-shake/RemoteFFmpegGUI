@@ -41,7 +41,9 @@ public class AppLifetimeService(
                 { BinaryFolder = Path.Combine(Directory.GetCurrentDirectory(), ffmpegDir) });
         }
 
-        await using (var db = await dbFactory.CreateDbContextAsync(cancellationToken))
+        // ConfigureAwait(false)：与 DbLoggerService 同理，WPF 在 UI 线程同步调用 StartAsync/StopAsync，
+        // 避免延续被 post 回 Dispatcher 造成死锁
+        await using (var db = await dbFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
             foreach (var item in db.Tasks.Where(p => p.Status == TaskStatus.Processing))
             {
@@ -49,7 +51,7 @@ public class AppLifetimeService(
                 item.Message = "状态异常：启动时处于正在运行状态";
             }
 
-            await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -60,6 +62,6 @@ public class AppLifetimeService(
             return;
         }
 
-        await configService.SaveAsync();
+        await configService.SaveAsync().ConfigureAwait(false);
     }
 }

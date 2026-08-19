@@ -69,7 +69,7 @@ public class ConfigService
         {
             try
             {
-                root = JsonNode.Parse(await File.ReadAllTextAsync(path)) as JsonObject ?? new JsonObject();
+                root = JsonNode.Parse(await File.ReadAllTextAsync(path).ConfigureAwait(false)) as JsonObject ?? new JsonObject();
             }
             catch (Exception ex)
             {
@@ -83,6 +83,6 @@ public class ConfigService
         }
         root["DefaultProcessPriority"] = DefaultProcessPriority;
         root["SnapshotSize"] = SnapshotSize;
-        await File.WriteAllTextAsync(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(path, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true })).ConfigureAwait(false);
     }
 }

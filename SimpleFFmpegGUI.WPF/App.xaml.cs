@@ -245,7 +245,9 @@ namespace SimpleFFmpegGUI.WPF
                 {
                     try
                     {
-                        hostedService.StopAsync(CancellationToken.None).GetAwaiter().GetResult();
+                        // 用带超时的 Wait 兜底：即使某个托管服务的 StopAsync 实现再次引入同步上下文依赖，
+                        // 也不会让进程无限卡死，超时后继续退出流程
+                        hostedService.StopAsync(CancellationToken.None).Wait(TimeSpan.FromSeconds(5));
                     }
                     catch
                     {
