@@ -33,6 +33,19 @@ public class LogApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmp
         page2.List.Select(l => l.Id).Should().NotIntersectWith(page1Ids);
     }
 
+    /// <summary>
+    /// 无任何查询参数时使用默认分页（Page=1、PageSize=20），应正常返回
+    /// </summary>
+    [Fact]
+    public async Task TestGetLogsDefaultPagingAsync()
+    {
+        var response = await GetAsync("/Log");
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var logs = ParseLogs(await response.Content.ReadAsStringAsync());
+        logs.List.Should().NotBeNull();
+        logs.List.Count.Should().BeLessThanOrEqualTo(20);
+    }
+
     private PagedListResponse<LogEntity> ParseLogs(string content)
     {
         return content.DeserializeWithWebSettings<PagedListResponse<LogEntity>>();

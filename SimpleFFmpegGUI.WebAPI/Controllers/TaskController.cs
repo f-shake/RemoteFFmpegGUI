@@ -145,6 +145,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("PreviewArguments")]
         public ActionResult<string> PreviewArguments([FromBody] OutputParameters parameters)
         {
+            if (parameters == null)
+            {
+                return BadRequest("参数不能为空");
+            }
             return FFmpegTaskService.TestOutputArguments(parameters);
         }
 

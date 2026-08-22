@@ -14,10 +14,10 @@ namespace SimpleFFmpegGUI.Models.MediaParameters
         private MuxParameters mux = new MuxParameters();
 
         [ObservableProperty]
-        private string? extra;
+        private string extra;
 
         [ObservableProperty]
-        private string? format;
+        private string format;
 
         [ObservableProperty]
         private StreamParameters stream = new StreamParameters();

@@ -48,4 +48,17 @@ public class TokenApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
         var invalid = await GetObjectFromJsonAsync<bool>("/Token/Check/wrong_token");
         invalid.Should().BeFalse();
     }
+
+    /// <summary>
+    /// 配置了 Token 时，错误 Token 访问受保护接口应 401
+    /// </summary>
+    [Fact]
+    public async Task TestWrongTokenUnauthorizedAsync()
+    {
+        var client = factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/Task");
+        request.Headers.Add("Authorization", "Bearer wrong_token");
+        var response = await client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

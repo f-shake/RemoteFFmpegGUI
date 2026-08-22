@@ -118,6 +118,14 @@ void ConfigureServices(WebApplicationBuilder builder)
             options.JsonSerializerOptions.Converters.Add(new TimeSpanConverter());
         });
 
+    // 只关闭"引用类型字符串字段被隐式判为 [Required]"（Nullable=disable 时 DTO 的
+    // Size/AspectRatio/PixelFormat/Extra/Format 等合法 null 字段会被误拒为 400）。
+    // 不改用 SuppressModelStateInvalidFilter，以保留值类型参数（seconds/priority）绑定失败的自动 400。
+    builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
+    {
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+    });
+
     // 添加API探索器和Swagger
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>

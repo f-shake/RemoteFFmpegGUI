@@ -54,6 +54,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
         [HttpPost("Schedule")]
         public IActionResult SetSchedule(ScheduleRequest req)
         {
+            if (req == null)
+            {
+                return BadRequest("请求对象不能为空");
+            }
             if (req.Time <= DateTime.Now)
             {
                 return BadRequest("计划的时间早于当前时间");

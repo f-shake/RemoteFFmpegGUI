@@ -18,7 +18,7 @@ public static class PresetConverter
     /// 尝试将 JSON 作为旧版预设反序列化并转换。
     /// 若 JSON 不含旧版标志（"Arguments" 键），返回 null。
     /// </summary>
-    public static List<PresetEntity>? ConvertJson(string json)
+    public static List<PresetEntity> ConvertJson(string json)
     {
         // 快速检测：旧版预设顶层必须有 "Arguments"
         if (!json.Contains("\"Arguments\"", StringComparison.OrdinalIgnoreCase))

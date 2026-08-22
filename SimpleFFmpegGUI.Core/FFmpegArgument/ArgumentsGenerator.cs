@@ -163,7 +163,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
 
             string extra = "";
 
-            if (pass == 1)
+            if (pass == 1 && !string.IsNullOrWhiteSpace(p.Format))
             {
                 extra = $"-f {p.Format}";
             }

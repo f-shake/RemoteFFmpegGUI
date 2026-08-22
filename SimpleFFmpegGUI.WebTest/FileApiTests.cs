@@ -115,6 +115,61 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         savedContent.Should().Be(content);
     }
 
+    /// <summary>
+    /// 下载不存在的文件应返回 404
+    /// </summary>
+    [Fact]
+    public async Task TestDownloadNonExistentAsync()
+    {
+        var act = async () => await DownloadAsync("no_such_file.mp4");
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 空表单上传（无 file 字段）应返回 400
+    /// </summary>
+    [Fact]
+    public async Task TestUploadEmptyFormAsync()
+    {
+        var act = async () => await PostMultipartAsync("/File/Upload", new MultipartFormDataContent());
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 0 字节文件上传应返回 400
+    /// </summary>
+    [Fact]
+    public async Task TestUploadZeroByteAsync()
+    {
+        var fileContent = new ByteArrayContent(Array.Empty<byte>());
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        var form = new MultipartFormDataContent { { fileContent, "file", "empty.txt" } };
+        var act = async () => await PostMultipartAsync("/File/Upload", form);
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// Dirs 接口返回输入/输出目录
+    /// </summary>
+    [Fact]
+    public async Task TestDirsAsync()
+    {
+        var dirs = await GetDirsAsync();
+        dirs.InputDir.Should().NotBeNullOrWhiteSpace();
+        dirs.OutputDir.Should().NotBeNullOrWhiteSpace();
+    }
+
+    /// <summary>
+    /// 下载响应的 Content-Type 应为 octet-stream
+    /// </summary>
+    [Fact]
+    public async Task TestDownloadContentTypeAsync()
+    {
+        var fileName = Path.GetFileName(appTestSettings.TestOutputVideo10s);
+        var response = await GetAsync($"/File/Download/{fileName}");
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/octet-stream");
+    }
+
     private Task<string> DownloadAsync(string name) => GetStringAsync($"/File/Download/{name}");
 
     private Task FtpInputOffAsync() => PostAsync("/File/Ftp/Input/Off");

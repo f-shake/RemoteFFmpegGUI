@@ -8,9 +8,18 @@ namespace SimpleFFmpegGUI.Converters
     {
         public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonTokenType.String && reader.GetString() == "NaN")
+            // 处理字符串数字（配合 AllowReadingFromString），如 MediaInfo 输出的 "Duration":"10.5"
+            if (reader.TokenType == JsonTokenType.String)
             {
-                return double.NaN;
+                var str = reader.GetString();
+                if (str == "NaN")
+                {
+                    return double.NaN;
+                }
+                if (double.TryParse(str, out var parsed))
+                {
+                    return parsed;
+                }
             }
 
             return reader.GetDouble(); // JsonException thrown if reader.TokenType != JsonTokenType.Number
@@ -18,11 +27,7 @@ namespace SimpleFFmpegGUI.Converters
 
         public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
         {
-            if (double.IsNaN(value))
-            {
-                writer.WriteNullValue();
-            }
-            if (double.IsInfinity(value))
+            if (double.IsNaN(value) || double.IsInfinity(value))
             {
                 writer.WriteNullValue();
             }

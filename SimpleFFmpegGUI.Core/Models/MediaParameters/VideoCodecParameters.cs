@@ -8,7 +8,7 @@ public partial class VideoCodecParameters : StreamCodecParametersBase
     /// 画面比例
     /// </summary>
     [ObservableProperty]
-    private string? aspectRatio;
+    private string aspectRatio;
 
     /// <summary>
     /// 平均码率
@@ -44,7 +44,7 @@ public partial class VideoCodecParameters : StreamCodecParametersBase
     /// 像素格式
     /// </summary>
     [ObservableProperty]
-    private string? pixelFormat;
+    private string pixelFormat;
 
     /// <summary>
     /// 编码速度或速度预设
@@ -56,7 +56,7 @@ public partial class VideoCodecParameters : StreamCodecParametersBase
     /// 视频尺寸（分辨率）
     /// </summary>
     [ObservableProperty]
-    private string? size;
+    private string size;
 
     /// <summary>
     /// 是否二次编码

@@ -108,6 +108,65 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         presets.Should().Contain(p => p.Name == "v1_custom" && p.Type == TaskType.Custom);
     }
 
+    /// <summary>
+    /// 新增预设：空 body / 空参数 / 空名称 应被拒绝
+    /// </summary>
+    [Fact]
+    public async Task TestAddValidationAsync()
+    {
+        var act = async () => await PostAsync("/Preset");
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await PostAsync("/Preset", new AddPresetRequest("t", null, TaskType.Transcode));
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await PostAsync("/Preset", new AddPresetRequest(null, new OutputParameters(), TaskType.Transcode));
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 更新不存在的预设应返回 404；删除不存在的预设应幂等成功（控制器忽略 service 的 NotFound，恒 204）
+    /// </summary>
+    [Fact]
+    public async Task TestUpdateDeleteNonExistentAsync()
+    {
+        var act = async () =>
+            await UpdatePresetAsync(999999, new UpdatePresetRequest("t", new OutputParameters(), TaskType.Transcode));
+        await act.Should().ThrowAsync<Exception>();
+
+        // Delete 恒返回 NoContent（204），对不存在的 id 也不抛异常
+        var response = await PostAsync("/Preset/999999/Delete");
+        response.IsSuccessStatusCode.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// 导入非法 JSON 应报错
+    /// </summary>
+    [Fact]
+    public async Task TestImportInvalidJsonAsync()
+    {
+        var form = new MultipartFormDataContent
+        {
+            { new StringContent("not-a-json", Encoding.UTF8, "application/json"), "file", "presets.json" }
+        };
+        var act = async () => await PostMultipartAsync("/Preset/Import", form);
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 按 TaskType 过滤预设
+    /// </summary>
+    [Fact]
+    public async Task TestGetByTypeFilterAsync()
+    {
+        await AddPresetAsync(new AddPresetRequest("t1", new OutputParameters(), TaskType.Transcode));
+        await AddPresetAsync(new AddPresetRequest("m1", new OutputParameters(), TaskType.Mux));
+
+        var transcode = await GetPresetsAsync(TaskType.Transcode);
+        transcode.Should().Contain(p => p.Name == "t1");
+        transcode.Should().NotContain(p => p.Name == "m1");
+    }
+
     private Task<int> AddPresetAsync(AddPresetRequest request) =>
         PostObjectFromJsonAsync<int>("/Preset", request);
 

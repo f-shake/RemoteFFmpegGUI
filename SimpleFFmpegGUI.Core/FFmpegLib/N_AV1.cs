@@ -6,7 +6,7 @@ namespace SimpleFFmpegGUI.FFmpegLib
     {
         public override int DefaultCRF => 35;
         public override int MaxCRF => 63;
-        public override string Name => "AV1 (Nvdia)";
+        public override string Name => "AV1 (Nvidia)";
         public override string Lib => "av1_nvenc";
     }
 

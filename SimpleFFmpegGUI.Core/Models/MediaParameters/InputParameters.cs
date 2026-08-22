@@ -9,7 +9,7 @@ namespace SimpleFFmpegGUI.Models.MediaParameters
         /// 输入文件的路径
         /// </summary>
         [ObservableProperty]
-        private string? filePath;
+        private string filePath;
 
         /// <summary>
         /// 开始时间
@@ -33,7 +33,7 @@ namespace SimpleFFmpegGUI.Models.MediaParameters
         /// 输入格式
         /// </summary>
         [ObservableProperty]
-        private string? format;
+        private string format;
 
         /// <summary>
         /// 输入帧率（主要针对图像序列）
@@ -51,6 +51,6 @@ namespace SimpleFFmpegGUI.Models.MediaParameters
         /// 其他参数
         /// </summary>
         [ObservableProperty]
-        private string? extra;
+        private string extra;
     }
 }

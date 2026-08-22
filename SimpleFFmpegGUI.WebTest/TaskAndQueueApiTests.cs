@@ -299,6 +299,87 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         tasks.List.Count.Should().Be(11);
     }
 
+    /// <summary>
+    /// 查询不存在任务应返回 404
+    /// </summary>
+    [Fact]
+    public async Task TestGetTaskNonExistentAsync()
+    {
+        var act = async () => await GetTaskAsync(999999);
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 创建任务：空 body / 非法 type 应报错
+    /// </summary>
+    [Fact]
+    public async Task TestAddTaskValidationAsync()
+    {
+        var act = async () => await PostAsync("/Task/Transcode");
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await PostAsync("/Task/InvalidType", new TaskDto { Inputs = new List<InputParameters>() });
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 单条取消/删除/重置不存在的任务应返回 404
+    /// </summary>
+    [Fact]
+    public async Task TestCancelDeleteResetNonExistentAsync()
+    {
+        var act = async () => await CancelTaskAsync(999999);
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await DeleteTaskAsync(999999);
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await ResetTaskAsync(999999);
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 批量取消传入 null ids 应返回 400
+    /// </summary>
+    [Fact]
+    public async Task TestBatchCancelNullAsync()
+    {
+        var act = async () => await CancelTasksAsync(null);
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 参数预览：空 body 应报错
+    /// </summary>
+    [Fact]
+    public async Task TestPreviewArgumentsNullAsync()
+    {
+        var act = async () => await PostAsync("/Task/PreviewArguments");
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 计划时间早于当前应返回 400；空 body 应报错
+    /// </summary>
+    [Fact]
+    public async Task TestScheduleValidationAsync()
+    {
+        var act = async () => await ScheduleAsync(DateTime.Now.AddMinutes(-5));
+        await act.Should().ThrowAsync<Exception>();
+
+        act = async () => await PostAsync("/Queue/Schedule");
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    /// <summary>
+    /// 队列未运行时取消应幂等成功
+    /// </summary>
+    [Fact]
+    public async Task TestCancelQueueNotRunningAsync()
+    {
+        await CancelQueueAsync();
+    }
+
     private Task<List<int>> AddCodecTaskAsync(TaskDto task) =>
         PostObjectFromJsonAsync<List<int>>("/Task/Transcode", task);
 

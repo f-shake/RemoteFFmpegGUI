@@ -55,7 +55,7 @@ namespace SimpleFFmpegGUI.FFmpegArgument
                     {
                         subList.Add($"{arg.Key}={arg.Value}");
                     }
-                    list.Add($"-{group.Key} {string.Join(group.First().Seprator, subList)}");
+                    list.Add($"-{group.Key} {string.Join(group.First().Separator, subList)}");
                 }
             }
 

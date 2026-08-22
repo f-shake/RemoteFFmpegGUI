@@ -52,7 +52,7 @@ namespace SimpleFFmpegGUI.WPF
             try
             {
                 var config = new ConfigurationBuilder()
-                    .AddInMemoryCollection(new Dictionary<string, string?>
+                    .AddInMemoryCollection(new Dictionary<string, string>
                     {
                         [$"ConnectionStrings:{DependencyInjectionExtension.LocalSqliteConnectionStringKey}"] = "Data Source=db.sqlite"
                     })

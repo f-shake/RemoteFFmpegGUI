@@ -13,10 +13,10 @@
             Value = value;
         }
 
-        public FFmpegArgumentItem(string key, string value, string parent,char seprator) : this(key, value)
+        public FFmpegArgumentItem(string key, string value, string parent, char separator) : this(key, value)
         {
             Parent = parent;
-            Seprator = seprator;
+            Separator = separator;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@
         /// <summary>
         /// 如果该参数为某一参数的子参数，则该属性为划分该父参数下子参数的分隔符
         /// </summary>
-        public char Seprator { get; }
+        public char Separator { get; }
 
         /// <summary>
         /// 用于串联多个参数
