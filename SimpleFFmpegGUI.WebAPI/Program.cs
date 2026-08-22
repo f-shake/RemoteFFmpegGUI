@@ -80,8 +80,10 @@ void CreateWebApplication(string[] args)
     ConfigureServices(builder);
     app = builder.Build();
     ConfigureMiddleware(app);
-    MigrateDb(app.Configuration);
+    // 先确保 schema（EnsureCreated），再执行迁移（可能打标基线/升级到当前版本）。
+    // EnsureCreated 仅在"无任何表"时建表，遇到已有表（含 v1 旧库）是 no-op。
     InitializeDatabase(app);
+    MigrateDb(app.Configuration);
     InitializeLogs(app.Services);
     app.Run();
 }
@@ -203,7 +205,10 @@ static void MigrateDb(IConfiguration configuration)
     try
     {
         var connStr = configuration.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey);
-        if (DatabaseMigrator.MigrateIfNeeded(connStr))
+        // 迁移出的用户配置要写入 ConfigService 实际读取的位置：它用相对 cwd 的 "config.json"。
+        // 故这里也解析为 cwd 下的 config.json，与运行时行为一致（不能写成 BaseDirectory）。
+        var configJsonPath = Path.Combine(Environment.CurrentDirectory, "config.json");
+        if (MigrationRunner.Upgrade(connStr, configJsonPath))
         {
             Console.WriteLine("数据库迁移完成");
         }

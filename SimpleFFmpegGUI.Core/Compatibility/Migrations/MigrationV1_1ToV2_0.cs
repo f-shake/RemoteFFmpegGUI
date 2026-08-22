@@ -11,132 +11,51 @@ using SimpleFFmpegGUI.Models.MediaParameters;
 namespace SimpleFFmpegGUI.Compatibility;
 
 /// <summary>
-/// 数据库迁移器 — 检测 v1.1 数据库（master 分支）并自动迁移到 v2.0 格式（master_v2 分支）。
-/// 在 EF Core 的 EnsureCreated() 之前调用，使用 raw ADO.NET 操作。
+/// v1.1 → v2.0 数据库迁移（目标版本 2.0.0）。
+/// 内容源自旧 <c>DatabaseMigrator</c>：列重命名、JSON 格式转换、Custom 枚举修复、用户配置迁移、删除 Configs。
+/// 版本记录不再写于此，由 <see cref="MigrationRunner"/> 在每迁移成功后统一写入。
 /// </summary>
-public static class DatabaseMigrator
+public sealed class MigrationV1_1ToV2_0 : IMigration
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public string Version => "2.0.0";
+    public string Description => "v1.1 → v2.0: 列重命名、JSON格式转换、Custom枚举修复、迁移用户配置、清理Configs";
+
+    public void Up(SqliteConnection conn, SqliteTransaction tx, MigrationContext context)
     {
-        PropertyNameCaseInsensitive = true
-    };
-
-    /// <summary>
-    /// 检测并执行数据库迁移。
-    /// </summary>
-    /// <param name="connectionString">SQLite 连接字符串（如 "Data Source=db.sqlite"）</param>
-    /// <returns>是否执行了迁移</returns>
-    public static bool MigrateIfNeeded(string connectionString)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-            return false;
-
-        var builder = new SqliteConnectionStringBuilder(connectionString);
-        var dbPath = builder.DataSource;
-
-        if (string.IsNullOrEmpty(dbPath) || !File.Exists(dbPath))
-            return false;
-
-        using var conn = new SqliteConnection(connectionString);
-        conn.Open();
-
-        if (!NeedsMigration(conn))
-            return false;
-
-        // 备份旧数据库
-        try
-        {
-            var backupPath = $"{dbPath}.backup.{DateTime.Now:yyyyMMddHHmmss}";
-            File.Copy(dbPath, backupPath);
-            Console.WriteLine($"数据库已备份到: {backupPath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"数据库备份失败，继续迁移: {ex.Message}");
-        }
-
-        // 在事务中执行迁移
-        using var tx = conn.BeginTransaction();
-        try
-        {
-            MigrateSchema(conn);
-            MigrateTasksParameters(conn);
-            MigratePresetsParameters(conn);
-            MigrateTaskTypeCustom(conn);
-            MigrateConfigs(conn);
-            DropConfigsTable(conn);
-            WriteMigrationHistory(conn);
-            tx.Commit();
-            Console.WriteLine("数据库迁移完成");
-            return true;
-        }
-        catch
-        {
-            tx.Rollback();
-            Console.Error.WriteLine("数据库迁移失败，已回滚");
-            throw;
-        }
+        MigrateSchema(conn, tx);
+        MigrateJsonColumn(conn, tx, "Tasks", "Parameters");
+        MigrateJsonColumn(conn, tx, "Presets", "Parameters");
+        MigrateTaskTypeCustom(conn, tx);
+        MigrateConfigs(conn, tx, context.ConfigJsonPath);
+        DropConfigsTable(conn, tx);
     }
 
-    /// <summary>
-    /// 检测是否为旧版本数据库。
-    /// </summary>
-    private static bool NeedsMigration(SqliteConnection conn)
+    private static void MigrateSchema(SqliteConnection conn, SqliteTransaction tx)
     {
-        // 已有 _MigrationHistory 表 → 已迁移过
-        if (TableExists(conn, "_MigrationHistory"))
-            return false;
-
-        // 没有 Configs 表 → 不是旧版数据库
-        if (!TableExists(conn, "Configs"))
-            return false;
-
-        // Tasks 表有 Arguments 列 → 旧版列名
-        return ColumnExists(conn, "Tasks", "Arguments");
-    }
-
-    /// <summary>
-    /// 重命名列：Arguments → Parameters
-    /// </summary>
-    private static void MigrateSchema(SqliteConnection conn)
-    {
-        if (ColumnExists(conn, "Tasks", "Arguments"))
+        if (ColumnExists(conn, tx, "Tasks", "Arguments"))
         {
             using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
             cmd.CommandText = "ALTER TABLE Tasks RENAME COLUMN Arguments TO Parameters";
             cmd.ExecuteNonQuery();
         }
 
-        if (ColumnExists(conn, "Presets", "Arguments"))
+        if (ColumnExists(conn, tx, "Presets", "Arguments"))
         {
             using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
             cmd.CommandText = "ALTER TABLE Presets RENAME COLUMN Arguments TO Parameters";
             cmd.ExecuteNonQuery();
         }
     }
 
     /// <summary>
-    /// 转换 Tasks 表中 Parameters 列的旧 JSON 为新格式。
-    /// </summary>
-    private static void MigrateTasksParameters(SqliteConnection conn)
-    {
-        MigrateJsonColumn(conn, "Tasks", "Parameters");
-    }
-
-    /// <summary>
-    /// 转换 Presets 表中 Parameters 列的旧 JSON 为新格式。
-    /// </summary>
-    private static void MigratePresetsParameters(SqliteConnection conn)
-    {
-        MigrateJsonColumn(conn, "Presets", "Parameters");
-    }
-
-    /// <summary>
     /// 读取指定表的 JSON 列，逐行将旧格式转换为新格式。
     /// </summary>
-    private static void MigrateJsonColumn(SqliteConnection conn, string table, string column)
+    private static void MigrateJsonColumn(SqliteConnection conn, SqliteTransaction tx, string table, string column)
     {
         using var selectCmd = conn.CreateCommand();
+        selectCmd.Transaction = tx;
         selectCmd.CommandText = $"SELECT rowid, {column} FROM {table} WHERE {column} IS NOT NULL";
 
         using var reader = selectCmd.ExecuteReader();
@@ -168,6 +87,7 @@ public static class DatabaseMigrator
             }
 
             using var updateCmd = conn.CreateCommand();
+            updateCmd.Transaction = tx;
             updateCmd.CommandText = $"UPDATE {table} SET {column} = @json WHERE rowid = @rowid";
             updateCmd.Parameters.AddWithValue("@json", newJson);
             updateCmd.Parameters.AddWithValue("@rowid", rowid);
@@ -178,15 +98,17 @@ public static class DatabaseMigrator
     /// <summary>
     /// 修复 TaskType.Custom 枚举值：3 → 99。
     /// </summary>
-    private static void MigrateTaskTypeCustom(SqliteConnection conn)
+    private static void MigrateTaskTypeCustom(SqliteConnection conn, SqliteTransaction tx)
     {
         using var cmd1 = conn.CreateCommand();
+        cmd1.Transaction = tx;
         cmd1.CommandText = "UPDATE Tasks SET Type = 99 WHERE Type = 3";
         var affected1 = cmd1.ExecuteNonQuery();
         if (affected1 > 0)
             Console.WriteLine($"已修复 {affected1} 个任务的 TaskType (Custom 3→99)");
 
         using var cmd2 = conn.CreateCommand();
+        cmd2.Transaction = tx;
         cmd2.CommandText = "UPDATE Presets SET Type = 99 WHERE Type = 3";
         var affected2 = cmd2.ExecuteNonQuery();
         if (affected2 > 0)
@@ -195,14 +117,15 @@ public static class DatabaseMigrator
 
     /// <summary>
     /// 迁移前读出 v1 Configs 表中的用户配置（DefaultProcessPriority、SnapshotSize），
-    /// 写入当前目录的 config.json（v2 配置存储），避免 DROP 丢失用户设置（P1-11）。
+    /// 写入 <paramref name="configJsonPath"/>（v2 配置存储），避免 DROP 丢失用户设置。
     /// v1 的 Configs.Value 为 JSON 序列化字符串。
     /// </summary>
-    private static void MigrateConfigs(SqliteConnection conn)
+    private static void MigrateConfigs(SqliteConnection conn, SqliteTransaction tx, string configJsonPath)
     {
         var configs = new Dictionary<string, string>();
         using (var cmd = conn.CreateCommand())
         {
+            cmd.Transaction = tx;
             cmd.CommandText =
                 "SELECT Key, Value FROM Configs WHERE Key IN ('DefaultProcessPriority', 'SnapshotSize')";
             using var reader = cmd.ExecuteReader();
@@ -217,7 +140,10 @@ public static class DatabaseMigrator
             return;
         }
 
-        string path = Path.Combine(Environment.CurrentDirectory, "config.json");
+        var path = string.IsNullOrWhiteSpace(configJsonPath)
+            ? Path.Combine(Environment.CurrentDirectory, "config.json")
+            : configJsonPath;
+
         Dictionary<string, JsonNode> config = new();
         if (File.Exists(path))
         {
@@ -267,53 +193,26 @@ public static class DatabaseMigrator
         {
             WriteIndented = true
         }));
-        Console.WriteLine($"已迁移 {configs.Count} 项用户配置到 config.json");
+        Console.WriteLine($"已迁移 {configs.Count} 项用户配置到 {path}");
     }
 
-    /// <summary>
-    /// 删除旧版的 Configs 表。
-    /// </summary>
-    private static void DropConfigsTable(SqliteConnection conn)
+    private static void DropConfigsTable(SqliteConnection conn, SqliteTransaction tx)
     {
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = "DROP TABLE IF EXISTS Configs";
         cmd.ExecuteNonQuery();
     }
 
-    /// <summary>
-    /// 创建 _MigrationHistory 表并写入版本 1 记录。
-    /// </summary>
-    private static void WriteMigrationHistory(SqliteConnection conn)
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        using var createCmd = conn.CreateCommand();
-        createCmd.CommandText = """
-            CREATE TABLE IF NOT EXISTS _MigrationHistory (
-                Version     INTEGER PRIMARY KEY,
-                MigrationDate TEXT NOT NULL,
-                Description TEXT NOT NULL
-            )
-            """;
-        createCmd.ExecuteNonQuery();
+        PropertyNameCaseInsensitive = true
+    };
 
-        using var insertCmd = conn.CreateCommand();
-        insertCmd.CommandText = """
-            INSERT INTO _MigrationHistory (Version, MigrationDate, Description)
-            VALUES (1, datetime('now', 'localtime'), 'v1.1 → v2.0: 列重命名、JSON格式转换、Custom枚举修复、清理Configs')
-            """;
-        insertCmd.ExecuteNonQuery();
-    }
-
-    private static bool TableExists(SqliteConnection conn, string tableName)
+    private static bool ColumnExists(SqliteConnection conn, SqliteTransaction tx, string table, string column)
     {
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name=@name";
-        cmd.Parameters.AddWithValue("@name", tableName);
-        return cmd.ExecuteScalar() != null;
-    }
-
-    private static bool ColumnExists(SqliteConnection conn, string table, string column)
-    {
-        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = $"PRAGMA table_info({table})";
         using var reader = cmd.ExecuteReader();
         while (reader.Read())

@@ -58,19 +58,25 @@ namespace SimpleFFmpegGUI.WPF
                     })
                     .Build();
 
-                // 迁移 v1.1 → v2.0 数据库（如果检测到旧版），必须在 EnsureCreated 之前
-                DatabaseMigrator.MigrateIfNeeded(config.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey));
-
                 var serviceCollection = new ServiceCollection();
                 serviceCollection.AddSingleton<IConfiguration>(config);
                 serviceCollection.Configure<AppSettings>(_ => { });
                 ConfigureServices(serviceCollection);
                 ServiceProvider = serviceCollection.BuildServiceProvider();
 
-                // 创建数据库
+                // 先确保 schema（EnsureCreated），再执行迁移/打标基线。
+                // EnsureCreated 仅在"无任何表"时建表，遇到已有表（含 v1 旧库）是 no-op。
                 var factory = ServiceProvider.GetRequiredService<IDbContextFactory<FFmpegDbContext>>();
-                using var context = factory.CreateDbContext();
-                context.Database.EnsureCreated();
+                using (var context = factory.CreateDbContext())
+                {
+                    context.Database.EnsureCreated();
+                }
+
+                var connStr = config.GetConnectionString(DependencyInjectionExtension.LocalSqliteConnectionStringKey);
+                // 迁移出的用户配置要写入 WPF Config 实际读取的位置：它用相对 cwd 的 "config.json"。
+                // 故这里也解析为 cwd 下的 config.json（不能写成 ProgramDirectoryPath）。
+                var configJsonPath = Path.Combine(Environment.CurrentDirectory, "config.json");
+                MigrationRunner.Upgrade(connStr, configJsonPath);
             }
             catch (Exception ex)
             {

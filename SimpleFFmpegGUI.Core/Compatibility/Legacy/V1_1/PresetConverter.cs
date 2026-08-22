@@ -41,7 +41,7 @@ public static class PresetConverter
 
     private static PresetEntity ConvertToNew(OldPresetDto old)
     {
-        // v1 的 Custom 枚举值为 3，v2 为 99（与 DatabaseMigrator.MigrateTaskTypeCustom 一致）
+        // v1 的 Custom 枚举值为 3，v2 为 99（与 MigrationV1_1ToV2_0.MigrateTaskTypeCustom 一致）
         var type = (int)old.Type == 3 ? TaskType.Custom : old.Type;
         return new PresetEntity
         {
@@ -54,7 +54,7 @@ public static class PresetConverter
 
     /// <summary>
     /// 公开入口：将旧版 v1.1 的 OutputArguments DTO 转换为新版 v2.0 的 OutputParameters。
-    /// 供 <see cref="DatabaseMigrator"/> 在数据库迁移时调用。
+    /// 供 MigrationV1_1ToV2_0 在数据库迁移时调用。
     /// </summary>
     public static OutputParameters ConvertFromV1_1(OldOutputArgumentsDto old)
         => ConvertArguments(old);
