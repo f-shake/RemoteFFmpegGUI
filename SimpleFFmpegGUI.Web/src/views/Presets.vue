@@ -161,8 +161,7 @@ onMounted(() => {
 }
 
 .table-card {
-  border-radius: var(--radius-lg) !important;
-  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 .ops-btns { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
@@ -171,16 +170,30 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .presets-toolbar {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
-    margin: 8px 0 8px;
+    margin: 8px 12px;
   }
-  .toolbar-left {
-    order: 2;
-  }
+  .toolbar-left,
   .toolbar-right {
     width: 100%;
-    justify-content: flex-end;
+  }
+  .toolbar-left {
+    order: 0;
+  }
+  .toolbar-left .el-button {
+    width: 100%;
+  }
+  .toolbar-right {
+    gap: 8px;
+  }
+  .toolbar-right .el-button,
+  .toolbar-right .el-upload {
+    flex: 1;
+  }
+  .toolbar-right .el-upload :deep(.el-button) {
+    width: 100%;
   }
 }
 </style>

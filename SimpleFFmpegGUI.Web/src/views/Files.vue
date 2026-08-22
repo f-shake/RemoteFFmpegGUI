@@ -222,5 +222,8 @@ onMounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
+  .top24 {
+    margin-top: 0;
+  }
 }
 </style>

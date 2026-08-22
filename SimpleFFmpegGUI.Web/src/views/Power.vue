@@ -32,7 +32,7 @@
     </el-card>
 
     <!-- 进程优先级 -->
-    <el-card shadow="never" class="section-card">
+    <el-card shadow="never" class="section-card priority-card">
       <template #header>
         <div class="section-title">
           <el-icon><Sort /></el-icon>
@@ -232,12 +232,26 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
+  .section-card {
+    overflow: hidden;
+  }
   .slider-row {
     flex-direction: column;
     gap: 8px;
   }
   .slider-value {
     width: auto;
+  }
+  /* 优先级卡片：刻度文字是绝对定位，会溢出 body 造成内部 13px 滚动条；
+     body 改 overflow:visible 去掉内部滚动，再加底部 padding 让卡片长高、容纳溢出的刻度 */
+  .priority-card :deep(.el-card__body) {
+    overflow: visible;
+    padding-bottom: 34px;
+  }
+  /* 进程优先级的刻度文字在窄屏调小 */
+  .priority-slider :deep(.el-slider__marks-text) {
+    font-size: 11px;
+    line-height: 24px;
   }
 }
 </style>

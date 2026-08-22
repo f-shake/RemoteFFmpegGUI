@@ -27,8 +27,8 @@
       </div>
     </div>
 
-    <!-- 任务表格 -->
-    <el-card shadow="never" class="table-card">
+    <!-- 任务表格（桌面） -->
+    <el-card v-if="!isMobile" shadow="never" class="table-card">
       <el-table ref="table" :data="list" @selection-change="handleSelectionChange" size="small">
         <el-table-column type="expand">
           <template #default="props">
@@ -65,7 +65,7 @@
 
               <div v-if="props.row.fFmpegArguments" class="c-card">
                 <div class="c-card-header">
-                  <el-icon><Code /></el-icon>
+                  <el-icon><Operation /></el-icon>
                   <span>FFmpeg 参数</span>
                 </div>
                 <pre class="c-ffmpeg">{{ props.row.fFmpegArguments }}</pre>
@@ -110,9 +110,10 @@
             <span class="ellipsis-text">{{ scope.row.inputText }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="210" class-name="ops-col">
+        <el-table-column label="操作" width="260" class-name="ops-col">
           <template #default="scope">
             <div class="ops-btns">
+              <el-button @click="remakeTask(scope.row)" text size="small" title="以本任务参数重新创建新任务">复制</el-button>
               <el-button @click="resetTask(scope.row)" text size="small"
                 :disabled="scope.row.status === 1 || scope.row.status === 2">重置</el-button>
               <el-popconfirm v-if="scope.row.status === 2" title="真的要取消任务吗？任务会终止"
@@ -131,6 +132,30 @@
       </el-table>
     </el-card>
 
+    <!-- 任务卡片（手机端，每个任务独立渲染） -->
+    <div v-else class="task-cards">
+      <div v-for="row in list" :key="row.id" class="task-card">
+        <div class="task-card-head">
+          <el-tag :type="row.type === 4 ? 'warning' : 'info'" size="small" effect="plain">{{ row.typeText }}</el-tag>
+          <el-tag :type="statusMeta(row.status).type" :effect="statusMeta(row.status).effect" size="small">
+            {{ statusMeta(row.status).text }}
+          </el-tag>
+        </div>
+        <div class="task-card-body" :title="row.inputText">{{ row.inputText }}</div>
+        <div class="task-card-ops">
+          <el-button @click="remakeTask(row)" text size="small" title="以本任务参数重新创建新任务">复制</el-button>
+          <el-button @click="resetTask(row)" text size="small" :disabled="row.status === 1 || row.status === 2">重置</el-button>
+          <el-popconfirm v-if="row.status === 2" title="真的要取消任务吗？任务会终止" @confirm="cancelTask(row)">
+            <template #reference><el-button text size="small">取消</el-button></template>
+          </el-popconfirm>
+          <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(row)">
+            <template #reference><el-button text size="small">删除</el-button></template>
+          </el-popconfirm>
+        </div>
+      </div>
+      <el-empty v-if="list.length === 0" description="暂无数据" />
+    </div>
+
     <!-- 分页 -->
     <div class="tasks-pagination">
       <el-pagination
@@ -140,7 +165,15 @@
         v-model:page-size="countPerPage" v-model:current-page="page"
         :total="totalCount" background
       />
-      <el-radio-group v-model="statusFilter" @change="fillData">
+      <el-select v-if="isMobile" v-model="statusFilter" @change="fillData" class="status-select">
+        <el-option label="全部" :value="0" />
+        <el-option label="排队中" :value="1" />
+        <el-option label="进行中" :value="2" />
+        <el-option label="已完成" :value="3" />
+        <el-option label="错误" :value="4" />
+        <el-option label="取消" :value="5" />
+      </el-select>
+      <el-radio-group v-else v-model="statusFilter" @change="fillData">
         <el-radio-button :value="0"><b>全部</b></el-radio-button>
         <el-radio-button :value="1">排队中</el-radio-button>
         <el-radio-button :value="2">进行中</el-radio-button>
@@ -156,10 +189,13 @@
 import { ref, onMounted } from 'vue'
 import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
 import { getTaskTypeDescription } from '@/models/TaskType'
-import { displayPath } from '@/utils/navigation'
+import { displayPath, jumpByArgs } from '@/utils/navigation'
+import { InfoFilled, Operation, ChatDotSquare } from '@element-plus/icons-vue'
 import * as net from '@/api'
 import CodeArgumentsDescription from '@/components/CodeArgumentsDescription.vue'
+import { useIsMobile } from '@/composables/useIsMobile'
 
+const { isMobile } = useIsMobile()
 const list = ref<any[]>([])
 const isProcessing = ref(false)
 const isPaused = ref(false)
@@ -170,6 +206,18 @@ const countPerPage = ref(20)
 const statusFilter = ref<number>(0)
 const scheduleTime = ref('')
 const hasSchedule = ref(false)
+
+// 手机端卡片的状态徽标
+function statusMeta(status: number) {
+  switch (status) {
+    case 1: return { text: '待处理', type: 'info', effect: 'plain' }
+    case 2: return { text: '进行中', type: 'warning', effect: 'dark' }
+    case 3: return { text: '完成', type: 'success', effect: 'plain' }
+    case 4: return { text: '错误', type: 'danger', effect: 'plain' }
+    case 5: return { text: '取消', type: 'info', effect: 'plain' }
+    default: return { text: '未知', type: 'info', effect: 'plain' }
+  }
+}
 
 function handleSelectionChange(val: any[]) {
   selection.value = val
@@ -246,6 +294,14 @@ function cancelSchedule() {
       scheduleTime.value = ''
     })
     .catch(showError)
+}
+
+function remakeTask(item: any) {
+  // 以任务当前参数为基准，重新进入对应类型的新建任务界面（参数/输入/输出预填，可在其上修改后重提）。
+  // 任务存的是解析后的绝对路径；转成相对路径再回填，既让 FileSelect 下拉（option value=relativePath）
+  // 能匹配显示，也避免重提时后端拒绝对路径。
+  const inputs = (item.inputs ?? []).map((f: any) => ({ ...f, filePath: displayPath(f.filePath) }))
+  jumpByArgs(item.parameters, inputs, displayPath(item.output), item.type)
 }
 
 function resetTask(item: any) {
@@ -364,8 +420,7 @@ onMounted(() => {
 
 /* 表格卡片 */
 .table-card {
-  border-radius: var(--radius-lg) !important;
-  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 /* 展开详情 — 卡片风格（与 CodeArgumentsDescription 一致） */
@@ -488,14 +543,105 @@ onMounted(() => {
   .tasks-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .toolbar-left {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+  .toolbar-left .el-button {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  /* 右侧：日期选择器独占一行，操作按钮下面一行左右 1:1 分布；去掉 right12 边距使左右对齐，
+     行间用 row-gap 留出 margin */
+  .toolbar-right {
+    flex-wrap: wrap;
+    width: 100%;
+    column-gap: 6px;
+    row-gap: 8px;
+  }
+  .toolbar-right :deep(.el-date-editor) {
+    flex: 1 1 100%;
+    width: 100%;
+    margin: 0 !important;
+  }
+  .toolbar-right > .el-button {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+  }
+  .toolbar-right :deep(.el-popconfirm) {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    margin: 0 !important;
+  }
+  .toolbar-right :deep(.el-popconfirm .el-button) {
+    flex: 1;
+    width: auto;
+    margin: 0 !important;
+  }
+  .toolbar-right a {
+    display: none;
   }
   .tasks-pagination {
     flex-direction: column;
     align-items: stretch;
+    padding: 8px 12px 16px;
+    box-sizing: border-box;
   }
-  .tasks-pagination .el-radio-group {
-    display: flex;
-    overflow-x: auto;
+  .tasks-pagination .status-select {
+    width: 100%;
+  }
+  .page-container-wide :deep(.el-pagination) {
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 }
+
+/* 手机端任务卡片（<640px 时替代表格，每个任务独立渲染，无边框无圆角、左右顶到两侧） */
+.task-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 16px;
+}
+.task-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  background: var(--bg-card);
+  border: none;
+  border-radius: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.task-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.task-card-head .el-tag { margin: 0; }
+.task-card-body {
+  color: var(--text-regular);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-card-ops {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+.task-card-ops .el-popconfirm { display: inline-flex; }
+.task-card-ops .el-button { flex-shrink: 0; }
 </style>

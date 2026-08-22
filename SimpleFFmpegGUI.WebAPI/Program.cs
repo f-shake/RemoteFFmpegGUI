@@ -221,16 +221,8 @@ void ConfigureMiddleware(WebApplication app)
     // appsettings 的 PathBase 配置一次，改前缀无需动前端。
     var indexFile = Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html");
 
-    // 注入 <base href="{PathBase}/">，让前端在运行时从上读取部署基址（避免多处硬编码）。
-    string InjectBaseHref(string html, string basePath)
-    {
-        var clean = string.IsNullOrWhiteSpace(basePath) ? "/" : basePath.Trim();
-        if (!clean.StartsWith("/")) clean = "/" + clean;
-        if (!clean.EndsWith("/")) clean += "/";
-        var tag = $"<base href=\"{clean}\">";
-        var headEnd = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-        return headEnd >= 0 ? html.Insert(headEnd, tag) : tag + html;
-    }
+    // 注入 <base> 的逻辑见 HtmlBaseInjector（关键：<base> 必须注入在 <head> 起始处，排在 <script>/<link> 之前）。
+    // 前缀只在此路径 + appsettings 的 PathBase 出现一次，前端零硬编码。
 
     // 显式访问 /index.html：静态文件中间件会直接返回原始文件（缺 <base>，导致 history 路由基址与
     // cookie 路径错误、SPA 渲染空白），故先在此拦下并注入 <base>。其余 /assets/... 等仍走静态文件中间件。
@@ -243,7 +235,7 @@ void ConfigureMiddleware(WebApplication app)
         {
             context.Response.ContentType = "text/html; charset=utf-8";
             var html = File.ReadAllText(indexFile);
-            await context.Response.WriteAsync(InjectBaseHref(html, pathBase));
+            await context.Response.WriteAsync(HtmlBaseInjector.InjectBaseHref(html, pathBase));
             return;
         }
         await next();
@@ -266,7 +258,7 @@ void ConfigureMiddleware(WebApplication app)
             return Results.Text("SimpleFFmpegGUI API is running!");
         }
         var html = File.ReadAllText(indexFile);
-        return Results.Text(InjectBaseHref(html, pathBase), "text/html; charset=utf-8");
+        return Results.Text(HtmlBaseInjector.InjectBaseHref(html, pathBase), "text/html; charset=utf-8");
     });
 
     // 前端采用 history 路由：对未匹配的前端 GET/HEAD 统一回退到（注入 <base> 的）index.html，使刷新/直链
@@ -291,7 +283,7 @@ void ConfigureMiddleware(WebApplication app)
 
         context.Response.ContentType = "text/html; charset=utf-8";
         var html = File.ReadAllText(indexFile);
-        return context.Response.WriteAsync(InjectBaseHref(html, pathBase));
+        return context.Response.WriteAsync(HtmlBaseInjector.InjectBaseHref(html, pathBase));
     });
 }
 

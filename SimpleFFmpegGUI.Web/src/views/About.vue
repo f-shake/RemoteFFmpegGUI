@@ -13,7 +13,7 @@
       <div class="about-body">
         <p>基于 FFmpeg 的远程视频处理工具，支持转码、拼接、合并、媒体信息查询等功能。</p>
         <el-divider />
-        <el-link href="https://github.com/f-shake/RemoteFFmpegGUI" target="_blank" :underline="false" class="about-link">
+        <el-link href="https://github.com/f-shake/RemoteFFmpegGUI" target="_blank" underline="never" class="about-link">
           <el-icon><Share /></el-icon> GitHub 仓库
         </el-link>
       </div>

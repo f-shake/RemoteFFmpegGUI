@@ -383,3 +383,8 @@ config.json
 # 本地 MCP 配置与 Playwright 快照产物（机器相关，不入库）
 .mcp.json
 .playwright-mcp/
+
+ffmpeg-login-home.png
+# Playwright 调试截图等临时产物（误存到仓库根的不入库）
+mobile-*.png
+desktop-*.png

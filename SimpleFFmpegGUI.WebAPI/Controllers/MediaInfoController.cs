@@ -47,7 +47,10 @@ namespace SimpleFFmpegGUI.WebAPI.Controllers
             {
                 return BadRequest("seconds 必须为非负数字");
             }
-            videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath);
+            // 允许绝对路径：任务创建时（TaskService）已把输入路径规范化为 InputDir 内的绝对路径存储并传给前端，
+            // 而 StatusBar 快照预览直接用该路径；此处若仍拒绝对（默认 allowAbsolute=false）会恒 400，预览永不显示。
+            // 边界校验（须落在 InputDir 内）依旧生效，拒绝 .. 逃逸。
+            videoPath = filePathHelper.GetFullPath(RootDirType.InputDir, videoPath, allowAbsolute: true);
             if (!System.IO.File.Exists(videoPath))
             {
                 return NotFound();

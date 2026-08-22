@@ -50,7 +50,7 @@
 
     <!-- 底部 -->
     <div class="footer-area">
-      <el-link href="https://github.com/f-shake/RemoteFFmpegGUI" target="_blank" :underline="false" class="footer-link">
+      <el-link href="https://github.com/f-shake/RemoteFFmpegGUI" target="_blank" underline="never" class="footer-link">
         <el-icon><Share /></el-icon> GitHub 仓库
       </el-link>
       <span class="footer-version">v2.0</span>

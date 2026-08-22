@@ -34,11 +34,6 @@
     padding: 0;
   }
 
-  /* 列表类页面留点左右空 */
-  .page-container-wide {
-    padding: 0 12px;
-  }
-
   /* 手机上所有卡片扁平化：无边框、无圆角、无阴影 */
   .page-container .el-card,
   .page-container-wide .el-card,
@@ -52,5 +47,14 @@
   .page-container-wide .el-card + .el-card,
   .welcome .el-card + .el-card {
     border-top: 1px solid var(--el-border-color-light, #e4e7ed) !important;
+  }
+
+  /* 列表型页面：卡片内超宽内容（表格）改为横向滚动，而不是被裁切 */
+  .page-container-wide .el-card {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .page-container-wide .el-table {
+    min-width: 560px;
   }
 }

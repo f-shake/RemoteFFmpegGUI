@@ -46,7 +46,14 @@
           range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
           align="right" class="filter-date"
         />
-        <el-radio-group v-model="typeFilter" @change="fillData">
+        <el-select v-if="isMobile" v-model="typeFilter" @change="fillData" class="filter-select">
+          <el-option label="全部" :value="0" />
+          <el-option label="错误" value="E" />
+          <el-option label="警告" value="W" />
+          <el-option label="信息" value="I" />
+          <el-option label="输出" value="O" />
+        </el-select>
+        <el-radio-group v-else v-model="typeFilter" @change="fillData">
           <el-radio-button :value="0"><b>全部</b></el-radio-button>
           <el-radio-button value="E">错误</el-radio-button>
           <el-radio-button value="W">警告</el-radio-button>
@@ -66,7 +73,9 @@ import { formatDateTime } from '@/utils/format'
 import { displayPath } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
 import * as net from '@/api'
+import { useIsMobile } from '@/composables/useIsMobile'
 
+const { isMobile } = useIsMobile()
 const route = useRoute()
 const list = ref<any[]>([])
 const totalCount = ref(0)
@@ -117,8 +126,7 @@ onMounted(() => {
 @import '../assets/page.css';
 
 .table-card {
-  border-radius: var(--radius-lg) !important;
-  overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 .expand-message {
@@ -160,23 +168,35 @@ onMounted(() => {
   .logs-pagination {
     flex-direction: column;
     align-items: stretch;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  .logs-page :deep(.el-pagination) {
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
-  }
-  .filter-date {
+    gap: 8px;
+    min-width: 0;
     width: 100%;
     max-width: 100%;
   }
-  .logs-page :deep(.filter-date .el-range-editor) {
+  .logs-page :deep(.filter-date) {
     width: 100% !important;
+    max-width: 100% !important;
     min-width: 0 !important;
   }
   .logs-page :deep(.filter-date .el-range-input) {
     min-width: 0 !important;
     width: 0 !important;
     flex: 1 1 0 !important;
+  }
+  .filter-select,
+  .logs-page :deep(.filter-select) {
+    width: 100%;
   }
 }
 </style>

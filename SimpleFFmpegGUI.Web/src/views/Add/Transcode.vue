@@ -26,6 +26,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { showError } from '@/utils/ui'
 import { loadArgs } from '@/utils/navigation'
 import * as net from '@/api'
 import { useAddTask } from '@/composables/useAddTask'
@@ -52,7 +53,7 @@ function addTask(start: boolean) {
   files.value = ioResult.getArgs()
   output.value = ioResult.outputFile
   if (files.value.filter((p: any) => p.filePath !== '').length === 0) {
-    // 错误提示在 getArgs 中已处理
+    showError('请选择至少一个输入文件')
     return
   }
   const taskArgs = args.value?.getArgs()
