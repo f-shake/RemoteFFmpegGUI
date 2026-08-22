@@ -36,13 +36,13 @@ WPF ──HTTP──> 远程 WebAPI（提交任务）
 ### 部署 Web 版本
 
 1. 进入 `Generation/Publish/WebPackage`
-2. 编辑 `api` 的 `appsettings.json`，主要修改 `InputDir` 和 `OutputDir` 项（相对部署目录），指定输入和输出目录。**建议设置 `Token` 为强口令**（留空则不鉴权）。其它修改项详见文件内的注释。
-3. 在合适的位置新建一个网站文件夹，将 `Generation/Publish/WebPackage` 内的所有内容复制到新建的文件夹之中。
+2. 编辑 `appsettings.json`，主要修改 `InputDir` 和 `OutputDir` 项（相对部署目录），指定输入和输出目录。**建议设置 `Token` 为强口令**（留空则不鉴权）。若要部署到子路径（如前后端都在 `/ffmpeg` 下），设置 `PathBase` 为 `/ffmpeg`（留空则应用在根路径）；其它修改项详见文件内的注释。
+3. 将 `Generation/Publish/WebPackage` 内的所有内容复制到部署文件夹（WebAPI 可执行文件位于 `WebPackage` 根目录；前端成品在 `wwwroot`，由 WebAPI 直接托管）。
 4. 运行方式二选一：
-   - 直接运行 `api/SimpleFFmpegGUI.WebAPI.exe`（控制台窗口）。
-   - 在 Windows 系统中，右键 `api/CreateWindowsService.bat` 以管理员身份运行（将自动申请管理员权限），把 WebAPI 注册为自启动的 Windows 服务。
-5. 打开浏览器访问 `http://localhost:5001`，检查服务是否正常（首页显示 "SimpleFFmpegGUI API is running!"）。
-6. 前端页面为 `WebPackage` 根目录下的静态文件，需自行部署到 Web 服务器（如 IIS/Nginx），并把 API 请求代理到后端地址；或将前后端部署在同一个站点下（前端生产构建默认请求相对路径 `api/{controller}`）。
+   - 直接运行 `SimpleFFmpegGUI.WebAPI.exe`（控制台窗口）。
+   - 在 Windows 系统中，右键 `CreateWindowsService.bat` 以管理员身份运行（将自动申请管理员权限），把 WebAPI 注册为自启动的 Windows 服务。
+5. 打开浏览器访问 `http://localhost:5001`（默认根路径），检查服务是否正常：有前端时返回注入 `<base>` 的首页，无前端（裸 API）时显示 "SimpleFFmpegGUI API is running!"。
+6. 前端由 WebAPI 从 `wwwroot` 托管（history 路由，刷新/直链由 SPA 回退到注入 `<base href="{PathBase}/">` 的 index.html），无需另起 Web 服务器；生产构建请求相对路径 `api/{controller}`（跟随 `<base>` 部署基址）。若经 nginx 部署在子路径（如 `/ffmpeg`），把 `PathBase` 设为对应值并让 nginx 将该前缀代理到后端即可。
 
 **注意：**
 

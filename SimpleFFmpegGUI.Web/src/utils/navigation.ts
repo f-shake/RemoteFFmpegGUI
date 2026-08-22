@@ -2,18 +2,12 @@ import { argKey, inputKey, outputKey } from '@/constants/encoding'
 import axios from 'axios'
 import { showError, showSuccess } from './ui'
 import { TaskType } from '@/models/TaskType'
+import { getUrl } from '@/api'
 import router from '@/router'
 
 // 基准目录缓存，用于路径显示
 let inputDir: string | null = null
 let outputDir: string | null = null
-
-function getApiUrl(controller: string): string {
-  if (import.meta.env.PROD) {
-    return `api/${controller}`
-  }
-  return `http://localhost:5001/${controller}`
-}
 
 /**
  * 从 API 加载 InputDir/OutputDir 到缓存
@@ -21,7 +15,7 @@ function getApiUrl(controller: string): string {
 export async function loadDirs(): Promise<void> {
   if (inputDir && outputDir) return
   try {
-    const r = await axios.get(getApiUrl('File/Dirs'))
+    const r = await axios.get(getUrl('File/Dirs'))
     inputDir = (r.data.inputDir ?? '').replace(/\\/g, '/').replace(/\/$/, '').toLowerCase()
     outputDir = (r.data.outputDir ?? '').replace(/\\/g, '/').replace(/\/$/, '').toLowerCase()
   } catch {

@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using FluentAssertions;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.FFmpegLib;
@@ -134,7 +134,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
             new() { FilePath = appTestSettings.TestVideo10s },
         };
 
-        var muxIds = await PostObjectFromJsonAsync<List<int>>("/Task/Mux", new TaskDto
+        var muxIds = await PostObjectFromJsonAsync<List<int>>("/api/Task/Mux", new TaskDto
         {
             Inputs = inputs,
             Output = "mux_test_output.mp4",
@@ -146,7 +146,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         // 「裁剪到最短媒体」参数应完整保存（P1-7 回归）
         muxTask.Parameters.Mux.Shortest.Should().BeTrue();
 
-        var qcIds = await PostObjectFromJsonAsync<List<int>>("/Task/QualityCheck", new TaskDto
+        var qcIds = await PostObjectFromJsonAsync<List<int>>("/api/Task/QualityCheck", new TaskDto
         {
             Inputs = inputs,
             Output = "qc_test_output.mp4",
@@ -168,7 +168,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
             new() { FilePath = appTestSettings.TestVideo10s },
         };
 
-        var concatIds = await PostObjectFromJsonAsync<List<int>>("/Task/Concat", new TaskDto
+        var concatIds = await PostObjectFromJsonAsync<List<int>>("/api/Task/Concat", new TaskDto
         {
             Inputs = inputs,
             Output = "concat_test_output.mp4",
@@ -177,7 +177,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         var concatTask = await GetTaskAsync(concatIds[0]);
         concatTask.Type.Should().Be(TaskType.Concat);
 
-        var customIds = await PostObjectFromJsonAsync<List<int>>("/Task/Custom", new TaskDto
+        var customIds = await PostObjectFromJsonAsync<List<int>>("/api/Task/Custom", new TaskDto
         {
             Inputs = new List<InputParameters>(),
             Parameter = new OutputParameters { Extra = "-threads 4" },
@@ -187,7 +187,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         customTask.Type.Should().Be(TaskType.Custom);
 
         // 自定义任务缺少 Extra 应被拒绝
-        var act = async () => await PostObjectFromJsonAsync<List<int>>("/Task/Custom", new TaskDto
+        var act = async () => await PostObjectFromJsonAsync<List<int>>("/api/Task/Custom", new TaskDto
         {
             Inputs = new List<InputParameters>(),
         });
@@ -216,7 +216,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     public async Task TestPreviewArgumentsAndFormatsAsync()
     {
         // 参数预览：返回纯文本的 ffmpeg 输出参数
-        var previewResponse = await PostAsync("/Task/PreviewArguments", new OutputParameters
+        var previewResponse = await PostAsync("/api/Task/PreviewArguments", new OutputParameters
         {
             Video = new VideoCodecParameters { Strategy = StreamStrategy.Copy },
             Audio = new AudioCodecParameters { Strategy = StreamStrategy.Copy },
@@ -226,7 +226,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         preview.Should().Contain("-c:v copy");
 
         // 容器格式列表
-        var formats = await GetObjectFromJsonAsync<VideoFormat[]>("/Task/Formats");
+        var formats = await GetObjectFromJsonAsync<VideoFormat[]>("/api/Task/Formats");
         formats.Should().NotBeEmpty();
         formats.Should().Contain(p => p.Name == "mp4");
     }
@@ -237,10 +237,10 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     [Fact]
     public async Task TestQueuePauseResumeWithoutTaskAsync()
     {
-        var act = async () => await PostAsync("/Queue/Pause");
+        var act = async () => await PostAsync("/api/Queue/Pause");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Queue/Resume");
+        act = async () => await PostAsync("/api/Queue/Resume");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -315,10 +315,10 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     [Fact]
     public async Task TestAddTaskValidationAsync()
     {
-        var act = async () => await PostAsync("/Task/Transcode");
+        var act = async () => await PostAsync("/api/Task/Transcode");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Task/InvalidType", new TaskDto { Inputs = new List<InputParameters>() });
+        act = async () => await PostAsync("/api/Task/InvalidType", new TaskDto { Inputs = new List<InputParameters>() });
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -354,7 +354,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     [Fact]
     public async Task TestPreviewArgumentsNullAsync()
     {
-        var act = async () => await PostAsync("/Task/PreviewArguments");
+        var act = async () => await PostAsync("/api/Task/PreviewArguments");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -367,7 +367,7 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         var act = async () => await ScheduleAsync(DateTime.Now.AddMinutes(-5));
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Queue/Schedule");
+        act = async () => await PostAsync("/api/Queue/Schedule");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -381,25 +381,25 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     }
 
     private Task<List<int>> AddCodecTaskAsync(TaskDto task) =>
-        PostObjectFromJsonAsync<List<int>>("/Task/Transcode", task);
+        PostObjectFromJsonAsync<List<int>>("/api/Task/Transcode", task);
 
     private Task<List<int>> AddCodecTaskAsync(int count) => AddCodecTaskAsync(GetCodeTask(count));
 
-    private Task CancelQueueAsync() => PostAsync("/Queue/Cancel");
+    private Task CancelQueueAsync() => PostAsync("/api/Queue/Cancel");
 
-    private Task CancelTaskAsync(int id) => PostAsync($"/Task/{id}/Cancel");
+    private Task CancelTaskAsync(int id) => PostAsync($"/api/Task/{id}/Cancel");
 
-    private Task CancelTasksAsync(ICollection<int> ids) => PostAsync("/Task/Batch/Cancel", ids);
+    private Task CancelTasksAsync(ICollection<int> ids) => PostAsync("/api/Task/Batch/Cancel", ids);
 
-    private Task ResetTaskAsync(int id) => PostAsync($"/Task/{id}/Reset");
+    private Task ResetTaskAsync(int id) => PostAsync($"/api/Task/{id}/Reset");
 
-    private Task ResetTasksAsync(IEnumerable<int> ids) => PostAsync("/Task/Batch/Reset", ids);
+    private Task ResetTasksAsync(IEnumerable<int> ids) => PostAsync("/api/Task/Batch/Reset", ids);
 
-    private Task CancelScheduleAsync() => PostAsync("/Queue/CancelSchedule");
+    private Task CancelScheduleAsync() => PostAsync("/api/Queue/CancelSchedule");
 
-    private Task DeleteTaskAsync(int id) => PostAsync($"/Task/{id}/Delete");
+    private Task DeleteTaskAsync(int id) => PostAsync($"/api/Task/{id}/Delete");
 
-    private Task DeleteTaskAsync(ICollection<int> ids) => PostAsync("/Task/Batch/Delete", ids);
+    private Task DeleteTaskAsync(ICollection<int> ids) => PostAsync("/api/Task/Batch/Delete", ids);
 
     private TaskDto GetCodeTask(int count)
     {
@@ -473,21 +473,21 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         throw new TimeoutException($"等待任务{id}状态为{status}超时（{timeout}），当前状态：{current.Status}");
     }
 
-    private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/Queue/Schedule");
+    private Task<DateTime?> GetScheduleTimeAsync() => GetObjectFromJsonAsync<DateTime?>("/api/Queue/Schedule");
 
-    private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/Queue");
+    private Task<StatusDto> GetStatusAsync() => GetObjectFromJsonAsync<StatusDto>("/api/Queue");
 
-    private Task<TaskEntity> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskEntity>($"/Task/{id}");
+    private Task<TaskEntity> GetTaskAsync(int id) => GetObjectFromJsonAsync<TaskEntity>($"/api/Task/{id}");
 
     private async Task<PagedListResponse<TaskEntity>> GetTasksAsync(int page = 1, int pageSize = 1000,
         TaskStatus? status = null)
     {
         var statusStr = status != null ? $"&status={(int)status}" : "";
         return await GetObjectFromJsonAsync<PagedListResponse<TaskEntity>>(
-            $"/Task?page={page}&pageSize={pageSize}{statusStr}");
+            $"/api/Task?page={page}&pageSize={pageSize}{statusStr}");
     }
 
-    private Task ScheduleAsync(DateTime time) => PostAsync("/Queue/Schedule", new ScheduleRequest { Time = time });
+    private Task ScheduleAsync(DateTime time) => PostAsync("/api/Queue/Schedule", new ScheduleRequest { Time = time });
 
-    private Task StartQueueAsync() => PostAsync("/Queue/Start");
+    private Task StartQueueAsync() => PostAsync("/api/Queue/Start");
 }

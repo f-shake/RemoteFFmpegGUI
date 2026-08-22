@@ -10,7 +10,7 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
     [Fact]
     public async Task TestCpuUsageAsync()
     {
-        var cpuUsages = await GetObjectFromJsonAsync<CpuCoreUsageDto[]>("/Power/Cpu");
+        var cpuUsages = await GetObjectFromJsonAsync<CpuCoreUsageDto[]>("/api/Power/Cpu");
         cpuUsages.Should().NotBeNull();
         cpuUsages.Length.Should().BeGreaterThan(0);
         cpuUsages.Should().AllSatisfy(c =>
@@ -25,7 +25,7 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
     public async Task TestShutdownQueueToggleAsync()
     {
         // GET默认值应该是false
-        var initial = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
+        var initial = await GetObjectFromJsonAsync<bool>("/api/Power/ShutdownQueue");
         initial.Should().BeFalse();
 
         // POST设为true（模拟前端通过FormData发送）
@@ -33,9 +33,9 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
         {
             { new StringContent("true"), "on" }
         };
-        await PostMultipartAsync("/Power/ShutdownQueue", formOn);
+        await PostMultipartAsync("/api/Power/ShutdownQueue", formOn);
 
-        var afterOn = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
+        var afterOn = await GetObjectFromJsonAsync<bool>("/api/Power/ShutdownQueue");
         afterOn.Should().BeTrue();
 
         // POST设为false
@@ -43,9 +43,9 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
         {
             { new StringContent("false"), "on" }
         };
-        await PostMultipartAsync("/Power/ShutdownQueue", formOff);
+        await PostMultipartAsync("/api/Power/ShutdownQueue", formOff);
 
-        var afterOff = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
+        var afterOff = await GetObjectFromJsonAsync<bool>("/api/Power/ShutdownQueue");
         afterOff.Should().BeFalse();
     }
 
@@ -56,8 +56,8 @@ public class PowerApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFF
     [Fact]
     public async Task TestAbortShutdownAsync()
     {
-        await PostAsync("/Power/AbortShutdown");
-        var shutdownQueue = await GetObjectFromJsonAsync<bool>("/Power/ShutdownQueue");
+        await PostAsync("/api/Power/AbortShutdown");
+        var shutdownQueue = await GetObjectFromJsonAsync<bool>("/api/Power/ShutdownQueue");
         shutdownQueue.Should().BeFalse();
     }
 }

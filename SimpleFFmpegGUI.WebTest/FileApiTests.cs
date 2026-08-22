@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
@@ -55,12 +55,12 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     [Fact]
     public async Task TestFtpStatusAsync()
     {
-        var status = await GetObjectFromJsonAsync<FtpStatusDto>("/File/Ftp");
+        var status = await GetObjectFromJsonAsync<FtpStatusDto>("/api/File/Ftp");
         status.InputOn.Should().BeFalse();
         status.OutputOn.Should().BeFalse();
 
         await FtpInputOnAsync();
-        status = await GetObjectFromJsonAsync<FtpStatusDto>("/File/Ftp");
+        status = await GetObjectFromJsonAsync<FtpStatusDto>("/api/File/Ftp");
         status.InputOn.Should().BeTrue();
         status.InputPort.Should().BeGreaterThan(0);
         await FtpInputOffAsync();
@@ -106,7 +106,7 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         {
             { fileContent, "file", "test_upload.txt" }
         };
-        var response = await PostMultipartAsync("/File/Upload", form);
+        var response = await PostMultipartAsync("/api/File/Upload", form);
         var uploadedPath = await response.Content.ReadAsStringAsync();
         uploadedPath.Should().NotBeNullOrEmpty();
         uploadedPath.Should().Contain("test_upload");
@@ -131,7 +131,7 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     [Fact]
     public async Task TestUploadEmptyFormAsync()
     {
-        var act = async () => await PostMultipartAsync("/File/Upload", new MultipartFormDataContent());
+        var act = async () => await PostMultipartAsync("/api/File/Upload", new MultipartFormDataContent());
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -144,7 +144,7 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
         var fileContent = new ByteArrayContent(Array.Empty<byte>());
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
         var form = new MultipartFormDataContent { { fileContent, "file", "empty.txt" } };
-        var act = async () => await PostMultipartAsync("/File/Upload", form);
+        var act = async () => await PostMultipartAsync("/api/File/Upload", form);
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -166,22 +166,22 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     public async Task TestDownloadContentTypeAsync()
     {
         var fileName = Path.GetFileName(appTestSettings.TestOutputVideo10s);
-        var response = await GetAsync($"/File/Download/{fileName}");
+        var response = await GetAsync($"/api/File/Download/{fileName}");
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/octet-stream");
     }
 
-    private Task<string> DownloadAsync(string name) => GetStringAsync($"/File/Download/{name}");
+    private Task<string> DownloadAsync(string name) => GetStringAsync($"/api/File/Download/{name}");
 
-    private Task FtpInputOffAsync() => PostAsync("/File/Ftp/Input/Off");
+    private Task FtpInputOffAsync() => PostAsync("/api/File/Ftp/Input/Off");
 
-    private Task FtpInputOnAsync() => PostAsync("/File/Ftp/Input/On");
+    private Task FtpInputOnAsync() => PostAsync("/api/File/Ftp/Input/On");
 
-    private Task FtpOutputOffAsync() => PostAsync("/File/Ftp/Output/Off");
+    private Task FtpOutputOffAsync() => PostAsync("/api/File/Ftp/Output/Off");
 
-    private Task FtpOutputOnAsync() => PostAsync("/File/Ftp/Output/On");
+    private Task FtpOutputOnAsync() => PostAsync("/api/File/Ftp/Output/On");
 
-    private Task<List<FileInfoDto>> GetInputListAsync() => GetObjectFromJsonAsync<List<FileInfoDto>>("/File/List/Input");
+    private Task<List<FileInfoDto>> GetInputListAsync() => GetObjectFromJsonAsync<List<FileInfoDto>>("/api/File/List/Input");
 
     private Task<List<FileInfoDto>> GetOutputListAsync() =>
-        GetObjectFromJsonAsync<List<FileInfoDto>>("/File/List/Output");
+        GetObjectFromJsonAsync<List<FileInfoDto>>("/api/File/List/Output");
 }

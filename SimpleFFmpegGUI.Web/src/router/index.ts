@@ -1,5 +1,6 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import { TaskType } from '@/models/TaskType'
+import { getBase } from '@/config'
 import Welcome from '@/views/Welcome.vue'
 import MediaInfo from '@/views/MediaInfo.vue'
 import Transcode from '@/views/Add/Transcode.vue'
@@ -14,7 +15,7 @@ import Logs from '@/views/Logs.vue'
 import Power from '@/views/Power.vue'
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(getBase()),
   routes: [
     { path: '/', name: 'welcome', component: Welcome },
     { path: '/info', name: 'MediaInfo', component: MediaInfo },

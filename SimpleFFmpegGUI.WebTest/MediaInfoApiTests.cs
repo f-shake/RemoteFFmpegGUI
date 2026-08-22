@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,7 +65,7 @@ public class MediaInfoApiTests(SimpleFFmpegWebApplicationFactory factory) : Simp
 
         // +∞：double.PositiveInfinity.ToString() 是 "∞" 而非 "Infinity"，绑定会失败，
         // 改用字面量 "Infinity"（double.TryParse 可解析为 +∞），以触发控制的 IsInfinity 校验
-        act = async () => await GetAsync($"/MediaInfo/Snapshot?videoPath={name}&seconds=Infinity");
+        act = async () => await GetAsync($"/api/MediaInfo/Snapshot?videoPath={name}&seconds=Infinity");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -87,14 +87,14 @@ public class MediaInfoApiTests(SimpleFFmpegWebApplicationFactory factory) : Simp
     public async Task TestSnapshotNonNumericSecondsAsync()
     {
         var name = Path.GetFileName(appTestSettings.TestVideo10s);
-        var act = async () => await GetAsync($"/MediaInfo/Snapshot?videoPath={name}&seconds=abc");
+        var act = async () => await GetAsync($"/api/MediaInfo/Snapshot?videoPath={name}&seconds=abc");
         await act.Should().ThrowAsync<Exception>();
     }
 
     private Task<MediaInfoGeneral> GetMediaInfoAsync(string name) =>
-        GetObjectFromJsonAsync<MediaInfoGeneral>($"/MediaInfo/{name}");
+        GetObjectFromJsonAsync<MediaInfoGeneral>($"/api/MediaInfo/{name}");
     
     private Task<HttpResponseMessage> GetSnapshotAsync(string name, double seconds) =>
-        GetAsync($"/MediaInfo/Snapshot?videoPath={name}&seconds={seconds}");
+        GetAsync($"/api/MediaInfo/Snapshot?videoPath={name}&seconds={seconds}");
 
 }

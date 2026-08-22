@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using FluentAssertions;
@@ -50,7 +50,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         id.Should().BeGreaterThan(0);
 
         // 导出预设
-        var exportResponse = await GetAsync("/Preset/Export");
+        var exportResponse = await GetAsync("/api/Preset/Export");
         var jsonBytes = await exportResponse.Content.ReadAsByteArrayAsync();
         jsonBytes.Length.Should().BeGreaterThan(0);
         exportResponse.Content.Headers.ContentDisposition.Should().NotBeNull();
@@ -68,7 +68,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         {
             { importContent, "file", "presets.json" }
         };
-        await PostMultipartAsync("/Preset/Import", form);
+        await PostMultipartAsync("/api/Preset/Import", form);
 
         // 验证导入成功
         presets = await GetPresetsAsync(null);
@@ -86,7 +86,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         var presets = await GetPresetsAsync(null);
         presets.Count.Should().BeGreaterThan(0);
 
-        await PostAsync("/Preset/Clear");
+        await PostAsync("/api/Preset/Clear");
         presets = await GetPresetsAsync(null);
         presets.Count.Should().Be(0);
     }
@@ -102,7 +102,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         {
             { new StringContent(v1Json, Encoding.UTF8, "application/json"), "file", "presets.json" }
         };
-        await PostMultipartAsync("/Preset/Import", form);
+        await PostMultipartAsync("/api/Preset/Import", form);
 
         var presets = await GetPresetsAsync(null);
         presets.Should().Contain(p => p.Name == "v1_custom" && p.Type == TaskType.Custom);
@@ -114,13 +114,13 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestAddValidationAsync()
     {
-        var act = async () => await PostAsync("/Preset");
+        var act = async () => await PostAsync("/api/Preset");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Preset", new AddPresetRequest("t", null, TaskType.Transcode));
+        act = async () => await PostAsync("/api/Preset", new AddPresetRequest("t", null, TaskType.Transcode));
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Preset", new AddPresetRequest(null, new OutputParameters(), TaskType.Transcode));
+        act = async () => await PostAsync("/api/Preset", new AddPresetRequest(null, new OutputParameters(), TaskType.Transcode));
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -135,7 +135,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         await act.Should().ThrowAsync<Exception>();
 
         // Delete 恒返回 NoContent（204），对不存在的 id 也不抛异常
-        var response = await PostAsync("/Preset/999999/Delete");
+        var response = await PostAsync("/api/Preset/999999/Delete");
         response.IsSuccessStatusCode.Should().BeTrue();
     }
 
@@ -149,7 +149,7 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
         {
             { new StringContent("not-a-json", Encoding.UTF8, "application/json"), "file", "presets.json" }
         };
-        var act = async () => await PostMultipartAsync("/Preset/Import", form);
+        var act = async () => await PostMultipartAsync("/api/Preset/Import", form);
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -168,13 +168,13 @@ public class PresetApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     }
 
     private Task<int> AddPresetAsync(AddPresetRequest request) =>
-        PostObjectFromJsonAsync<int>("/Preset", request);
+        PostObjectFromJsonAsync<int>("/api/Preset", request);
 
     private Task UpdatePresetAsync(int id, UpdatePresetRequest request) =>
-        PostAsync($"/Preset/{id}", request);
+        PostAsync($"/api/Preset/{id}", request);
 
-    private Task DeletePresetAsync(int id) => PostAsync($"/Preset/{id}/Delete");
+    private Task DeletePresetAsync(int id) => PostAsync($"/api/Preset/{id}/Delete");
 
     private Task<List<PresetEntity>> GetPresetsAsync(TaskType? type) =>
-        GetObjectFromJsonAsync<List<PresetEntity>>(type == null ? "/Preset" : $"/Preset?type={type}");
+        GetObjectFromJsonAsync<List<PresetEntity>>(type == null ? "/api/Preset" : $"/api/Preset?type={type}");
 }

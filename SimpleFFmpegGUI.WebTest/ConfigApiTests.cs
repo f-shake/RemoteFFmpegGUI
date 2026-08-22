@@ -9,17 +9,17 @@ public class ConfigApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     public async Task TestProcessPriorityAsync()
     {
         // 获取默认优先级
-        var defaultPriority = await GetObjectFromJsonAsync<int>("/Config/ProcessPriority");
+        var defaultPriority = await GetObjectFromJsonAsync<int>("/api/Config/ProcessPriority");
         defaultPriority.Should().BeInRange(0, 5);
 
         // 设置为3
-        await PostAsync("/Config/ProcessPriority?priority=3");
-        var afterSet = await GetObjectFromJsonAsync<int>("/Config/ProcessPriority");
+        await PostAsync("/api/Config/ProcessPriority?priority=3");
+        var afterSet = await GetObjectFromJsonAsync<int>("/api/Config/ProcessPriority");
         afterSet.Should().Be(3);
 
         // 设回0（Normal）
-        await PostAsync("/Config/ProcessPriority?priority=0");
-        var afterReset = await GetObjectFromJsonAsync<int>("/Config/ProcessPriority");
+        await PostAsync("/api/Config/ProcessPriority?priority=0");
+        var afterReset = await GetObjectFromJsonAsync<int>("/api/Config/ProcessPriority");
         afterReset.Should().Be(0);
     }
 
@@ -29,16 +29,16 @@ public class ConfigApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestSnapshotSizeAsync()
     {
-        var size = await GetObjectFromJsonAsync<string>("/Config/SnapshotSize");
+        var size = await GetObjectFromJsonAsync<string>("/api/Config/SnapshotSize");
         size.Should().NotBeNullOrWhiteSpace();
 
-        await PostAsync("/Config/SnapshotSize?snapshotSize=-1:720");
-        var afterSet = await GetObjectFromJsonAsync<string>("/Config/SnapshotSize");
+        await PostAsync("/api/Config/SnapshotSize?snapshotSize=-1:720");
+        var afterSet = await GetObjectFromJsonAsync<string>("/api/Config/SnapshotSize");
         afterSet.Should().Be("-1:720");
 
         // 恢复默认，避免影响其他用例
-        await PostAsync("/Config/SnapshotSize?snapshotSize=-1:1080");
-        var afterReset = await GetObjectFromJsonAsync<string>("/Config/SnapshotSize");
+        await PostAsync("/api/Config/SnapshotSize?snapshotSize=-1:1080");
+        var afterReset = await GetObjectFromJsonAsync<string>("/api/Config/SnapshotSize");
         afterReset.Should().Be("-1:1080");
     }
 
@@ -48,10 +48,10 @@ public class ConfigApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestSetProcessPriorityOutOfRangeAsync()
     {
-        var act = async () => await PostAsync("/Config/ProcessPriority?priority=6");
+        var act = async () => await PostAsync("/api/Config/ProcessPriority?priority=6");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Config/ProcessPriority?priority=-1");
+        act = async () => await PostAsync("/api/Config/ProcessPriority?priority=-1");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -61,16 +61,16 @@ public class ConfigApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestSnapshotSizeInvalidValuesRejectedAsync()
     {
-        var act = async () => await PostAsync("/Config/SnapshotSize?snapshotSize=abc");
+        var act = async () => await PostAsync("/api/Config/SnapshotSize?snapshotSize=abc");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Config/SnapshotSize?snapshotSize=1920");
+        act = async () => await PostAsync("/api/Config/SnapshotSize?snapshotSize=1920");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Config/SnapshotSize?snapshotSize=1920:1080:1");
+        act = async () => await PostAsync("/api/Config/SnapshotSize?snapshotSize=1920:1080:1");
         await act.Should().ThrowAsync<Exception>();
 
-        act = async () => await PostAsync("/Config/SnapshotSize?snapshotSize=");
+        act = async () => await PostAsync("/api/Config/SnapshotSize?snapshotSize=");
         await act.Should().ThrowAsync<Exception>();
     }
 
@@ -80,7 +80,7 @@ public class ConfigApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleF
     [Fact]
     public async Task TestNonNumericPriorityRejectedAsync()
     {
-        var act = async () => await PostAsync("/Config/ProcessPriority?priority=abc");
+        var act = async () => await PostAsync("/api/Config/ProcessPriority?priority=abc");
         await act.Should().ThrowAsync<Exception>();
     }
 }

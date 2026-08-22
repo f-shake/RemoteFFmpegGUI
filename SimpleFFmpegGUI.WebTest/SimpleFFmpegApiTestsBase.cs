@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,7 +49,7 @@ public abstract class SimpleFFmpegApiTestsBase //: IClassFixture<SimpleFFmpegWeb
         return SendAsync(HttpMethod.Get, endpoint);
     }
 
-    protected Task<AppDirDto> GetDirsAsync() => GetObjectFromJsonAsync<AppDirDto>("/File/Dirs");
+    protected Task<AppDirDto> GetDirsAsync() => GetObjectFromJsonAsync<AppDirDto>("/api/File/Dirs");
 
     protected async Task<T> GetObjectFromJsonAsync<T>(string endpoint)
     {

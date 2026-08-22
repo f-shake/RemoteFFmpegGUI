@@ -58,7 +58,6 @@ try {
     
     if ($w) {
         mkdir -Force Generation/Publish/WebPackage
-        mkdir -Force Generation/Publish/WebPackage/api
 
         if (-not [Console]::IsInputRedirected) { Clear-Host }
 
@@ -67,21 +66,24 @@ try {
         npm install
         npm run build
         Set-Location ..
-        Write-Output "正在复制Web"
-        Copy-Item SimpleFFmpegGUI.Web/dist/* Generation/Publish/WebPackage -Force -Recurse
+        Write-Output "前端将由 WebAPI 托管（wwwroot），不再复制到 WebPackage 顶层"
 
         Write-Output "正在发布WebAPI"
-        dotnet publish SimpleFFmpegGUI.WebAPI -c Release -o Generation/Publish/WebPackage/api
+        dotnet publish SimpleFFmpegGUI.WebAPI -c Release -o Generation/Publish/WebPackage
 
         Write-Output "正在复制Windows服务安装脚本"
-        Copy-Item SimpleFFmpegGUI.WebAPI/CreateWindowsService.bat Generation/Publish/WebPackage/api
-        Copy-Item SimpleFFmpegGUI.WebAPI/DeleteWindowsService.bat Generation/Publish/WebPackage/api
+        Copy-Item SimpleFFmpegGUI.WebAPI/CreateWindowsService.bat Generation/Publish/WebPackage
+        Copy-Item SimpleFFmpegGUI.WebAPI/DeleteWindowsService.bat Generation/Publish/WebPackage
 
         Write-Output "正在复制二进制库"
-        Copy-Item bin/* Generation/Publish/WebPackage/api -Force -Recurse
+        Copy-Item bin/* Generation/Publish/WebPackage -Force -Recurse
+
+        Write-Output "正在复制前端到WebAPI（wwwroot，供后端托管）"
+        New-Item -ItemType Directory -Force Generation/Publish/WebPackage/wwwroot | Out-Null
+        Copy-Item SimpleFFmpegGUI.Web/dist/* Generation/Publish/WebPackage/wwwroot -Force -Recurse
 
         Write-Output "正在清理"
-        Remove-Item SimpleFFmpegGUI.Web/dist -Recurse
+        Remove-Item SimpleFFmpegGUI.Web/dist -Recurse -Force
     }
 
     

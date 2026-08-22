@@ -106,6 +106,7 @@ import {
   Monitor, Sunny, Moon, UserFilled
 } from '@element-plus/icons-vue'
 import Cookies from 'js-cookie'
+import { getBasePath } from '@/config'
 import { jump, loadDirs } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
 import * as net from './api'
@@ -174,7 +175,6 @@ net.getNeedToken().then((r) => {
         if (!r.data) {
           jump('login')
         } else {
-          net.setHeader()
           logged.value = true
         }
       })
@@ -183,7 +183,6 @@ net.getNeedToken().then((r) => {
     }
   }
 })
-net.setHeader()
 loadDirs()
 getStatus()
 window.addEventListener('resize', resizeMenu)
@@ -199,7 +198,9 @@ function logout() {
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    Cookies.remove('token')
+    Cookies.remove('token', { path: getBasePath() })
+    // 兼容升级前 cookie 存于根路径(/)的情况，一并清理，避免注销后仍处于"已登录"态
+    Cookies.remove('token', { path: '/' })
     location.reload()
   })
 }

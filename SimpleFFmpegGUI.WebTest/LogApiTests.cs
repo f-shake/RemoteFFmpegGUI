@@ -16,7 +16,7 @@ public class LogApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmp
     public async Task TestGetLogsAsync()
     {
         // 日志由 DbLoggerService 周期异步落库，这里验证接口与分页语义正确
-        var response = await GetAsync("/Log?Page=1&PageSize=10");
+        var response = await GetAsync("/api/Log?Page=1&PageSize=10");
         response.IsSuccessStatusCode.Should().BeTrue();
         var page1 = ParseLogs(await response.Content.ReadAsStringAsync());
         page1.List.Should().NotBeNull();
@@ -25,7 +25,7 @@ public class LogApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmp
         page1.TotalCount.Should().BeGreaterThanOrEqualTo(page1.List.Count);
 
         // 分页语义：倒序分页下第 2 页与第 1 页不应有重叠记录
-        response = await GetAsync("/Log?Page=2&PageSize=10");
+        response = await GetAsync("/api/Log?Page=2&PageSize=10");
         response.IsSuccessStatusCode.Should().BeTrue();
         var page2 = ParseLogs(await response.Content.ReadAsStringAsync());
         page2.List.Count.Should().BeLessThanOrEqualTo(10);
@@ -39,7 +39,7 @@ public class LogApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFmp
     [Fact]
     public async Task TestGetLogsDefaultPagingAsync()
     {
-        var response = await GetAsync("/Log");
+        var response = await GetAsync("/api/Log");
         response.IsSuccessStatusCode.Should().BeTrue();
         var logs = ParseLogs(await response.Content.ReadAsStringAsync());
         logs.List.Should().NotBeNull();

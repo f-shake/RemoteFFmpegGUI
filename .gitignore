@@ -379,3 +379,7 @@ db.sqlite*
 temp/
 # 运行时生成的本机配置文件（WPF/WebAPI 各工作目录下，含 RemoteHosts 等用户设置，不入库）
 config.json
+
+# 本地 MCP 配置与 Playwright 快照产物（机器相关，不入库）
+.mcp.json
+.playwright-mcp/

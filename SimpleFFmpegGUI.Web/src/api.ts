@@ -2,11 +2,26 @@ import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 import Cookies from 'js-cookie'
 
-function getUrl(controller: string): string {
-  if (import.meta.env.PROD) {
-    return `api/${controller}`
+// 请求拦截器：每次请求都从 cookie 读取 token 并自动附上 Authorization 头。
+// 不依赖登录时机的显式调用；即使登录后重载/早发请求也不会漏掉鉴权头。
+axios.interceptors.request.use((config) => {
+  const token = Cookies.get('token')
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`
+  } else {
+    delete config.headers['Authorization']
   }
-  return `http://localhost:5001/${controller}`
+  return config
+})
+
+// 部署基址下的 API 地址。PROD 用相对路径（跟随 <base>）；DEV 直连后端（控制器在 /api 前缀下）。
+// 前端唯一构建 API URL 的地方；navigation.ts 也复用此函数，避免两份逻辑漂移。
+export function getUrl(controller: string): string {
+  if (import.meta.env.PROD) {
+    return `api/${controller}` // 相对路径：跟随 <base> 部署基址，即 {PathBase}/api/...
+  }
+  // 开发直连后端：控制器带 /api 前缀（后端 PathBase 对非 /ffmpeg 路径不影响 /api）
+  return `http://localhost:5001/api/${controller}`
 }
 
 // ===== Task =====
@@ -265,16 +280,7 @@ export function getCheckToken(token: string): Promise<AxiosResponse<any>> {
 
 // ===== Auth Helpers =====
 
-export function setHeader(): void {
-  const token = Cookies.get('token')
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  } else {
-    // 未登录时不设置 Authorization 头，避免发送 "Bearer undefined" 触发鉴权错误
-    delete axios.defaults.headers.common['Authorization']
-  }
-}
-
+// el-upload（Files/Presets）与下载不一定走 axios 拦截器，显式生成鉴权头。
 export function getHeader(): Record<string, string> {
   const token = Cookies.get('token')
   if (token == null) return {}

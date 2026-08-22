@@ -12,5 +12,5 @@ npm run build    # 生产构建，输出到 dist/
 
 ## 说明
 
-- API 请求封装在 `src/api.ts`；开发环境通过 CORS 直连 `http://localhost:5001`，生产构建请求相对路径 `api/{controller}`。
+- API 请求封装在 `src/api.ts`；开发环境通过 CORS 直连 `http://localhost:5001`，生产构建请求相对路径 `api/{controller}`。部署前缀（如 `/ffmpeg`）由后端托管 `index.html` 时注入的 `<base>` 统一提供，前端仅在 `src/config.ts` 的 `getBase()`/`getBasePath()` 读取，无硬编码。
 - 新增任务相关视图在 `src/views/Add/`。

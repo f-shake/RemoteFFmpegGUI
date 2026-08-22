@@ -34,6 +34,7 @@ import { useRouter } from 'vue-router'
 import * as net from '@/api'
 import Cookies from 'js-cookie'
 import { showError } from '@/utils/ui'
+import { getBasePath } from '@/config'
 
 const router = useRouter()
 const token = ref('')
@@ -46,8 +47,7 @@ function login() {
       if (!r.data) {
         showError('Token 错误')
       } else {
-        Cookies.set('token', token.value, { expires: 365 })
-        net.setHeader()
+        Cookies.set('token', token.value, { expires: 365, path: getBasePath() })
         router.push({ path: '/' })
       }
     })
