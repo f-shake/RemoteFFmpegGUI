@@ -2,19 +2,26 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
+using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class QueueController(QueueService queue) : FFmpegControllerBase()
+    public class QueueController(QueueService queue, TaskRepository taskRepository) : FFmpegControllerBase()
     {
         [HttpGet]
         public ActionResult<StatusDto> GetStatus()
         {
             var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
             return status;
+        }
+
+        [HttpGet("HasPending")]
+        public async Task<bool> HasPendingAsync()
+        {
+            return await taskRepository.HasQueueTasksAsync();
         }
 
         [HttpGet("Schedule")]

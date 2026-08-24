@@ -96,6 +96,10 @@ export function getQueueStatus(): Promise<AxiosResponse<any>> {
   return axios.get(getUrl('Queue'))
 }
 
+export function getQueueHasPending(): Promise<AxiosResponse<boolean>> {
+  return axios.get(getUrl('Queue/HasPending'))
+}
+
 export function getQueueScheduleTime(): Promise<AxiosResponse<any>> {
   return axios.get(getUrl('Queue/Schedule'))
 }

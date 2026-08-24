@@ -59,6 +59,37 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
     }
 
     [Fact]
+    public async Task TestQueueHasPendingAsync()
+    {
+        // 先清掉可能遗留的计划与运行中的队列，避免新加入的排队任务被自动处理导致断言不稳定
+        await CancelScheduleAsync();
+        var status = await GetStatusAsync();
+        if (status.IsProcessing)
+        {
+            await CancelQueueAsync();
+        }
+
+        // 取消是异步收尾，等队列真正停止后再继续，避免新任务被自动拾取造成 HasPending 断言竞态
+        var cancelSw = Stopwatch.StartNew();
+        while (cancelSw.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            status = await GetStatusAsync();
+            if (!status.IsProcessing)
+            {
+                break;
+            }
+            await Task.Delay(200);
+        }
+
+        // 没有任务时：不应存在待执行任务，开始队列按钮应置灰
+        (await GetObjectFromJsonAsync<bool>("/api/Queue/HasPending")).Should().BeFalse();
+
+        // 新增一个排队任务后：应返回有待执行任务
+        await AddCodecTaskAsync(1);
+        (await GetObjectFromJsonAsync<bool>("/api/Queue/HasPending")).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task TestQueueStartAndCancelAsync()
     {
         //创建任务

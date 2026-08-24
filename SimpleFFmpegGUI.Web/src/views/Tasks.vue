@@ -15,7 +15,7 @@
             @click="schedule" class="right12">设置计划</el-button>
           <el-button v-if="!isProcessing && hasSchedule" @click="cancelSchedule"
             class="right12">取消计划</el-button>
-          <el-button v-if="!isProcessing" type="primary" @click="start">开始队列</el-button>
+          <el-button v-if="!isProcessing" type="primary" :disabled="!hasPending" @click="start">开始队列</el-button>
         </template>
         <template v-else>
           <el-popconfirm title="真的要取消任务吗？" @confirm="cancel" class="right12">
@@ -32,55 +32,7 @@
       <el-table ref="table" :data="list" @selection-change="handleSelectionChange" size="small">
         <el-table-column type="expand">
           <template #default="props">
-            <div class="task-expand">
-              <div class="c-card c-card--thin">
-                <div class="c-card-header">
-                  <el-icon><InfoFilled /></el-icon>
-                  <span>任务详情</span>
-                </div>
-                <div class="c-grid">
-                  <span class="c-label">输入</span>
-                  <span class="c-val">
-                    <div v-for="file in (props.row.displayInputs ?? props.row.inputs)" :key="file.filePath">
-                      <div>{{ file.displayPath ?? file.filePath }}</div>
-                      <div v-if="file.image2" class="c-hint">图像序列，帧率为 {{ file.framerate }}</div>
-                      <div v-if="file.extra" class="c-hint">额外参数：{{ file.extra }}</div>
-                      <div v-if="file.from || file.to || file.duration" class="c-hint">
-                        <span v-if="file.from">开始 {{ file.from }}s</span>
-                        <span v-if="file.to" class="left12">结束 {{ file.to }}s</span>
-                        <span v-if="file.duration" class="left12">经过 {{ file.duration }}s</span>
-                      </div>
-                    </div>
-                  </span>
-                  <span class="c-label">输出</span>
-                  <span class="c-val" :class="{ 'c-val--nil': !props.row.output }">{{ props.row.output || '自动生成' }}</span>
-                  <span class="c-label">创建时间</span>
-                  <span class="c-val">{{ props.row.createTime }}</span>
-                  <span class="c-label" v-if="props.row.startTime">开始时间</span>
-                  <span class="c-val" v-if="props.row.startTime">{{ props.row.startTime }}</span>
-                  <span class="c-label" v-if="props.row.finishTime">结束时间</span>
-                  <span class="c-val" v-if="props.row.finishTime">{{ props.row.finishTime }}</span>
-                </div>
-              </div>
-
-              <div v-if="props.row.fFmpegArguments" class="c-card">
-                <div class="c-card-header">
-                  <el-icon><Operation /></el-icon>
-                  <span>FFmpeg 参数</span>
-                </div>
-                <pre class="c-ffmpeg">{{ props.row.fFmpegArguments }}</pre>
-              </div>
-
-              <div v-if="props.row.message" class="c-card">
-                <div class="c-card-header">
-                  <el-icon><ChatDotSquare /></el-icon>
-                  <span>信息</span>
-                </div>
-                <pre class="c-ffmpeg">{{ props.row.message }}</pre>
-              </div>
-
-              <CodeArgumentsDescription v-if="props.row.parameters" :type="props.row.type" :args="props.row.parameters" />
-            </div>
+            <TaskDetail :task="props.row" />
           </template>
         </el-table-column>
         <el-table-column type="selection" width="48" />
@@ -140,8 +92,15 @@
           <el-tag :type="statusMeta(row.status).type" :effect="statusMeta(row.status).effect" size="small">
             {{ statusMeta(row.status).text }}
           </el-tag>
+          <button class="task-card-toggle" :class="{ 'is-open': expandedId === row.id }"
+            @click="toggleDetail(row)" type="button" aria-label="展开/收起详情">
+            <el-icon><ArrowRight /></el-icon>
+          </button>
         </div>
-        <div class="task-card-body" :title="row.inputText">{{ row.inputText }}</div>
+        <div class="task-card-body" :title="row.inputText" @click="toggleDetail(row)">{{ row.inputText }}</div>
+        <el-collapse-transition>
+          <TaskDetail v-if="expandedId === row.id" :task="row" class="task-card-detail" />
+        </el-collapse-transition>
         <div class="task-card-ops">
           <el-button @click="remakeTask(row)" text size="small" title="以本任务参数重新创建新任务">复制</el-button>
           <el-button @click="resetTask(row)" text size="small" :disabled="row.status === 1 || row.status === 2">重置</el-button>
@@ -156,31 +115,44 @@
       <el-empty v-if="list.length === 0" description="暂无数据" />
     </div>
 
-    <!-- 分页 -->
+    <!-- 分页 + 分类筛选 -->
     <div class="tasks-pagination">
-      <el-pagination
-        @size-change="fillData" @current-change="fillData"
-        layout="sizes, prev, pager, next"
-        :page-sizes="[10, 20, 50, 100]"
-        v-model:page-size="countPerPage" v-model:current-page="page"
-        :total="totalCount" background
-      />
-      <el-select v-if="isMobile" v-model="statusFilter" @change="fillData" class="status-select">
-        <el-option label="全部" :value="0" />
-        <el-option label="排队中" :value="1" />
-        <el-option label="进行中" :value="2" />
-        <el-option label="已完成" :value="3" />
-        <el-option label="错误" :value="4" />
-        <el-option label="取消" :value="5" />
-      </el-select>
-      <el-radio-group v-else v-model="statusFilter" @change="fillData">
-        <el-radio-button :value="0"><b>全部</b></el-radio-button>
-        <el-radio-button :value="1">排队中</el-radio-button>
-        <el-radio-button :value="2">进行中</el-radio-button>
-        <el-radio-button :value="3">已完成</el-radio-button>
-        <el-radio-button :value="4">错误</el-radio-button>
-        <el-radio-button :value="5">取消</el-radio-button>
-      </el-radio-group>
+      <!-- 桌面：条数 + 页码 + 分类 radio -->
+      <template v-if="!isMobile">
+        <el-pagination
+          @size-change="fillData" @current-change="fillData"
+          layout="sizes, prev, pager, next"
+          :page-sizes="[10, 20, 50, 100]"
+          v-model:page-size="countPerPage" v-model:current-page="page"
+          :total="totalCount" background
+        />
+        <el-radio-group v-model="statusFilter" @change="onStatusFilterChange">
+          <el-radio-button :value="0"><b>全部</b></el-radio-button>
+          <el-radio-button :value="1">排队中</el-radio-button>
+          <el-radio-button :value="2">进行中</el-radio-button>
+          <el-radio-button :value="3">已完成</el-radio-button>
+          <el-radio-button :value="4">错误</el-radio-button>
+          <el-radio-button :value="5">取消</el-radio-button>
+        </el-radio-group>
+      </template>
+
+      <!-- 手机：第一行页码(prev pager next)；第二行 1/3 条数 + 2/3 分类 select -->
+      <template v-else>
+        <MobilePager :page="page" :total="totalCount" :page-size="countPerPage" @change="onPagerChange" />
+        <div class="mobile-filter-row">
+          <el-select v-model="countPerPage" @change="onMobileSizeChange" class="page-size-select">
+            <el-option v-for="s in [10, 20, 50, 100]" :key="s" :label="s + '条/页'" :value="s" />
+          </el-select>
+          <el-select v-model="statusFilter" @change="onStatusFilterChange" class="status-select">
+            <el-option label="全部" :value="0" />
+            <el-option label="排队中" :value="1" />
+            <el-option label="进行中" :value="2" />
+            <el-option label="已完成" :value="3" />
+            <el-option label="错误" :value="4" />
+            <el-option label="取消" :value="5" />
+          </el-select>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -190,15 +162,18 @@ import { ref, onMounted } from 'vue'
 import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
 import { getTaskTypeDescription } from '@/models/TaskType'
 import { displayPath, jumpByArgs } from '@/utils/navigation'
-import { InfoFilled, Operation, ChatDotSquare } from '@element-plus/icons-vue'
+import { ArrowRight } from '@element-plus/icons-vue'
 import * as net from '@/api'
-import CodeArgumentsDescription from '@/components/CodeArgumentsDescription.vue'
+import TaskDetail from '@/components/TaskDetail.vue'
+import MobilePager from '@/components/MobilePager.vue'
 import { useIsMobile } from '@/composables/useIsMobile'
 
 const { isMobile } = useIsMobile()
 const list = ref<any[]>([])
 const isProcessing = ref(false)
 const isPaused = ref(false)
+// 是否存在待执行（排队中）任务——用于控制"开始队列"按钮置灰
+const hasPending = ref(true)
 const totalCount = ref(0)
 const selection = ref<any[]>([])
 const page = ref(1)
@@ -206,6 +181,29 @@ const countPerPage = ref(20)
 const statusFilter = ref<number>(0)
 const scheduleTime = ref('')
 const hasSchedule = ref(false)
+// 手机端卡片展开详情的当前任务 id（单开，详情复用桌面展开的 TaskDetail）
+const expandedId = ref<number | null>(null)
+function toggleDetail(row: any) {
+  expandedId.value = expandedId.value === row.id ? null : row.id
+}
+
+// 手机端切换每页条数时回到第一页
+function onMobileSizeChange() {
+  page.value = 1
+  fillData()
+}
+
+// 切换状态筛选时回到第一页（避免 page 超出筛选后的 totalPages）
+function onStatusFilterChange() {
+  page.value = 1
+  fillData()
+}
+
+// 手机端切换页码
+function onPagerChange(p: number) {
+  page.value = p
+  fillData()
+}
 
 // 手机端卡片的状态徽标
 function statusMeta(status: number) {
@@ -232,6 +230,14 @@ function refreshQueueStatus() {
     .then((r) => {
       isProcessing.value = r.data.isProcessing ?? false
       isPaused.value = r.data.isPaused ?? false
+    })
+    .catch(() => {})
+}
+
+function refreshHasPending() {
+  net.getQueueHasPending()
+    .then((r) => {
+      hasPending.value = r.data === true
     })
     .catch(() => {})
 }
@@ -376,6 +382,7 @@ onMounted(() => {
   showLoading()
   fillData()
   refreshQueueStatus()
+  refreshHasPending()
   net.getQueueScheduleTime()
     .then((r) => {
       const time = r.data
@@ -390,6 +397,7 @@ onMounted(() => {
       // 定时轮询队列状态
       setInterval(() => {
         refreshQueueStatus()
+        refreshHasPending()
         if (isProcessing.value) {
           fillData()
         }
@@ -423,84 +431,6 @@ onMounted(() => {
   border-radius: var(--radius-lg);
 }
 
-/* 展开详情 — 卡片风格（与 CodeArgumentsDescription 一致） */
-.task-expand {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 2px 0;
-}
-.task-expand :deep(.c-card) {
-  background: var(--el-fill-color-lighter);
-  border-radius: 6px;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  margin: 0 8px;
-}
-.task-expand :deep(.c-card-header) {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border-color);
-}
-.task-expand :deep(.c-card-header .el-icon) {
-  font-size: 14px;
-  color: var(--el-color-primary);
-}
-.task-expand :deep(.c-grid) {
-  display: grid;
-  gap: 2px 12px;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.task-expand :deep(.c-card:not(.c-card--thin) .c-grid) {
-  grid-template-columns: auto 1fr auto 1fr auto 1fr;
-}
-.task-expand :deep(.c-card:not(.c-card--thin) .c-grid.audio-grid) {
-  grid-template-columns: auto 1fr auto 1fr;
-}
-.task-expand :deep(.c-card--thin .c-grid) {
-  grid-template-columns: auto 1fr;
-}
-@media (max-width: 640px) {
-  .task-expand :deep(.c-card:not(.c-card--thin) .c-grid) {
-    grid-template-columns: auto 1fr;
-  }
-}
-.task-expand :deep(.c-label) {
-  color: var(--text-secondary);
-  white-space: nowrap;
-  text-align: right;
-}
-.task-expand :deep(.c-val) {
-  color: var(--text-primary);
-  word-break: break-all;
-  min-width: 0;
-}
-.task-expand :deep(.c-val--nil) {
-  color: var(--text-disabled);
-  font-style: italic;
-}
-.task-expand :deep(.c-hint) {
-  color: var(--text-secondary);
-  font-size: 11px;
-  margin-top: 2px;
-}
-.c-ffmpeg {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: var(--text-regular);
-}
-
 /* 状态徽标微调 */
 .el-tag--small {
   font-weight: 500;
@@ -515,6 +445,24 @@ onMounted(() => {
   gap: 12px;
   margin-top: 12px;
   padding-bottom: 16px;
+}
+
+/* 手机端第二行：1/3 条数 + 2/3 分类（mobile-filter-row 仅移动端模板渲染） */
+.mobile-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.mobile-filter-row :deep(.el-select) {
+  min-width: 0;
+}
+.mobile-filter-row .page-size-select {
+  flex: 1 1 0;
+}
+.mobile-filter-row .status-select {
+  flex: 2 1 0;
 }
 
 .cell .el-button { margin-right: 6px; }
@@ -593,13 +541,7 @@ onMounted(() => {
     align-items: stretch;
     padding: 8px 12px 16px;
     box-sizing: border-box;
-  }
-  .tasks-pagination .status-select {
-    width: 100%;
-  }
-  .page-container-wide :deep(.el-pagination) {
-    flex-wrap: wrap;
-    row-gap: 4px;
+    gap: 8px;
   }
 }
 
@@ -634,6 +576,28 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+}
+/* 右上角展开/收起详情按钮 */
+.task-card-toggle {
+  margin-left: auto;
+  border: none;
+  background: none;
+  padding: 2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.task-card-toggle .el-icon {
+  transition: transform 0.2s ease;
+}
+.task-card-toggle.is-open .el-icon {
+  transform: rotate(90deg);
+}
+/* 卡片内详情去掉自身 8px 外边距，铺满卡片内容宽度（提高特异度，确保胜过 TaskDetail 自身的 margin 规则） */
+.task-card .task-card-detail :deep(.c-card) {
+  margin: 0;
 }
 .task-card-ops {
   display: flex;

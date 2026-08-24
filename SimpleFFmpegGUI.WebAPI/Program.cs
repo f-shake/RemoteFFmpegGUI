@@ -43,6 +43,11 @@ static void InitializeFileLogger()
         Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase);
     Log.Logger = new LoggerConfiguration()
         .MinimumLevel.Is(isDevelopment ? LogEventLevel.Debug : LogEventLevel.Information)
+        // 抑制 ASP.NET Core / System 框架的 Debug（以及逐请求的 Information）日志刷屏，仅保留应用自身日志。
+        // 应用日志（SimpleFFmpegGUI.*、顶层 Log.Information 等）不受此覆盖影响，仍按上面的全局级别
+        // （开发 Debug / 生产 Information）输出，便于排障。
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .MinimumLevel.Override("System", LogEventLevel.Warning)
         .Enrich.WithProperty("ProcessId", processId)
         .WriteTo.File("logs/logs.txt",
             outputTemplate:

@@ -42,7 +42,7 @@
       <!-- 侧栏 -->
       <el-aside class="app-aside" :class="{ collapsed: menuCollapse }" v-if="route.path != '/login'">
         <div class="aside-inner">
-          <el-menu router :default-active="route.path" :collapse="menuCollapse" :collapse-transition="false">
+          <el-menu router :default-active="activeMenu" :collapse="menuCollapse" :collapse-transition="false">
             <el-menu-item index="/">
               <el-icon><HomeFilled /></el-icon>
               <template #title>欢迎</template>
@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import {
@@ -114,7 +114,6 @@ import StatusBar from './components/StatusBar.vue'
 
 const route = useRoute()
 
-const activeMenu = ref('/')
 const menus = [
   ['/info', 'Search', '媒体信息查询'],
   ['/tasks', 'Document', '任务列表'],
@@ -127,6 +126,11 @@ const types = TaskType.NavTypes
 const status = ref<any>(null)
 const netError = ref(false)
 const menuCollapse = ref(false)
+// 菜单高亮项：进入 /add/* 且折叠(移动端)时映射到顶层 '/'，避免 Element Plus 因 active 项落在
+// "新建任务"子菜单内而自动弹出该弹层（点子项后菜单应消失且不再出现）；桌面端保留高亮展开
+const activeMenu = computed(() =>
+  menuCollapse.value && route.path.startsWith('/add/') ? '/' : route.path
+)
 const windowWidth = ref(0)
 const logged = ref(false)
 const themeMode = ref(localStorage.getItem('theme') || 'auto')
@@ -156,11 +160,6 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   }
 })
 
-watch(
-  () => route.path,
-  (path) => { activeMenu.value = path }
-)
-
 onMounted(() => {
   nextTick(() => {
     resizeMenu()
@@ -189,7 +188,9 @@ window.addEventListener('resize', resizeMenu)
 
 function resizeMenu() {
   windowWidth.value = window.innerWidth
-  menuCollapse.value = window.innerWidth < 640
+  // 用 <= 640 与各处手机端媒体查询/useIsMobile 语义一致（640 也算窄屏），避免正好 640px 时
+  // isMobile=true 但菜单未折叠导致 activeMenu 对 /add/* 走桌面分支
+  menuCollapse.value = window.innerWidth <= 640
 }
 
 function logout() {

@@ -32,28 +32,35 @@
 
     <!-- 分页 + 类型筛选 -->
     <div class="logs-pagination">
+      <!-- 桌面：条数 + 页码 + 时间/类型 -->
       <el-pagination
+        v-if="!isMobile"
         @size-change="fillData" @current-change="fillData"
         layout="sizes, prev, pager, next"
         :page-sizes="[10, 20, 50, 100, 200, 500, 1000]"
         v-model:page-size="countPerPage" v-model:current-page="page"
         :total="totalCount" background
       />
+      <!-- 手机：第一行仅页码（少量），条数随 filter 行 -->
+      <MobilePager
+        v-else
+        :page="page" :total="totalCount" :page-size="countPerPage" @change="onPagerChange"
+      />
       <div class="filter-bar">
         <span class="filter-label">时间范围：</span>
         <el-date-picker
-          @change="fillData" v-model="timeRange" type="datetimerange"
+          @change="onFilterChange" v-model="timeRange" type="datetimerange"
           range-separator="至" start-placeholder="开始日期" end-placeholder="结束日期"
           align="right" class="filter-date"
         />
-        <el-select v-if="isMobile" v-model="typeFilter" @change="fillData" class="filter-select">
+        <el-select v-if="isMobile" v-model="typeFilter" @change="onFilterChange" class="filter-select">
           <el-option label="全部" :value="0" />
           <el-option label="错误" value="E" />
           <el-option label="警告" value="W" />
           <el-option label="信息" value="I" />
           <el-option label="输出" value="O" />
         </el-select>
-        <el-radio-group v-else v-model="typeFilter" @change="fillData">
+        <el-radio-group v-else v-model="typeFilter" @change="onFilterChange">
           <el-radio-button :value="0"><b>全部</b></el-radio-button>
           <el-radio-button value="E">错误</el-radio-button>
           <el-radio-button value="W">警告</el-radio-button>
@@ -74,6 +81,7 @@ import { displayPath } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
 import * as net from '@/api'
 import { useIsMobile } from '@/composables/useIsMobile'
+import MobilePager from '@/components/MobilePager.vue'
 
 const { isMobile } = useIsMobile()
 const route = useRoute()
@@ -114,6 +122,18 @@ function fillData() {
     })
     .catch(showError)
     .finally(closeLoading)
+}
+
+// 手机端切换页码
+function onPagerChange(p: number) {
+  page.value = p
+  fillData()
+}
+
+// 切换时间范围/类型筛选时回到第一页（避免 page 超出筛选后的 totalPages）
+function onFilterChange() {
+  page.value = 1
+  fillData()
 }
 
 onMounted(() => {
@@ -171,10 +191,7 @@ onMounted(() => {
     padding: 8px 12px;
     box-sizing: border-box;
     min-width: 0;
-  }
-  .logs-page :deep(.el-pagination) {
-    flex-wrap: wrap;
-    row-gap: 4px;
+    gap: 8px;
   }
   .filter-bar {
     flex-direction: column;
@@ -184,15 +201,27 @@ onMounted(() => {
     width: 100%;
     max-width: 100%;
   }
+  /* 时间范围：border-box 让 100% 宽度包含内边距，避免 content-box 把盒子撑到超出容器宽度 */
   .logs-page :deep(.filter-date) {
+    box-sizing: border-box;
     width: 100% !important;
-    max-width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 13px;
   }
   .logs-page :deep(.filter-date .el-range-input) {
     min-width: 0 !important;
     width: 0 !important;
     flex: 1 1 0 !important;
+    font-size: 13px;
+  }
+  .logs-page :deep(.filter-date .el-range-separator) {
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+  .logs-page :deep(.filter-date .el-range__icon),
+  .logs-page :deep(.filter-date .el-range__close-icon) {
+    flex-shrink: 0;
   }
   .filter-select,
   .logs-page :deep(.filter-select) {
