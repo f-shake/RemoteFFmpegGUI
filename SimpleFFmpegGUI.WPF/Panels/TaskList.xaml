@@ -22,7 +22,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="3*" />
             <RowDefinition Height="8" />
-            <RowDefinition Height="2*" />
+            <RowDefinition
+                x:Name="rDetailRow"
+                Height="2*" />
         </Grid.RowDefinitions>
         <ListView
             xmlns:c="clr-namespace:SimpleFFmpegGUI.WPF.FzLib.WPF.Controls"

@@ -57,6 +57,8 @@ namespace SimpleFFmpegGUI.WPF
             RegisterMessages();
             this.queue = queue;
             childWindows = new ChildWindowManager(this, App.ServiceProvider);
+            WindowBusyOverlay.Register(this, ring);
+            Closed += (_, _) => WindowBusyOverlay.Unregister(this);
         }
 
         public MainWindowViewModel ViewModel { get; set; }
@@ -200,14 +202,9 @@ namespace SimpleFFmpegGUI.WPF
 
             WeakReferenceMessenger.Default.Register<WindowEnableMessage>(this, (_, m) =>
             {
-                if (m.IsEnabled)
-                {
-                    ring.Hide();
-                }
-                else
-                {
-                    ring.Show();
-                }
+                // 不再只切换主窗口的加载环，而是把“忙碌”状态交给 WindowBusyOverlay，
+                // 由它决定显示在哪个窗口（当前正在操作的那个窗口）上。
+                WindowBusyOverlay.SetBusy(!m.IsEnabled);
             });
 
 
@@ -236,17 +233,17 @@ namespace SimpleFFmpegGUI.WPF
                     IsHitTestVisible = false
                 };
                 panel.ViewModel.Update(task.Type, task.Arguments);
-                ScrollViewer scr = new ScrollViewer();
-                scr.Content = panel;
-                Window win = new Window()
+
+                // 用普通外层 ScrollViewer 承载滚动：CodeArgumentsPanel 内部的 SmoothScroll 滚动在
+                // 独立窗口里不生效（被内部 catch 吞掉），外层普通 ScrollViewer 交由 ViewWindow 限高、滚动可靠。
+                // 同时用 ViewWindow（而非 new Window()）避免 iNKORE backdrop 递归导致 StackOverflow。
+                ScrollViewer scr = new ScrollViewer
                 {
-                    Owner = this.GetWindow(),
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Content = scr,
-                    Width = 600,
-                    Height = 800,
-                    Title = "详细参数 - FFmpeg工具箱"
+                    Content = panel,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 };
+                Window win = new ViewWindow(scr, "详细参数 - FFmpeg工具箱", this, 600, 800);
                 win.Show();
             });
 
@@ -280,6 +277,19 @@ namespace SimpleFFmpegGUI.WPF
                 }));
         }
 
+        /// <summary>
+        /// 点击详情浮层外的遮罩：取消选中任务，浮层随之收起（不依赖独立 Popup Hwnd，失激活不崩溃）
+        /// </summary>
+        private void DetailOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            taskPanel.ViewModel.Tasks.SelectedTask = null;
+        }
+
+        private void DetailOverlay_Close(object sender, RoutedEventArgs e)
+        {
+            taskPanel.ViewModel.Tasks.SelectedTask = null;
+        }
+
         protected override void OnStateChanged(EventArgs e)
         {
             base.OnStateChanged(e);
@@ -289,7 +299,7 @@ namespace SimpleFFmpegGUI.WPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            taskPanel = new TaskList { ShowAllTasks = false };
+            taskPanel = new TaskList { ShowAllTasks = false, ShowDetailPanel = false };
             statusPanel = new StatusPanel();
             taskHost.Content = taskPanel;
             statusHost.Content = statusPanel;

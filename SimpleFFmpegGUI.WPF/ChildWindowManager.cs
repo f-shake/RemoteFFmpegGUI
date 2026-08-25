@@ -34,9 +34,10 @@ namespace SimpleFFmpegGUI.WPF
 
             if (modelessWindows.TryGetValue(viewType, out Window existingWindow))
             {
-                initialize?.Invoke((UserControl)((ViewWindow)existingWindow).Content);
+                var existing = (ViewWindow)existingWindow;
+                initialize?.Invoke(existing.View);
                 existingWindow.Activate();
-                return (UserControl)((ViewWindow)existingWindow).Content;
+                return existing.View;
             }
 
             var view = serviceProvider.GetRequiredService(viewType) as UserControl;

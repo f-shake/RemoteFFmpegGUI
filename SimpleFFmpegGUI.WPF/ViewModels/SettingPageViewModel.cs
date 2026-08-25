@@ -9,8 +9,10 @@ using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
+using CommonDialog = iNKORE.Extension.CommonDialog.CommonDialog;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -53,6 +55,74 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         private void AddRemoteHost()
         {
             ObservableRemoteHosts.Add(new RemoteHost());
+        }
+
+        /// <summary>
+        /// 测试连接专用的 HttpClient：测试连接需要较短的超时，避免地址填错时长时间卡住
+        /// </summary>
+        private static readonly HttpClient testHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
+        [RelayCommand]
+        private async Task TestRemoteHostAsync(RemoteHost host)
+        {
+            SendMessage(new WindowEnableMessage(false));
+            try
+            {
+                string baseUrl = (host.Address ?? "").TrimEnd('/');
+                if (string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    await CommonDialog.ShowOkDialogAsync("测试连接", "请先填写主机地址");
+                    return;
+                }
+
+                // 1. 远程是否需要鉴权（Token/Need 与 Token/Check 都豁免全局鉴权，可直接访问）
+                bool need = await GetBoolAsync(baseUrl + "/Token/Need");
+                // 2. 若需要鉴权，再用当前填写的密码校验是否匹配
+                if (need)
+                {
+                    string token = (host.Token ?? "").Trim();
+                    // 兼容 v1 已保存带 "Bearer " 前缀的 Token
+                    if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        token = token["Bearer ".Length..];
+                    }
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        await CommonDialog.ShowOkDialogAsync("测试连接", "该远程主机需要连接密码，请填写后再测试");
+                        return;
+                    }
+                    bool ok = await GetBoolAsync(baseUrl + "/Token/Check/" + Uri.EscapeDataString(token));
+                    if (!ok)
+                    {
+                        await CommonDialog.ShowErrorDialogAsync("连接密码不正确");
+                        return;
+                    }
+                }
+
+                await CommonDialog.ShowOkDialogAsync("测试连接", "连接成功");
+            }
+            catch (TaskCanceledException)
+            {
+                await CommonDialog.ShowErrorDialogAsync("连接超时");
+            }
+            catch (HttpRequestException ex)
+            {
+                await CommonDialog.ShowErrorDialogAsync(ex, "连接失败");
+            }
+            catch (Exception ex)
+            {
+                await CommonDialog.ShowErrorDialogAsync(ex, "测试连接失败");
+            }
+            finally
+            {
+                SendMessage(new WindowEnableMessage(true));
+            }
+        }
+
+        private static async Task<bool> GetBoolAsync(string url)
+        {
+            string text = await testHttpClient.GetStringAsync(url);
+            return bool.TryParse(text, out bool result) && result;
         }
 
         [RelayCommand]

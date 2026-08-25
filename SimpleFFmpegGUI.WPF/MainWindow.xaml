@@ -24,11 +24,13 @@
     </Window.TaskbarItemInfo>
     <Grid x:Name="grdMain">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="480" MinWidth="320" />
+            <ColumnDefinition Width="*" MinWidth="300" />
             <ColumnDefinition Width="4" />
-            <ColumnDefinition Width="*" MinWidth="420" />
+            <ColumnDefinition Width="*" MinWidth="300" />
         </Grid.ColumnDefinitions>
-        <Grid x:Name="grdLeft">
+        <Grid
+            x:Name="grdLeft"
+            Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -79,7 +81,56 @@
             </ui:CommandBar>
         </Grid>
         <Border Grid.Column="1" Background="#33000000" />
-        <ContentControl x:Name="statusHost" Grid.Column="2" Margin="12" />
+        <ContentControl
+            x:Name="statusHost"
+            Grid.Column="2"
+            Margin="12" />
+        <Grid
+            x:Name="detailOverlay"
+            Grid.ColumnSpan="99"
+            Visibility="{Binding Content.DataContext.Tasks.SelectedTask, ElementName=taskHost, Converter={StaticResource NotNullConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="4" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!-- 半透明遮罩：点击主窗口其它位置即收起详情 -->
+            <Border
+                Grid.ColumnSpan="99"
+                Background="#30000000"
+                MouseLeftButtonDown="DetailOverlay_MouseLeftButtonDown" />
+            <!-- 任务详情浮层卡片（浮在任务清单右侧、正在执行任务上方）-->
+            <Border
+                Grid.Column="2"
+                Width="420"
+                MaxHeight="700"
+                Margin="12"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Padding="4"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <panels:TaskDetailPanel DataContext="{Binding Content.DataContext, ElementName=taskHost}" />
+                    <ui:AppBarButton
+                        Grid.Column="1"
+                        Margin="-4,0,-8,0"
+                        Click="DetailOverlay_Close"
+                        Label="关闭"
+                        LabelPosition="Collapsed">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Cancel}" />
+                        </ui:AppBarButton.Icon>
+                    </ui:AppBarButton>
+                </Grid>
+            </Border>
+        </Grid>
         <ixt:ProgressRingOverlay
             x:Name="ring"
             Grid.ColumnSpan="99"

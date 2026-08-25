@@ -30,6 +30,13 @@ namespace SimpleFFmpegGUI.WPF.Panels
         public static readonly DependencyProperty ShowAllTasksProperty = DependencyProperty.Register(
             nameof(ShowAllTasks), typeof(bool), typeof(TaskList));
 
+        /// <summary>
+        /// 是否在任务列表下方显示详情面板。主界面把详情拆成独立列，故设为 false，
+        /// “查看所有任务”窗口保持 true（详情仍在列表下方）。
+        /// </summary>
+        public static readonly DependencyProperty ShowDetailPanelProperty = DependencyProperty.Register(
+            nameof(ShowDetailPanel), typeof(bool), typeof(TaskList), new PropertyMetadata(true, OnShowDetailPanelChanged));
+
         public TaskList()
         {
             InitializeComponent();
@@ -39,6 +46,19 @@ namespace SimpleFFmpegGUI.WPF.Panels
         {
             get => (bool)GetValue(ShowAllTasksProperty);
             set => SetValue(ShowAllTasksProperty, value);
+        }
+
+        public bool ShowDetailPanel
+        {
+            get => (bool)GetValue(ShowDetailPanelProperty);
+            set => SetValue(ShowDetailPanelProperty, value);
+        }
+
+        private static void OnShowDetailPanelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var panel = (TaskList)d;
+            // 隐藏详情时把详情行高度压成 0，让列表占满整列，避免底部留白
+            panel.rDetailRow.Height = (bool)e.NewValue ? new GridLength(2, GridUnitType.Star) : new GridLength(0);
         }
 
         public TaskListViewModel ViewModel { get; }

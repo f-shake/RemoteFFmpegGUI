@@ -143,14 +143,23 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             CanSetConcat = type is TaskType.Concat;
             if (argument != null)
             {
-                Video = argument.Video.Adapt<VideoArgumentsViewModel>();
-                Video.Code = argument.Video.Codec;
-                Video?.Update();
-                VideoOutputStrategy = argument.Video.Strategy;
-                Audio = argument.Audio.Adapt<AudioArgumentsViewModel>();
-                Audio.Code = argument.Audio.Codec;
-                Audio?.Update();
-                AudioOutputStrategy = argument.Audio.Strategy;
+                // 从数据库反序列化时 Video/Audio 可能是 null（而非构造器默认值），需判空防止 NRE
+                VideoOutputStrategy = argument.Video?.Strategy ?? StreamStrategy.Disable;
+                if (argument.Video != null)
+                {
+                    Video = argument.Video.Adapt<VideoArgumentsViewModel>();
+                    Video.Code = argument.Video.Codec;
+                    Video.Update();
+                }
+
+                AudioOutputStrategy = argument.Audio?.Strategy ?? StreamStrategy.Disable;
+                if (argument.Audio != null)
+                {
+                    Audio = argument.Audio.Adapt<AudioArgumentsViewModel>();
+                    Audio.Code = argument.Audio.Codec;
+                    Audio.Update();
+                }
+
                 Format = new FormatArgumentViewModel() { Format = argument.Format };
                 Format.Update();
                 Mux = argument.Mux ?? new MuxParameters();

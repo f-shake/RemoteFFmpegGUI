@@ -1,3 +1,4 @@
+using iNKORE.Extension;
 using iNKORE.UI.WPF.Modern.Controls.Helpers;
 using SimpleFFmpegGUI.WPF.Views;
 using System;
@@ -9,10 +10,21 @@ namespace SimpleFFmpegGUI.WPF
     public sealed class ViewWindow : Window
     {
         private const double OwnerMargin = 32;
-        private readonly UserControl view;
+        private readonly FrameworkElement view;
         private readonly ICloseableView closeableView;
 
-        public ViewWindow(UserControl view, string title, Window owner, double width, double height)
+        /// <summary>
+        /// 本窗口自己的忙碌加载环，避免“在子窗口操作却看到主窗口转圈”。
+        /// </summary>
+        public ProgressRingOverlay Ring { get; }
+
+        /// <summary>
+        /// 原始内容视图。Content 现在是一个 Grid（用于叠放加载环），
+        /// 供 ChildWindowManager 等复用窗口时取回真正的视图。
+        /// </summary>
+        public UserControl View => view as UserControl;
+
+        public ViewWindow(FrameworkElement view, string title, Window owner, double width, double height)
         {
             this.view = view;
             Owner = owner;
@@ -23,7 +35,15 @@ namespace SimpleFFmpegGUI.WPF
             Width = width;
             Height = height;
             LimitInitialSize(this, owner, 640, 400);
-            Content = view;
+
+            // 用 Grid 把内容视图与加载环叠放：内容在底层，加载环覆盖整个窗口
+            var container = new Grid();
+            container.Children.Add(view);
+            Ring = new ProgressRingOverlay { Margin = new Thickness(-8) };
+            container.Children.Add(Ring);
+            Content = container;
+
+            WindowBusyOverlay.Register(this, Ring);
 
             closeableView = view as ICloseableView;
             if (closeableView != null)
@@ -38,6 +58,7 @@ namespace SimpleFFmpegGUI.WPF
                     closeableView.RequestToClose -= CloseableView_RequestToClose;
                 }
                 (view as IDisposable)?.Dispose();
+                WindowBusyOverlay.Unregister(this);
             };
 
             WindowHelper.SetUseModernWindowStyle(this, true);

@@ -1,7 +1,5 @@
 using SimpleFFmpegGUI.WPF.FzLib.Program.Runtime;
-using log4net;
-using log4net.Appender;
-using log4net.Layout;
+using Serilog;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +11,6 @@ using SimpleFFmpegGUI.WPF.ViewModels;
 using SimpleFFmpegGUI.WPF.Views;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -27,8 +23,6 @@ using FFMpegCore;
 using Microsoft.Extensions.Hosting;
 using SimpleFFmpegGUI.Services;
 
-[assembly: log4net.Config.XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
-
 namespace SimpleFFmpegGUI.WPF
 {
     /// <summary>
@@ -37,7 +31,7 @@ namespace SimpleFFmpegGUI.WPF
     public partial class App : Application
     {
         public static DateTime AppStartTime { get; } = DateTime.Now;
-        public static ILog AppLog { get; private set; }
+        public static WpfLogger AppLog { get; private set; }
         public static ServiceProvider ServiceProvider { get; private set; }
 
         protected override void OnStartup(StartupEventArgs e)
@@ -45,8 +39,8 @@ namespace SimpleFFmpegGUI.WPF
             base.OnStartup(e);
             InitializeLogs();
 #if !DEBUG
-
-                WPFUnhandledExceptionCatcher.RegistAll().UnhandledExceptionCatched += UnhandledException_UnhandledExceptionCatched;
+            // 仅 Release 注册未处理异常捕获；Debug 下让异常直接抛给 VS 调试器，便于看堆栈
+            WPFUnhandledExceptionCatcher.RegistAll().UnhandledExceptionCatched += UnhandledException_UnhandledExceptionCatched;
 #endif
 
             try
@@ -185,8 +179,12 @@ namespace SimpleFFmpegGUI.WPF
 
         private void InitializeLogs()
         {
-            //本地日志
-            AppLog = log4net.LogManager.GetLogger(GetType());
+            // 用 Serilog 替换 log4net：按天滚动文件日志（写入 logs/ 目录），无需外部 log4net.config
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.File("logs/SimpleFFmpegGUI.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 30)
+                .CreateLogger();
+            AppLog = new WpfLogger(Log.Logger);
             AppLog.Info("程序启动");
         }
 
@@ -209,15 +207,17 @@ namespace SimpleFFmpegGUI.WPF
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine(e.Exception.ToString());
                 AppLog.Error(e.Exception);
-                Dispatcher.Invoke(() =>
+                // 用 BeginInvoke 异步编组，避免在 UI 线程的异常回调里同步 Invoke 造成死锁
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var result = MessageBox.Show("程序发生异常，可能出现数据丢失等问题。是否关闭？" + Environment.NewLine + Environment.NewLine + e.Exception.ToString(), SimpleFFmpegGUI.WPF.FzLib.Program.App.ProgramName + " - 未捕获的异常", MessageBoxButton.YesNo, MessageBoxImage.Error);
                     if (result == MessageBoxResult.Yes)
                     {
                         Shutdown(-1);
                     }
-                });
+                }));
             }
             catch (Exception ex)
             {

@@ -142,6 +142,18 @@
                     <DataGridTextColumn
                         Binding="{Binding Token, UpdateSourceTrigger=PropertyChanged}"
                         Header="连接密码" />
+                    <DataGridTemplateColumn Header="操作" Width="72">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Content="测试"
+                                    Command="{Binding DataContext.TestRemoteHostCommand, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                    CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </GroupBox>
