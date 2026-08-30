@@ -4,6 +4,8 @@ using iNKORE.Extension.CommonDialog;
 using SimpleFFmpegGUI.WPF.Messages;
 using SimpleFFmpegGUI.WPF.Views;
 using System;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using SimpleFFmpegGUI.Services;
@@ -19,11 +21,37 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             this.queue = queue;
             this.taskManager = taskManager;
-            queue.TaskManagersChanged += (s, e) => this.Notify(nameof(StartMainQueueButtonVisibility), nameof(StopMainQueueButtonVisibility));
+            queue.TaskManagersChanged += (s, e) =>
+            {
+                OnTaskManagersChanged();
+                this.Notify(nameof(StartMainQueueButtonVisibility), nameof(StopMainQueueButtonVisibility), nameof(IsRunning), nameof(IsAllPaused));
+            };
         }
 
         public Visibility StartMainQueueButtonVisibility => queue.MainQueueTask == null ? Visibility.Visible : Visibility.Collapsed;
         public Visibility StopMainQueueButtonVisibility => queue.MainQueueTask == null ? Visibility.Collapsed : Visibility.Visible;
+        public bool IsRunning => queue.Tasks.Any();
+        public bool IsAllPaused => queue.Managers.Count > 0 && queue.Managers.All(m => m.Paused);
+
+        private void OnTaskManagersChanged()
+        {
+            foreach (var manager in queue.Managers)
+            {
+                manager.PropertyChanged -= Manager_PropertyChanged;
+            }
+            foreach (var manager in queue.Managers)
+            {
+                manager.PropertyChanged += Manager_PropertyChanged;
+            }
+        }
+
+        private void Manager_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FFmpegTaskService.Paused))
+            {
+                this.Notify(nameof(IsAllPaused));
+            }
+        }
         [RelayCommand]
         private async Task StartQueueAsync()
         {

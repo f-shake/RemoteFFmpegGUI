@@ -8,6 +8,7 @@
     <c:StringReplaceConverter x:Key="StringReplaceConverter" />
     <c:EqualConverter x:Key="EqualConverter" />
     <c:InverseBoolConverter x:Key="InverseBoolConverter" />
+    <c:MultiAndBooleanToVisibilityConverter x:Key="MultiAndBooleanToVisibilityConverter" />
     <c:NotNullConverter x:Key="NotNullConverter" />
     <c:DescriptionConverter x:Key="DescriptionConverter" />
     <c:TimeSpanConverter x:Key="TimeSpanConverter" />

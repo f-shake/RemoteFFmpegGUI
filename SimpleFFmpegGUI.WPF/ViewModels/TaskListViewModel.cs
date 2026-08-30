@@ -149,6 +149,32 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             OpenOutputFileOrFolder(task, false);
         }
 
+        [RelayCommand]
+        private void OpenSource()
+        {
+            var task = Tasks.SelectedTask;
+            Debug.Assert(task != null);
+            OpenInputFileOrFolder(task, false);
+        }
+
+        [RelayCommand]
+        private void OpenSourceDir()
+        {
+            var task = Tasks.SelectedTask;
+            Debug.Assert(task != null);
+            OpenInputFileOrFolder(task, true);
+        }
+
+        private void OpenInputFileOrFolder(TaskInfoViewModel task, bool folder)
+        {
+            if (task.Inputs == null || task.Inputs.Count == 0)
+            {
+                QueueErrorMessage("没有输入文件");
+                return;
+            }
+            OpenFileOrFolder(task.Inputs[0].FilePath, folder);
+        }
+
         private void OpenOutputFileOrFolder(TaskInfoViewModel task, bool folder)
         {
             if (string.IsNullOrWhiteSpace(task.RealOutput))

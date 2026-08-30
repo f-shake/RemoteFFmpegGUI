@@ -14,6 +14,15 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style
+            x:Key="BorderlessButtonStyle"
+            BasedOn="{StaticResource DefaultButtonStyle}"
+            TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -138,49 +147,125 @@
         </ScrollViewer>
 
 
-        <ui:AppBarButton
+        <ikw:SimpleStackPanel
             Grid.Column="2"
-            Label="更多"
-            LabelPosition="Collapsed">
-            <ui:AppBarButton.Icon>
-                <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.More}" />
-            </ui:AppBarButton.Icon>
-            <ui:AppBarButton.Flyout>
-                <ui:MenuFlyout>
-                    <MenuItem
-                        Command="{Binding StartStandaloneCommand}"
-                        Header="独立执行"
-                        IsEnabled="{Binding CanStart}"
-                        Visibility="{Binding ShowAllTasks, Converter={StaticResource Bool2VisibilityConverter}, ConverterParameter=i}" />
-                    <MenuItem
-                        Command="{Binding CancelCommand}"
-                        Header="取消"
-                        IsEnabled="{Binding CanCancel}"
-                        ToolTip="取消执行任务，正在执行的任务会被停止"
-                        Visibility="{Binding ShowAllTasks, Converter={StaticResource Bool2VisibilityConverter}, ConverterParameter=i}" />
-                    <MenuItem
-                        Command="{Binding ResetCommand}"
-                        Header="重置"
-                        IsEnabled="{Binding CanReset}"
-                        ToolTip="将任务设置为排队状态"
-                        Visibility="{Binding ShowAllTasks, Converter={StaticResource Bool2VisibilityConverter}, ConverterParameter=i}" />
-                    <MenuItem
-                        Command="{Binding CloneCommand}"
-                        Header="建立副本" />
-                    <MenuItem
-                        Command="{Binding ShowLogsCommand}"
-                        Header="查看日志" />
-                    <MenuItem
-                        Command="{Binding OpenOutputFileCommand}"
-                        Header="打开目标文件"
-                        Visibility="{Binding Status, Converter={StaticResource EqualConverter}, ConverterParameter={x:Static model:TaskStatus.Done}}" />
-                    <MenuItem
-                        Command="{Binding OpenOutputDirCommand}"
-                        Header="打开目标文件目录"
-                        Visibility="{Binding Status, Converter={StaticResource EqualConverter}, ConverterParameter={x:Static model:TaskStatus.Done}}" />
-
-                </ui:MenuFlyout>
-            </ui:AppBarButton.Flyout>
-        </ui:AppBarButton>
+            Margin="0,4,8,8"
+            VerticalAlignment="Top"
+            Orientation="Vertical"
+            Spacing="8">
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding StartStandaloneCommand}"
+                ToolTip="单独执行该任务">
+                <Button.Visibility>
+                    <MultiBinding Converter="{StaticResource MultiAndBooleanToVisibilityConverter}">
+                        <Binding Path="CanStart" />
+                        <Binding Path="ShowAllTasks" Converter="{StaticResource InverseBoolConverter}" />
+                    </MultiBinding>
+                </Button.Visibility>
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Play}" VerticalAlignment="Center" />
+                    <TextBlock Text="独立执行" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding CancelCommand}"
+                ToolTip="取消执行任务，正在执行的任务会被停止">
+                <Button.Visibility>
+                    <MultiBinding Converter="{StaticResource MultiAndBooleanToVisibilityConverter}">
+                        <Binding Path="CanCancel" />
+                        <Binding Path="ShowAllTasks" Converter="{StaticResource InverseBoolConverter}" />
+                    </MultiBinding>
+                </Button.Visibility>
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Cancel}" VerticalAlignment="Center" />
+                    <TextBlock Text="取消" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding ResetCommand}"
+                ToolTip="将任务设置为排队状态">
+                <Button.Visibility>
+                    <MultiBinding Converter="{StaticResource MultiAndBooleanToVisibilityConverter}">
+                        <Binding Path="CanReset" />
+                        <Binding Path="ShowAllTasks" Converter="{StaticResource InverseBoolConverter}" />
+                    </MultiBinding>
+                </Button.Visibility>
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Refresh}" VerticalAlignment="Center" />
+                    <TextBlock Text="重置" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding CloneCommand}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Copy}" VerticalAlignment="Center" />
+                    <TextBlock Text="建立副本" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding ShowLogsCommand}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" VerticalAlignment="Center" />
+                    <TextBlock Text="查看日志" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding OpenSourceCommand}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.OpenFile}" VerticalAlignment="Center" />
+                    <TextBlock Text="打开源文件" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding OpenSourceDirCommand}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Folder}" VerticalAlignment="Center" />
+                    <TextBlock Text="打开源目录" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding OpenOutputFileCommand}"
+                Visibility="{Binding Tasks.SelectedTask.Status, Converter={StaticResource EqualConverter}, ConverterParameter={x:Static model:TaskStatus.Done}}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.OpenFile}" VerticalAlignment="Center" />
+                    <TextBlock Text="打开目标文件" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+            <Button
+                Padding="8,6"
+                HorizontalContentAlignment="Left"
+                Style="{StaticResource BorderlessButtonStyle}"
+                Command="{Binding OpenOutputDirCommand}"
+                Visibility="{Binding Tasks.SelectedTask.Status, Converter={StaticResource EqualConverter}, ConverterParameter={x:Static model:TaskStatus.Done}}">
+                <ikw:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Folder}" VerticalAlignment="Center" />
+                    <TextBlock Text="打开目标文件目录" VerticalAlignment="Center" />
+                </ikw:SimpleStackPanel>
+            </Button>
+        </ikw:SimpleStackPanel>
     </Grid>
 </UserControl>

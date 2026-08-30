@@ -234,6 +234,13 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         public string Title => Type == TaskType.Custom ? AttributeHelper.GetAttributeValue<NameDescriptionAttribute, string>(Type, p => p.Name)
             : AttributeHelper.GetAttributeValue<NameDescriptionAttribute, string>(Type, p => p.Name) + "：" + InputText;
 
+        /// <summary>
+        /// 是否为独立执行的任务（非主队列任务）
+        /// </summary>
+        public bool IsStandalone =>
+            ProcessManager?.Task != null
+            && ProcessManager.Task != App.ServiceProvider.GetRequiredService<QueueService>().MainQueueTask;
+
         public SnapshotViewModel Snapshot { get; } = new SnapshotViewModel();
         public static TaskInfoViewModel FromTask(TaskEntity task)
         {

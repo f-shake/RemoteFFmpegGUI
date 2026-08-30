@@ -27,6 +27,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -58,7 +59,53 @@ namespace SimpleFFmpegGUI.WPF
             this.queue = queue;
             childWindows = new ChildWindowManager(this, App.ServiceProvider);
             WindowBusyOverlay.Register(this, ring);
-            Closed += (_, _) => WindowBusyOverlay.Unregister(this);
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            UpdateRunStatusBorder();
+            Closed += (_, _) =>
+            {
+                WindowBusyOverlay.Unregister(this);
+                ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
+            };
+        }
+
+        private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsRunning)
+                || e.PropertyName == nameof(MainWindowViewModel.IsAllPaused))
+            {
+                Dispatcher.BeginInvoke(new Action(UpdateRunStatusBorder));
+            }
+        }
+
+        private void UpdateRunStatusBorder()
+        {
+            var border = RunStatusBorder;
+            if (border == null)
+            {
+                return;
+            }
+            if (!ViewModel.IsRunning)
+            {
+                border.BeginAnimation(UIElement.OpacityProperty, null);
+                border.Opacity = 0;
+            }
+            else if (ViewModel.IsAllPaused)
+            {
+                border.BeginAnimation(UIElement.OpacityProperty, null);
+                border.Opacity = 1;
+            }
+            else
+            {
+                var animation = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 1,
+                    AutoReverse = true,
+                    Duration = TimeSpan.FromSeconds(2.5),
+                    RepeatBehavior = RepeatBehavior.Forever,
+                };
+                border.BeginAnimation(UIElement.OpacityProperty, animation);
+            }
         }
 
         public MainWindowViewModel ViewModel { get; set; }
@@ -281,11 +328,6 @@ namespace SimpleFFmpegGUI.WPF
         /// 点击详情浮层外的遮罩：取消选中任务，浮层随之收起（不依赖独立 Popup Hwnd，失激活不崩溃）
         /// </summary>
         private void DetailOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            taskPanel.ViewModel.Tasks.SelectedTask = null;
-        }
-
-        private void DetailOverlay_Close(object sender, RoutedEventArgs e)
         {
             taskPanel.ViewModel.Tasks.SelectedTask = null;
         }
