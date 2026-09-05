@@ -313,7 +313,7 @@ namespace SimpleFFmpegGUI.WPF
             });
         }
 
-        private void SendSnapshotEnabledMessage()
+        internal void SendSnapshotEnabledMessage()
         {
             WeakReferenceMessenger.Default.Send(new SnapshotEnabledMessage(
                 new SnapshotViewModel

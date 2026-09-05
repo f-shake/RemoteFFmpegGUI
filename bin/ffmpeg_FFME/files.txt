@@ -1,1 +1,2 @@
-在此处放置适用于FFME的、用于视频裁剪的ffmpeg，测试版本：6.1.1
+在此处放置适用于视频转码的ffmpeg，版本无限制，下载地址：https://www.gyan.dev/ffmpeg/builds/
+请下载ffmpeg-release-full-shared版本，将bin中的所有文件复制到本目录下

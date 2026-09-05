@@ -24,9 +24,13 @@
     </Window.TaskbarItemInfo>
     <Grid x:Name="grdMain">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition
+                Width="*"
+                MinWidth="300" />
             <ColumnDefinition Width="2" />
-            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition
+                Width="2*"
+                MinWidth="300" />
         </Grid.ColumnDefinitions>
         <Grid
             x:Name="grdLeft"
@@ -35,47 +39,83 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ContentControl x:Name="taskHost" Margin="8,8,0,0" />
+            <ContentControl
+                x:Name="taskHost"
+                Margin="8,8,0,0" />
             <ui:CommandBar Grid.Row="1">
-                <ui:AppBarButton Command="{Binding ShowMediaInfoCommand}" Label="查询媒体信息">
+                <ui:AppBarButton
+                    Command="{Binding ShowMediaInfoCommand}"
+                    Label="查询媒体信息">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Zoom}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
                 <ui:AppBarSeparator />
-                <ui:AppBarButton Command="{Binding StartQueueCommand}" Label="开始队列" Visibility="{Binding StartMainQueueButtonVisibility}">
+                <ui:AppBarButton
+                    Command="{Binding StartQueueCommand}"
+                    Label="开始队列"
+                    Visibility="{Binding StartMainQueueButtonVisibility}">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Play}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton Command="{Binding StopQueueCommand}" Label="终止队列" Visibility="{Binding StopMainQueueButtonVisibility}">
+                <ui:AppBarButton
+                    Command="{Binding StopQueueCommand}"
+                    Label="终止队列"
+                    Visibility="{Binding StopMainQueueButtonVisibility}">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stop}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
-                <ui:AppBarButton Command="{Binding ShowAddTaskCommand}" Label="创建任务">
+                <ui:AppBarButton
+                    Command="{Binding ShowAddTaskCommand}"
+                    Label="创建任务">
                     <ui:AppBarButton.Icon>
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Add}" />
                     </ui:AppBarButton.Icon>
                 </ui:AppBarButton>
                 <ui:CommandBar.SecondaryCommands>
-                    <ui:AppBarButton Command="{Binding ShowSettingsCommand}" Label="设置">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowSettingsCommand}"
+                        Label="设置">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton Command="{Binding ShowTasksCommand}" Label="查看所有任务">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowTasksCommand}"
+                        Label="查看所有任务">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton Command="{Binding ShowPresetsCommand}" Label="查看预设">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowPresetsCommand}"
+                        Label="查看预设">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton Command="{Binding ShowLogsCommand}" Label="查看日志">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowLogsCommand}"
+                        Label="查看日志">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton Command="{Binding ShowTestsCommand}" Label="编码性能测试">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowTestsCommand}"
+                        Label="编码性能测试">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
-                    <ui:AppBarButton Command="{Binding ShowFFmpegOutputsCommand}" Label="FFmpeg输出命令行">
-                        <ui:AppBarButton.Icon><ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" /></ui:AppBarButton.Icon>
+                    <ui:AppBarButton
+                        Command="{Binding ShowFFmpegOutputsCommand}"
+                        Label="FFmpeg输出命令行">
+                        <ui:AppBarButton.Icon>
+                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" />
+                        </ui:AppBarButton.Icon>
                     </ui:AppBarButton>
                 </ui:CommandBar.SecondaryCommands>
             </ui:CommandBar>
@@ -100,22 +140,22 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="4" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
-            <!-- 半透明遮罩（仅遮罩中间分隔线与右侧状态区，保留左侧任务清单可点击）：点击遮罩即收起详情 -->
+            <!--  半透明遮罩（仅遮罩中间分隔线与右侧状态区，保留左侧任务清单可点击）：点击遮罩即收起详情  -->
             <Border
                 Grid.Column="1"
                 Grid.ColumnSpan="2"
                 Background="#30000000"
                 MouseLeftButtonDown="DetailOverlay_MouseLeftButtonDown" />
-            <!-- 任务详情浮层卡片（浮在任务清单右侧、正在执行任务上方）-->
+            <!--  任务详情浮层卡片（浮在任务清单右侧、正在执行任务上方）  -->
             <Border
                 Grid.Column="2"
                 MaxHeight="700"
                 Margin="12"
+                Padding="4"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
-                Padding="4"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
@@ -127,22 +167,26 @@
             x:Name="ring"
             Grid.ColumnSpan="99"
             Margin="-8" />
-        <!-- 有任意任务正在执行时：主窗口显示闪烁的边框（5 秒周期）；全部暂停则橙色稳定（不闪） -->
+        <!--  有任意任务正在执行时：主窗口显示闪烁的边框（5 秒周期）；全部暂停则橙色稳定（不闪）  -->
         <Border
             x:Name="RunStatusBorder"
             Grid.ColumnSpan="99"
             BorderThickness="2"
-            Opacity="0"
-            IsHitTestVisible="False">
+            IsHitTestVisible="False"
+            Opacity="0">
             <Border.Style>
                 <Style TargetType="Border">
                     <Setter Property="BorderBrush" Value="LimeGreen" />
                     <Setter Property="Visibility" Value="Collapsed" />
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                        <DataTrigger
+                            Binding="{Binding IsRunning}"
+                            Value="True">
                             <Setter Property="Visibility" Value="Visible" />
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding IsAllPaused}" Value="True">
+                        <DataTrigger
+                            Binding="{Binding IsAllPaused}"
+                            Value="True">
                             <Setter Property="BorderBrush" Value="Orange" />
                         </DataTrigger>
                     </Style.Triggers>

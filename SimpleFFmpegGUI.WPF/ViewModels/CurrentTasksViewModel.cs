@@ -36,7 +36,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             RefreshAsync();
             WeakReferenceMessenger.Default.Register<SnapshotEnabledMessage>(this, async (_, m) =>
             {
-                foreach (var task in Tasks)
+                foreach (var task in Tasks.ToList())
                 {
                     task.Snapshot.DisplayFrame = m.Options.DisplayFrame;
                     task.Snapshot.CanUpdate = m.Options.CanUpdate;
@@ -133,6 +133,11 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     Statuses.Add(unstartStatus);
                 }
                 manager.StatusChanged += Manager_StatusChanged;
+                // 启动后新加入的处理任务也需开启缩略图开关（DisplayFrame）：
+                // 否则 UpdateSnapshotAsync 第一步即 return，右侧不显示缩略图。
+                // 复用 MainWindow 的广播，以正确处理 CanUpdate（窗口可见性）。
+                // 此处已由方法顶部 marshal 到 UI 线程，直接用单例 MainWindow 发广播即可（避免重复 Dispatcher.Invoke）。
+                App.ServiceProvider.GetService<MainWindow>()?.SendSnapshotEnabledMessage();
             }
             else
             {

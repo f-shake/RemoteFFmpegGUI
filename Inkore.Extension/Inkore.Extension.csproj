@@ -7,9 +7,6 @@
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <RootNamespace>iNKORE.Extension</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\Release\AnyCPU\</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Remove="obj\**" />
     <EmbeddedResource Remove="obj\**" />

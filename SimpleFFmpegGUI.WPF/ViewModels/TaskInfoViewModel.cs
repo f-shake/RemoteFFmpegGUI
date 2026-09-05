@@ -266,14 +266,22 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public async Task UpdateSnapshotAsync()
         {
-            if (Snapshot.DisplayFrame == false
-                || Type != TaskType.Transcode //不是编码类型的任务
+            if (Snapshot.DisplayFrame == false)
+            {
+                // 开关未启用（如窗口不可见等）：不处理
+                return;
+            }
+            if (Type != TaskType.Transcode //不是编码类型的任务
                 || ProcessStatus == null //没有状态
-                || !ProcessStatus.HasDetail //状态无详情
                 || !HasInputs) //没有输入文件
             {
                 Snapshot.DisplayFrame = false;
-                //取消执行并不显示缩略图
+                // 非转码任务/无输入：关闭缩略图区域
+                return;
+            }
+            if (!ProcessStatus.HasDetail) //状态无详情（刚开始/尚未解析到 time）
+            {
+                // 仅在无详情阶段保留开关，等下次计时器满足条件再取缩略图
                 return;
             }
 

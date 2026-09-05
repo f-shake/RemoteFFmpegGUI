@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SimpleFFmpegGUI.WPF;
 using SimpleFFmpegGUI.WPF.Messages;
 using System;
 using System.Collections;
@@ -18,17 +19,50 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 {
     public partial class ViewModelBase : ObservableObject
     {
+        /// <summary>
+        /// 绑定的所属元素（由 SetDataContext 注入），用于把通知显示到正确的窗口
+        /// </summary>
+        internal FrameworkElement Owner { get; set; }
+
         protected TMessage SendMessage<TMessage>(TMessage message) where TMessage : class
         {
             return WeakReferenceMessenger.Default.Send(message);
         }
         protected void QueueSuccessMessage(string message)
         {
-            SendMessage(new QueueMessagesMessage('S', message));
+            ShowNotification('S', message, null);
         }
         protected void QueueErrorMessage(string message, Exception ex = null)
         {
-            SendMessage(new QueueMessagesMessage('E', message, ex));
+            ShowNotification('E', message, ex);
+        }
+        private void ShowNotification(char type, string message, Exception ex)
+        {
+            if (Owner is not null)
+            {
+                try
+                {
+                    var builder = Owner.CreateMessage();
+                    if (type == 'S')
+                    {
+                        builder.QueueSuccess(message);
+                    }
+                    else if (ex is null)
+                    {
+                        builder.QueueError(message);
+                    }
+                    else
+                    {
+                        builder.QueueError(message, ex);
+                    }
+                    return;
+                }
+                catch
+                {
+                    // 元素已脱离窗口树（如视图被关闭/导航走）时 CreateMessage 可能抛异常，回退到全局广播
+                }
+            }
+            SendMessage(new QueueMessagesMessage(type, message, ex));
         }
     }
 
@@ -38,6 +72,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         {
             TVM viewModel = App.ServiceProvider.GetRequiredService<TVM>();
             element.DataContext = viewModel;
+            viewModel.Owner = element;
             return viewModel;
         }
 

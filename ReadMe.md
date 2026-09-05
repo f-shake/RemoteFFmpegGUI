@@ -13,19 +13,21 @@
 | WebTest                | WebAPI 集成测试（xUnit + WebApplicationFactory）       |
 | Inkore.Extension       | WPF 用 iNKORE.UI.WPF.Modern 扩展与通用对话框           |
 
-```
-Web (Vue3) ──HTTP──> WebAPI ──执行──> ffmpeg
-WPF ──（进程内直连 Core，自带队列与数据库）
-WPF ──HTTP──> 远程 WebAPI（提交任务）
-```
+![](imgs/img0.png)
 
 ## 截图
 
 ### 网页版
 
-![](imgs/code.png)
-![](imgs/info.png)
-![](imgs/tasks.png)
+![](imgs/img1.png)
+
+![](imgs/img2.png)
+
+### 桌面版
+
+![](imgs/img3.png)
+
+![](imgs/img4.png)
 
 ## 部署 / 运行
 
