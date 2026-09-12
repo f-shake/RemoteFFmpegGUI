@@ -6,6 +6,7 @@
     <PackageVersion Include="FluentAssertions" Version="8.8.0" />
     <PackageVersion Include="FzLib" Version="3.4.0-rc.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageVersion Include="iNKORE.UI.WPF.Modern" Version="0.10.2.1" />

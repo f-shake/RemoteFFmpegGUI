@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
+    "@microsoft/signalr": "^10.0.11",
     "axios": "^1.17.0",
     "element-plus": "^2.14.2",
     "js-cookie": "^3.0.8",

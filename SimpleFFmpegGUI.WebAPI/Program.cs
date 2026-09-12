@@ -7,13 +7,16 @@ using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
 using SimpleFFmpegGUI;
+using SimpleFFmpegGUI.Caching;
 using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.WebAPI;
 using SimpleFFmpegGUI.WebAPI.Controllers;
+using SimpleFFmpegGUI.WebAPI.Realtime;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -141,6 +144,24 @@ void ConfigureServices(WebApplicationBuilder builder)
             options.JsonSerializerOptions.Converters.Add(new TimeSpanConverter());
         });
 
+    // 实时推送（SignalR）。Hub 挂在 /api/queue-hub，前端只走 WebSocket（skipNegotiation），
+    // 连不上时前端自行降级为 HTTP 轮询，因此不需要配置 SignalR 的传输层回退。
+    builder.Services.AddSignalR().AddJsonProtocol(options =>
+    {
+        // 必须与 MVC 的 JSON 选项（上面的 AddJsonOptions）保持一致：camelCase + TimeSpan 转秒数 +
+        // NaN/Infinity 转 null。否则前端拿到的 status.time 会变成 "00:01:23" 字符串，
+        // 状态栏里"用播放时间点配合快照"的数值比较会失效。
+        options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.PayloadSerializerOptions.Converters.Add(new DoubleConverter());
+        options.PayloadSerializerOptions.Converters.Add(new TimeSpanConverter());
+    });
+
+    // 队列状态的唯一出处（推送与 HTTP 兜底共用，内部维护推送序号），必须是单例
+    builder.Services.AddSingleton<QueueStateProvider>();
+    builder.Services.AddHostedService<RealtimeBroadcaster>();
+    // 快照缓存（全站最贵的请求：每次都要起一个 ffmpeg 进程截图）
+    builder.Services.AddSingleton<SnapshotCache>();
+
     // 只关闭"引用类型字符串字段被隐式判为 [Required]"（Nullable=disable 时 DTO 的
     // Size/AspectRatio/PixelFormat/Extra/Format 等合法 null 字段会被误拒为 400）。
     // 不改用 SuppressModelStateInvalidFilter，以保留值类型参数（seconds/priority）绑定失败的自动 400。
@@ -248,11 +269,67 @@ void ConfigureMiddleware(WebApplication app)
 
     app.UseStaticFiles();
 
+    // 实时通道（Hub）的鉴权：Hub 是 SignalR 自管的路由，MVC 的 AppActionFilter 管不到它，
+    // 只能在这里校验。规则与 AppActionFilter 完全一致（Token 为空则不校验，否则要求凭据匹配）。
+    // 必须放在 UseRouting 之前、且在升级连接之前就拒绝：否则连接建立后才断开，前端只能看到"连上又断"。
+    app.Use(async (context, next) =>
+    {
+        if (!context.Request.Path.StartsWithSegments("/api/queue-hub"))
+        {
+            await next();
+            return;
+        }
+
+        var token = app.Configuration["Token"];
+        if (!string.IsNullOrEmpty(token))
+        {
+            // 浏览器发 WebSocket 时无法自定义请求头，只能把凭据放在 Cookie 或 URL 里：
+            // 优先 Cookie（前端 api.ts 已把 token 存在名为 token 的 cookie 中，同源握手自动携带、不进访问日志），
+            // 其次 access_token 查询参数（跨域/dev 以及将来 WebView 场景的兜底），
+            // 最后 Authorization 头（非 WebSocket 传输，例如改用 LongPolling 的客户端只能靠它）
+            var provided = context.Request.Cookies["token"];
+            var source = "Cookie";
+            if (string.IsNullOrEmpty(provided))
+            {
+                provided = context.Request.Query["access_token"];
+                source = "Query";
+            }
+            if (string.IsNullOrEmpty(provided))
+            {
+                provided = context.Request.Headers.Authorization;
+                source = "Header";
+            }
+
+            provided = provided?.Trim();
+            // 先记下"到底有没有带凭据"，再裁剪 Bearer 前缀：否则客户端发一个字面量 "Bearer "（空凭据）
+            // 会被记成"没带"，排查时分不清"没登录"与"凭据写错"
+            var hasCredential = !string.IsNullOrEmpty(provided);
+            if (provided?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                provided = provided["Bearer ".Length..];
+            }
+
+            if (provided != token)
+            {
+                // 必须留日志（带来源）：否则握手静默 401，前端只表现为"实时连不上"，无从排查
+                Log.Warning("实时通道鉴权失败：IP={Ip} Path={Path} Source={Source} 是否带凭据={HasCredential}",
+                    context.Connection.RemoteIpAddress, context.Request.Path, source, hasCredential);
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return;
+            }
+        }
+
+        await next();
+    });
+
     app.UseRouting();
     app.UseCors("AllowAll");
     app.UseAuthorization();
 
     app.MapControllers();
+    // 实时推送 Hub。必须挂在 /api 下：MapFallback 只对 /api、/health 前缀（以及末段含点的路径）返回 404，
+    // 其它路径的 GET 会被回退成 200 + index.html —— 对 SignalR 客户端就是"拿到一份 HTML"的隐蔽失败
+    app.MapHub<QueueHub>("/api/queue-hub");
     app.MapHealthChecks("/health");
 
     // 根路径入口：有前端时返回（注入 <base> 的）index.html（SPA 入口）；无前端（裸 API/测试宿主）时返回横幅。

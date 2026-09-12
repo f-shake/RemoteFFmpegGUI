@@ -12,13 +12,15 @@ using FzLib.Web;
 using Microsoft.Extensions.Configuration;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Enums;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Helpers;
 using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 
 namespace SimpleFFmpegGUI.Services;
 
-public class TaskService(TaskRepository taskRepository, QueueService queue, FilePathHelper filePathHelper)
+public class TaskService(TaskRepository taskRepository, QueueService queue, FilePathHelper filePathHelper,
+    ITaskChangeNotifier notifier)
 {
     public async Task<ServiceResult<List<int>>> AddTasks(string type, TaskDto request)
     {
@@ -100,6 +102,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
             // throw new HttpStatusCodeException($"不支持的任务类型: {type}", System.Net.HttpStatusCode.BadRequest);
         }
 
+        // 批量新增（Code 类型可能是循环创建多个）只在这里通知一次，避免一次请求推 N 条
+        if (ids.Count > 0)
+        {
+            notifier.Notify(TaskChangeKind.Tasks);
+        }
 
         return ids;
     }
@@ -133,6 +140,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         }
 
         result.AffectedRows = await taskRepository.UpdateStatusAsync(processingIds, TaskStatus.Cancel);
+        if (result.AffectedRows > 0)
+        {
+            notifier.Notify(TaskChangeKind.Tasks);
+        }
+
         return result;
     }
 
@@ -159,6 +171,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         }
 
         result.AffectedRows = await taskRepository.SoftDeleteAsync(processingIds);
+        if (result.AffectedRows > 0)
+        {
+            notifier.Notify(TaskChangeKind.Tasks);
+        }
+
         return result;
     }
 
@@ -185,6 +202,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         }
 
         result.AffectedRows = await taskRepository.UpdateStatusAsync(processingIds, TaskStatus.Queue);
+        if (result.AffectedRows > 0)
+        {
+            notifier.Notify(TaskChangeKind.Tasks);
+        }
+
         return result;
     }
 

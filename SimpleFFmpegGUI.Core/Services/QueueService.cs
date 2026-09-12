@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Models.Entities;
 using Task = System.Threading.Tasks.Task;
 using Tasks = System.Threading.Tasks;
@@ -26,6 +27,7 @@ namespace SimpleFFmpegGUI.Services
         private readonly IDbContextFactory<FFmpegDbContext> dbFactory;
         private readonly DbLoggerService logger;
         private readonly IServiceScopeFactory scopeFactory;
+        private readonly ITaskChangeNotifier notifier;
         private volatile bool cancelQueue = false;
         private Timer queueTimer; // 定时器
         private int runningFlag = 0;
@@ -35,12 +37,14 @@ namespace SimpleFFmpegGUI.Services
 
         public QueueService(IDbContextFactory<FFmpegDbContext> dbFactory,
             DbLoggerService logger,
-            IServiceScopeFactory scopeFactory
+            IServiceScopeFactory scopeFactory,
+            ITaskChangeNotifier notifier
         )
         {
             this.dbFactory = dbFactory;
             this.logger = logger;
             this.scopeFactory = scopeFactory;
+            this.notifier = notifier;
             // Release 下 10 秒 tick：计划任务启动精度从约 1 分钟提升到约 10 秒，
             // 且保证 Release 构建下运行集成测试（计划任务 +5s、轮询超时 30s）不会超时
             queueTimer = new Timer(QueueTimerCallback, null,
@@ -112,6 +116,7 @@ namespace SimpleFFmpegGUI.Services
         public void CancelQueueSchedule()
         {
             scheduleTime = null;
+            notifier.Notify(TaskChangeKind.Schedule);
         }
 
         public DateTime? GetQueueScheduleTime()
@@ -140,7 +145,10 @@ namespace SimpleFFmpegGUI.Services
             try
             {
                 scheduleTime = null;
+                // 计划时间在队列开跑时清空（到点触发与手动开始都一样），通知前端同步清掉"已计划开始时间"
+                notifier.Notify(TaskChangeKind.Schedule);
                 logger.Info("开始队列");
+                notifier.Notify(TaskChangeKind.QueueStarted);
                 while (!cancelQueue)
                 {
                     TaskEntity task;
@@ -179,6 +187,7 @@ namespace SimpleFFmpegGUI.Services
                                     .SetProperty(t => t.Status, TaskStatus.Error)
                                     .SetProperty(t => t.Message, ex.Message)
                                     .SetProperty(t => t.FinishTime, DateTime.Now));
+                            notifier.Notify(TaskChangeKind.Tasks);
                         }
                         catch (Exception ex2)
                         {
@@ -195,6 +204,7 @@ namespace SimpleFFmpegGUI.Services
                 cancelQueue = false;
                 Interlocked.Exchange(ref runningFlag, 0);
                 logger.Info("队列完成");
+                notifier.Notify(TaskChangeKind.QueueFinished);
             }
 
             using var scope = scopeFactory.CreateScope();
@@ -242,6 +252,7 @@ namespace SimpleFFmpegGUI.Services
         public void ScheduleQueue(DateTime time)
         {
             scheduleTime = time;
+            notifier.Notify(TaskChangeKind.Schedule);
         }
 
         /// <summary>
@@ -329,6 +340,9 @@ namespace SimpleFFmpegGUI.Services
             }
 
             AddManager(task, ffmpegManager, main);
+            // 任务已被置为"进行中"（上面已落库）且管理器已就位，通知任务清单与状态已变化。
+            // 必须放在 AddManager 之后：此刻 MainQueueManager 才是非空，"正在处理中"的状态才拿得对
+            notifier.Notify(TaskChangeKind.Tasks);
             try
             {
                 try
@@ -374,6 +388,9 @@ namespace SimpleFFmpegGUI.Services
             {
                 // 无论结果如何都移除管理器，避免 DB 保存失败等异常路径导致管理器泄漏
                 RemoveManager(task, ffmpegManager, main);
+                // 任务已进入结束态（完成/取消/错误；异常路径下可能尚未落库）。放在 RemoveManager 之后，
+                // 保证推送出去的状态快照与"管理器已清空"一致，前端不会收到"已结束但仍在处理中"的状态
+                notifier.Notify(TaskChangeKind.Tasks);
             }
         }
 

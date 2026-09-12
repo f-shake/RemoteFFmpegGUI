@@ -156,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
 import { getTaskTypeDescription } from '@/models/TaskType'
@@ -172,18 +172,18 @@ const { isMobile } = useIsMobile()
 const list = ref<any[]>([])
 // el-table 实例（模板里的 ref="table"）：刷新后需要用它在代码里还原选中行
 const table = ref()
-// 队列状态来自 pinia（单一数据源）：本页不再自己轮询 Queue —— 那与顶栏的轮询是同一个请求，
-// 而且页面卸载后那个定时器还留着。本页只保留"列表刷新"这件自己独有的事。
+// 队列状态来自 pinia（单一数据源）：本页不自己轮询 Queue，也不轮询任务列表——
+// 状态由服务端推送（连不上时由 realtime 模块降级为轮询），任务清单由 tasksVersion 事件驱动刷新。
 // storeToRefs 取出的 ref 名字与原来一致、模板不用改；scheduleTime 是 state，v-model 仍可直接写
 const queue = useQueueStore()
-const { isProcessing, isPaused, hasPending, scheduleTime, hasSchedule } = storeToRefs(queue)
+const { isProcessing, isPaused, hasPending, scheduleTime, hasSchedule, tasksVersion } = storeToRefs(queue)
 const totalCount = ref(0)
 const selection = ref<any[]>([])
 const page = ref(1)
 const countPerPage = ref(20)
 const statusFilter = ref<number>(0)
-/** 本页轮询定时器的句柄（null 表示尚未创建）：离开本页时必须清掉，否则每次进出都会多一个 */
-let pollTimer: number | null = null
+/** 任务清单变化的去抖定时器句柄：一次操作会连着来几条事件，合并成一次列表请求 */
+let versionTimer: number | null = null
 /** 操作后"补一次列表刷新"的那些一次性定时器句柄：离开本页要一并清掉 */
 const pendingFills = new Set<number>()
 /** 已卸载标记：POST 的 .then 可能在卸载之后才执行，届时不能再登记新的补刷定时器 */
@@ -201,9 +201,30 @@ function scheduleFill(delay: number) {
   const id = window.setTimeout(() => {
     pendingFills.delete(id)
     fillData()
+    // 顺带核对一次队列状态：乐观更新只是预测，服务端最终没开始跑（例如队列里已没有待处理任务）
+    // 时，这条真实状态能把它纠正回来；正常开始的情况与推送一致，且序号更大，不会被旧数据覆盖
+    queue.refreshState().catch(() => {})
   }, delay)
   pendingFills.add(id)
 }
+
+// 任务清单变化 → 去抖 200 毫秒后刷新列表。
+// 去抖是必须的：任务开始与结束会各推一次"清单变了"、紧随其后还有一条状态推送，
+// 而一次操作（取消/删除/重置）本身也会推一次——不去抖就会连着发好几个列表请求
+watch(tasksVersion, () => {
+  if (unmounted) {
+    return
+  }
+
+  if (versionTimer !== null) {
+    clearTimeout(versionTimer)
+  }
+
+  versionTimer = window.setTimeout(() => {
+    versionTimer = null
+    fillData()
+  }, 200)
+})
 // 手机端卡片展开详情的当前任务 id（单开，详情复用桌面展开的 TaskDetail）
 const expandedId = ref<number | null>(null)
 function toggleDetail(row: any) {
@@ -260,38 +281,44 @@ function getSelectionIds(): number[] {
 
 // 四个队列操作后的即时反馈：走 store 的乐观更新（等价于改造前的本地置位）。
 // 不能改成"操作后立刻取一次状态"：StartQueue 是服务端发射后不管（控制器返回时 MainQueueManager
-// 还没赋值）、CancelAsync 也要等当前任务收尾，那次 GET 很可能拿回旧值，按钮要等到下一次轮询才翻转
+// 还没赋值）、CancelAsync 也要等当前任务收尾，那次 GET 很可能拿回旧值，按钮要等到下一次刷新才翻转。
+// 传给 store 的 issuedSeq 是"点击那一刻"的状态序号：命令返回时若已有更新的真实状态（推送往往比
+// HTTP 响应先到），这次预测就作废，不能把新状态盖回旧值
 function start() {
+  const issuedSeq = queue.currentSeq()
   net.postStartQueue()
     .then(() => {
-      queue.applyOptimisticCommand('start')
+      queue.applyOptimisticCommand('start', issuedSeq)
       scheduleFill(500)
     })
     .catch(showError)
 }
 
 function pause() {
+  const issuedSeq = queue.currentSeq()
   net.postPauseQueue()
     .then(() => {
-      queue.applyOptimisticCommand('pause')
+      queue.applyOptimisticCommand('pause', issuedSeq)
       scheduleFill(500)
     })
     .catch(showError)
 }
 
 function resume() {
+  const issuedSeq = queue.currentSeq()
   net.postResumeQueue()
     .then(() => {
-      queue.applyOptimisticCommand('resume')
+      queue.applyOptimisticCommand('resume', issuedSeq)
       scheduleFill(500)
     })
     .catch(showError)
 }
 
 function cancel() {
+  const issuedSeq = queue.currentSeq()
   net.postCancelQueue()
     .then(() => {
-      queue.applyOptimisticCommand('cancel')
+      queue.applyOptimisticCommand('cancel', issuedSeq)
       scheduleFill(1500)
     })
     .catch(showError)
@@ -408,30 +435,18 @@ function fillData() {
 onMounted(() => {
   showLoading()
   fillData()
-  // 队列状态虽由 store 的全局轮询维护，但进页面时先取一次：否则本页工具栏可能按最多 3 秒前的
-  // 旧状态渲染（标签页在后台时浏览器会把 setInterval 节流到约 1 分钟，这个窗口会更长）
-  queue.refreshStatus()
-  queue.refreshHasPending()
-  queue.refreshSchedule()
+  // 进页面主动要一份最新队列状态：否则本页工具栏可能按"上一次推送/轮询"的状态渲染
+  // （标签页在后台时浏览器会节流定时器，轮询兜底期间这个窗口可能很久）
+  queue.refreshState()
     .catch(showError)
     .finally(closeLoading)
-  // 定时轮询：仅处理中才刷任务列表。
-  // 必须在 onMounted 里**同步**注册：原先把这个 setInterval 写在上面那个 promise 的 finally 里，
-  // 若在 GET Queue/Schedule 返回之前就离开本页，onBeforeUnmount 执行时句柄还是 null（等于没清），
-  // 随后 finally 才创建定时器——又留下一个没人能清的 3 秒轮询
-  pollTimer = setInterval(() => {
-    queue.refreshHasPending()
-    if (isProcessing.value) {
-      fillData()
-    }
-  }, 3000)
 })
 
 onBeforeUnmount(() => {
   unmounted = true
-  if (pollTimer !== null) {
-    clearInterval(pollTimer)
-    pollTimer = null
+  if (versionTimer !== null) {
+    clearTimeout(versionTimer)
+    versionTimer = null
   }
   for (const id of pendingFills) {
     clearTimeout(id)

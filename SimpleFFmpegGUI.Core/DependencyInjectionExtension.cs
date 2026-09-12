@@ -5,6 +5,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using SimpleFFmpegGUI.Configurations;
 using SimpleFFmpegGUI.Data;
+using SimpleFFmpegGUI.Events;
 using SimpleFFmpegGUI.Extensions;
 using SimpleFFmpegGUI.Helpers;
 using SimpleFFmpegGUI.Models;
@@ -49,6 +50,9 @@ public static class DependencyInjectionExtension
                 return config;
             })
             .AddSingleton<QueueService>()
+            // 任务/队列变更通知器必须单例：TaskService/TaskRepository 是瞬时服务，
+            // 宿主（WebAPI 的实时推送服务）必须订阅到长生命周期对象上才能持续收到通知
+            .AddSingleton<ITaskChangeNotifier, TaskChangeNotifier>()
             .AddTransient<MediaInfoService>()
             .AddTransient<IFFmpegTaskServiceFactory, FFmpegTaskServiceFactory>()
             .AddTransient<IFFmpegProcessServiceFactory, FFmpegProcessServiceFactory>()

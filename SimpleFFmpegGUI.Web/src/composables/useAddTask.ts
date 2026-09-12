@@ -23,11 +23,13 @@ export function useAddTask(
         showSuccess('已加入队列')
         if (start) {
           // 与任务页的「开始队列」保持一致：走 store 的乐观更新，让顶栏/底部状态栏立刻反映"已在跑"，
-          // 而不是等全局轮询下一次（最多 3 秒）才发现。
+          // 而不是等下一次推送/轮询才发现。
           // 顺序必须是"先 POST、成功后再乐观"（与 Tasks.vue 相同）：反过来的话 POST 失败时
-          // 也会先亮出"运行中"，要等下一次轮询才纠正
+          // 也会先亮出"运行中"，要等下一次状态到达才纠正；
+          // 同时把"发起前的状态序号"一并传下去，避免把已经先到的推送结果盖回旧值
+          const issuedSeq = queue.currentSeq()
           net.postStartQueue()
-            .then(() => queue.applyOptimisticCommand('start'))
+            .then(() => queue.applyOptimisticCommand('start', issuedSeq))
             .catch(showError)
         }
       })

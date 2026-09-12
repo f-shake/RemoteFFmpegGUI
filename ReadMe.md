@@ -44,7 +44,19 @@
    - 直接运行 `SimpleFFmpegGUI.WebAPI.exe`（控制台窗口）。
    - 在 Windows 系统中，右键 `CreateWindowsService.bat` 以管理员身份运行（将自动申请管理员权限），把 WebAPI 注册为自启动的 Windows 服务。
 5. 打开浏览器访问 `http://localhost:5001`（默认根路径），检查服务是否正常：有前端时返回注入 `<base>` 的首页，无前端（裸 API）时显示 "SimpleFFmpegGUI API is running!"。
-6. 前端由 WebAPI 从 `wwwroot` 托管（history 路由，刷新/直链由 SPA 回退到注入 `<base href="{PathBase}/">` 的 index.html），无需另起 Web 服务器；生产构建请求相对路径 `api/{controller}`（跟随 `<base>` 部署基址）。若经 nginx 部署在子路径（如 `/ffmpeg`），把 `PathBase` 设为对应值并让 nginx 将该前缀代理到后端即可。
+6. 前端由 WebAPI 从 `wwwroot` 托管（history 路由，刷新/直链由 SPA 回退到注入 `<base href="{PathBase}/">` 的 index.html），无需另起 Web 服务器；生产构建请求相对路径 `api/{controller}`（跟随 `<base>` 部署基址）。若经 nginx 部署在子路径（如 `/ffmpeg`），把 `PathBase` 设为对应值并让 nginx 将该前缀代理到后端——**同时必须加上 WebSocket 升级头**（队列状态实时推送用它，路径为 `{PathBase}/api/queue-hub`）：
+
+   ```nginx
+   location /ffmpeg/ {
+       proxy_pass http://127.0.0.1:5001/;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection "upgrade";
+       proxy_read_timeout 300s;   # 必须大于 SignalR 的 15 秒心跳间隔，否则空闲连接会被断开
+   }
+   ```
+
+   漏配的症状是**静默降级**：功能正常，但顶栏的连接圆点一直是蓝色（轮询兜底中）而不是绿色，实时性丢失且不易察觉。
 
 **注意：**
 

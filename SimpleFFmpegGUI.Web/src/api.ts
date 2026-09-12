@@ -92,16 +92,16 @@ export function previewArguments(parameters: any): Promise<AxiosResponse<string>
 
 // ===== Queue =====
 
-export function getQueueStatus(): Promise<AxiosResponse<any>> {
-  return axios.get(getUrl('Queue'))
-}
-
-export function getQueueHasPending(): Promise<AxiosResponse<boolean>> {
-  return axios.get(getUrl('Queue/HasPending'))
-}
-
-export function getQueueScheduleTime(): Promise<AxiosResponse<any>> {
-  return axios.get(getUrl('Queue/Schedule'))
+/**
+ * 队列状态（含是否有待处理任务与计划开始时间）：实时通道断开后的轮询兜底使用。
+ * 服务端原有的 `Queue`/`Queue/HasPending`/`Queue/Schedule` 三个接口仍然保留（WPF 远程模式、
+ * 集成测试与旧版前端在用），前端只走这个合并接口——一次请求拿齐，且形状与推送一致。
+ *
+ * 单独加超时：全局 axios 没有超时（见计划文档的待办），而这个接口是轮询兜底与任务页进页面时用的，
+ * 一旦"连上了但不回包"，轮询会静默停摆、任务页的加载遮罩也会一直不关。
+ */
+export function getQueueState(): Promise<AxiosResponse<any>> {
+  return axios.get(getUrl('Queue/State'), { timeout: 10000 })
 }
 
 export function postStartQueue(): Promise<AxiosResponse<any>> {

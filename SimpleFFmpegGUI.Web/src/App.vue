@@ -10,7 +10,10 @@
           </div>
         </div>
         <div class="header-right">
-          <a v-if="netError" class="header-error">获取状态失败</a>
+          <!-- 实时连接指示：连接状态圆点 + 悬停文字（原来「获取状态失败」的位置） -->
+          <el-tooltip :content="connectionText" placement="bottom">
+            <span class="conn-dot" :class="'conn-' + connection"></span>
+          </el-tooltip>
           <el-button text class="login-btn" v-show="logged" @click="logout">
             <el-icon><UserFilled /></el-icon>
             <span>已登录</span>
@@ -98,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessageBox } from 'element-plus'
@@ -129,7 +132,17 @@ const types = TaskType.NavTypes
 // 队列状态（含"取状态失败"标记）与 UI 状态（主题、侧栏折叠、窗口宽度）都在 pinia 里：
 // 跨组件共享的状态只有一个持有者，任务页与底部状态栏不再各自轮询队列状态
 const queue = useQueueStore()
-const { status, netError } = storeToRefs(queue)
+const { status, connection } = storeToRefs(queue)
+// 圆点的悬停文案：绿=推送、黄=重试中、蓝=轮询兜底、红=连不上
+const connectionText = computed(() => {
+  switch (connection.value) {
+    case 'ws': return '实时推送已连接'
+    case 'retrying': return '实时已断开，正在重试'
+    case 'http': return '轮询兜底中（实时已断开，刷新页面重试）'
+    case 'failed': return '获取状态失败'
+    default: return '正在连接实时推送…'
+  }
+})
 const ui = useUiStore()
 const { themeMode, menuCollapse } = storeToRefs(ui)
 const setTheme = ui.setTheme
@@ -140,9 +153,16 @@ const activeMenu = computed(() =>
 )
 const logged = ref(false)
 
-// 主题的读取/应用、以及"跟随系统"变化的监听都在 useUiStore 里（见该文件注释）
+// 主题的读取/应用、以及"跟随系统"变化的监听都在 useUiStore 里（见该文件注释）。
+// 实时通道由 queue store 里的 utils/realtime 承接：服务端推来的状态直接写进 store，
+// 顶栏圆点、底部状态栏、任务页都读同一份；连不上时它自己降级为 HTTP 轮询。
+// 根组件只挂载一次，这里连接也只建立一次（store 里做了幂等）
 onMounted(() => {
-  setInterval(() => queue.refreshStatus(), 3000)
+  queue.startRealtime()
+})
+
+onBeforeUnmount(() => {
+  queue.stopRealtime()
 })
 
 net.getNeedToken().then((r) => {
@@ -161,7 +181,6 @@ net.getNeedToken().then((r) => {
   }
 })
 loadDirs()
-queue.refreshStatus()
 
 function logout() {
   ElMessageBox.confirm('是否注销？', '提示', {
@@ -227,9 +246,36 @@ function logout() {
   gap: 8px;
   flex-shrink: 0;
 }
-.header-error {
-  color: var(--el-color-danger);
-  font-size: 12px;
+/* 实时连接圆点：绿=推送已连接、黄闪=断开重试中、蓝=轮询兜底、红=取状态失败、灰=首次连接中 */
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.conn-connecting {
+  background: var(--text-secondary);
+}
+.conn-ws {
+  background: var(--el-color-success);
+}
+.conn-retrying {
+  background: var(--el-color-warning);
+  animation: conn-blink 1s step-end infinite;
+}
+.conn-http {
+  background: var(--el-color-primary);
+}
+.conn-failed {
+  background: var(--el-color-danger);
+}
+@keyframes conn-blink {
+  50% { opacity: 0.2; }
+}
+/* 尊重"减少动态效果"偏好：此时黄色保持常亮，不做闪烁 */
+@media (prefers-reduced-motion: reduce) {
+  .conn-retrying { animation: none; }
 }
 .login-btn {
   font-size: 13px;

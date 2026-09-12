@@ -4,18 +4,33 @@ using Microsoft.Extensions.Logging;
 using SimpleFFmpegGUI.Dto;
 using SimpleFFmpegGUI.Repositories;
 using SimpleFFmpegGUI.Services;
+using SimpleFFmpegGUI.WebAPI.Realtime;
 using System;
 using System.Threading.Tasks;
 
 namespace SimpleFFmpegGUI.WebAPI.Controllers
 {
-    public class QueueController(QueueService queue, TaskRepository taskRepository) : FFmpegControllerBase()
+    public class QueueController(QueueService queue, TaskRepository taskRepository, QueueStateProvider stateProvider)
+        : FFmpegControllerBase()
     {
         [HttpGet]
         public ActionResult<StatusDto> GetStatus()
         {
             var status = queue.MainQueueManager == null ? new StatusDto() : queue.MainQueueManager.GetStatus();
             return status;
+        }
+
+        /// <summary>
+        /// 前端实时通道断开后的轮询兜底接口：一次拿齐队列状态、是否有待处理任务、计划开始时间。
+        /// <para>
+        /// 上面的 <see cref="GetStatus"/>/<see cref="HasPendingAsync"/>/<see cref="GetScheduleTime"/>
+        /// 全部保留不动：WPF 的远程模式、集成测试与旧版前端仍在使用它们。
+        /// </para>
+        /// </summary>
+        [HttpGet("State")]
+        public async Task<ActionResult<QueueStateDto>> GetStateAsync()
+        {
+            return await stateProvider.GetStateAsync();
         }
 
         [HttpGet("HasPending")]
