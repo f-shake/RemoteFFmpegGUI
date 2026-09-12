@@ -60,12 +60,55 @@ namespace SimpleFFmpegGUI.WPF
             childWindows = new ChildWindowManager(this, App.ServiceProvider);
             WindowBusyOverlay.Register(this, ring);
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            // 边框要贴住窗口四周（含标题栏）：位置随窗口状态变化，每次布局完成后重新补偿
+            grdMain.LayoutUpdated += MainGrid_LayoutUpdated;
             UpdateRunStatusBorder();
             Closed += (_, _) =>
             {
+                grdMain.LayoutUpdated -= MainGrid_LayoutUpdated;
                 WindowBusyOverlay.Unregister(this);
                 ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
             };
+        }
+
+        private void MainGrid_LayoutUpdated(object sender, EventArgs e) => UpdateRunStatusBorderMargin();
+
+        /// <summary>
+        /// 把"运行中"边框贴到窗口四周（含标题栏与底部命令栏），而不是只围住标题栏以下的内容区。
+        /// <para>
+        /// iNKORE 的窗口模板把内容放在标题栏下方的那一行里（高度由主题决定），窗口最大化时
+        /// 它还会给窗口设上调整边框的内边距（见库里的 MaximizedWindowFixer）——那部分在屏幕上
+        /// 是可见区域之外的，正好等于可见区域与窗口的差。两者都按实测值反向补偿，不写死数值。
+        /// </para>
+        /// <para>
+        /// 高对比度主题下不补偿：库会给内容加 7px 外边距、同时画一条同样厚的窗口边框，
+        /// 贴到窗口最外沿反而会被那条边框压住看不见，不如保持贴在内容区边界。
+        /// </para>
+        /// </summary>
+        private void UpdateRunStatusBorderMargin()
+        {
+            var border = RunStatusBorder;
+            if (border == null || grdMain.ActualWidth <= 0 || grdMain.ActualHeight <= 0)
+            {
+                return;
+            }
+
+            // 目标是"窗口可见区域"的四条边，按内容区相对窗口可视树的实测偏移换算成 Margin。
+            // 注意 Margin 四边统一为"正值＝向内收"：左/上取"目标 − 内容区原点"，
+            // 右/下取"内容区远端 − 目标"，符号相反才不会算反。
+            var offset = grdMain.TranslatePoint(new System.Windows.Point(0, 0), this);
+            var margin = SystemParameters.HighContrast
+                ? new Thickness(0)
+                : new Thickness(
+                    Padding.Left - offset.X,
+                    Padding.Top - offset.Y,
+                    offset.X + grdMain.ActualWidth - (ActualWidth - Padding.Right),
+                    offset.Y + grdMain.ActualHeight - (ActualHeight - Padding.Bottom));
+            // 本方法挂在 LayoutUpdated 上：值没变就不要赋值，免得再触发一轮布局
+            if (!margin.Equals(border.Margin))
+            {
+                border.Margin = margin;
+            }
         }
 
         private void ViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
