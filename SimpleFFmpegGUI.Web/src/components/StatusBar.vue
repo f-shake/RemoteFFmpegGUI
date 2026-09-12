@@ -129,22 +129,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Loading } from '@element-plus/icons-vue'
 import * as net from '@/api'
 import { showError } from '@/utils/ui'
 import { formatDateTime, formatDoubleTimeSpan } from '@/utils/format'
 import { displayPath } from '@/utils/navigation'
+import { useQueueStore } from '@/stores/queue'
+import { useUiStore } from '@/stores/ui'
+
+// 队列状态与窗口宽度都来自 pinia（不再由 App.vue 用 props 往下传）：这里保留 status / windowWidth
+// 两个名字，模板与其余逻辑一行都不用改
+const { status } = storeToRefs(useQueueStore())
+const { windowWidth } = storeToRefs(useUiStore())
+// 本组件里所有与 windowWidth 比较的 680 都必须与 CSS 的 @media (max-width: 680px)
+// 以及 stores/ui.ts 的 MOBILE_BREAKPOINT 同值（CSS 无法引用 TS 常量，改断点时要一起改）
 
 const barClass = computed(() => ({
-  paused: props.status?.isPaused,
-  error: props.status?.task?.status === 4,
+  paused: status.value?.isPaused,
+  error: status.value?.task?.status === 4,
 }))
-
-const props = defineProps<{
-  status: any
-  windowWidth: number
-}>()
 
 const snapshotSrc = ref('')
 const lastSnapshotTime = ref(1e10)
@@ -153,21 +158,22 @@ const lastSnapshotFile = ref('')
 const detailVisible = ref(false)
 // 拉宽到桌面形态时关掉这个窄屏专用弹窗：弹窗挂载条件里已带宽度判断（拉宽即卸载），
 // 这里把状态一并复位，否则缩回窄屏时它会自己又弹出来
-watch(() => props.windowWidth > 680, (isDesktop) => {
+watch(() => windowWidth.value > 680, (isDesktop) => {
   if (isDesktop) {
     detailVisible.value = false
   }
 })
-// 弹窗宽度跟随窗口并留出边距，最大 520px（windowWidth 初始为 0，故做下限兜底）
-const detailWidth = computed(() => `${Math.min(Math.max(props.windowWidth - 32, 280), 520)}px`)
+// 弹窗宽度跟随窗口并留出边距，最大 520px；下限 280px 是给极窄窗口（< 312px）兜底
+// （windowWidth 现在来自 useUiStore，初值即真实宽度，不再是改造前那个初值为 0、靠 resizeMenu 纠正的 props）
+const detailWidth = computed(() => `${Math.min(Math.max(windowWidth.value - 32, 280), 520)}px`)
 // 进度百分比文案：进度无法计算时显示"未知"，与桌面分支的占位文案一致
 const progressText = computed(() =>
-  props.status?.progress?.isIndeterminate
+  status.value?.progress?.isIndeterminate
     ? '未知'
-    : (props.status.progress.percent * 100).toFixed(1) + '%'
+    : (status.value.progress.percent * 100).toFixed(1) + '%'
 )
 function finishTime(): Date {
-  return new Date(props.status.progress.finishTime)
+  return new Date(status.value.progress.finishTime)
 }
 
 function cancel() {
@@ -175,25 +181,25 @@ function cancel() {
 }
 
 function updateSnapshot() {
-  if (props.status == null) return
+  if (status.value == null) return
 
-  if (props.status?.hasDetail && props.status.task != null && props.status.task.inputs.length >= 1) {
-    const isDesktop = props.windowWidth > 680
-    const needRefresh = isDesktop && !props.status.isPaused
+  if (status.value?.hasDetail && status.value.task != null && status.value.task.inputs.length >= 1) {
+    const isDesktop = windowWidth.value > 680
+    const needRefresh = isDesktop && !status.value.isPaused
     const needInitial = snapshotSrc.value === ''
 
     if (needRefresh || needInitial) {
       if (
         !needInitial &&
-        props.status.task.inputs[0].filePath === lastSnapshotFile.value &&
-        Math.abs(props.status.time - lastSnapshotTime.value) < 1
+        status.value.task.inputs[0].filePath === lastSnapshotFile.value &&
+        Math.abs(status.value.time - lastSnapshotTime.value) < 1
       ) {
         return
       }
-      net.getSnapshot(props.status.task.inputs[0].filePath, props.status.time)
+      net.getSnapshot(status.value.task.inputs[0].filePath, status.value.time)
         .then((r) => {
-          lastSnapshotFile.value = props.status.task.inputs[0].filePath
-          lastSnapshotTime.value = props.status.time
+          lastSnapshotFile.value = status.value.task.inputs[0].filePath
+          lastSnapshotTime.value = status.value.time
           const reader = new window.FileReader()
           reader.readAsDataURL(r.data)
           reader.onload = () => {
@@ -211,9 +217,27 @@ function updateSnapshot() {
   }
 }
 
+// 两个定时器的句柄都要留给 onBeforeUnmount 清理：本组件由 App.vue 的
+// v-if="status != null && status.isProcessing" 控制挂载，**每跑一次队列就会重新挂载一次**，
+// 而闭包里的 status 仍跟着 store 更新——不清理的话，跑过 N 次队列就有 N 个定时器各自去拉快照
+// （JPEG 几十 KB，是全站最贵的请求），且永不停止
+let snapshotTimer: number | null = null
+let firstSnapshotTimer: number | null = null
+
 onMounted(() => {
-  setInterval(updateSnapshot, 10 * 1000)
-  setTimeout(updateSnapshot, 1000)
+  snapshotTimer = setInterval(updateSnapshot, 10 * 1000)
+  firstSnapshotTimer = setTimeout(updateSnapshot, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (snapshotTimer !== null) {
+    clearInterval(snapshotTimer)
+    snapshotTimer = null
+  }
+  if (firstSnapshotTimer !== null) {
+    clearTimeout(firstSnapshotTimer)
+    firstSnapshotTimer = null
+  }
 })
 </script>
 

@@ -176,9 +176,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, ref, computed, watch, onMounted } from 'vue'
 import { showError, showSuccess } from '@/utils/ui'
 import * as net from '@/api'
+import { useUiStore } from '@/stores/ui'
 
 const props = withDefaults(defineProps<{
   type?: number
@@ -226,13 +227,17 @@ const code = reactive({
 const showFormats = computed(() => [0, 1, 2, 4].includes(props.type))
 const showVideosAndAudios = computed(() => [0].includes(props.type))
 
+// 窗口宽度取 useUiStore（全局唯一一个 resize 监听），本组件不再自己挂监听——
+// 这样反复进出"新建任务"各页面也不会累积监听器，且不用再手动注销
+const ui = useUiStore()
+
 // 初值就按当前宽度定，避免窄屏下首帧标签先按桌面排再跳一次
-const labelWidth = ref(window.innerWidth <= 680 ? '100%' : '100px')
-const labelPosition = ref<'top' | 'left' | 'right'>(window.innerWidth <= 680 ? 'top' : 'right')
+const labelWidth = ref(ui.windowWidth <= 680 ? '100%' : '100px')
+const labelPosition = ref<'top' | 'left' | 'right'>(ui.windowWidth <= 680 ? 'top' : 'right')
 
 // 窄屏（<=680，与各处手机端媒体查询/useIsMobile 语义一致）时标签改为独占一行
 function updateLabelLayout() {
-  if (window.innerWidth <= 680) {
+  if (ui.windowWidth <= 680) {
     labelPosition.value = 'top'
     labelWidth.value = '100%'
   } else {
@@ -241,12 +246,8 @@ function updateLabelLayout() {
   }
 }
 
-onMounted(() => {
-  updateLabelLayout()
-  window.addEventListener('resize', updateLabelLayout)
-})
-// 卸载时移除监听：否则反复进出"新建任务"各页面会让监听器逐次累积，回调一直持有已销毁组件的状态
-onBeforeUnmount(() => window.removeEventListener('resize', updateLabelLayout))
+watch(() => ui.windowWidth, updateLabelLayout)
+onMounted(updateLabelLayout)
 
 function fillPresetsAnd(action: (id: number) => void) {
   net.getPresets(props.type)

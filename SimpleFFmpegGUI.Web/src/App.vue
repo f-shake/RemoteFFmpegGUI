@@ -84,7 +84,7 @@
       <el-main class="app-main">
         <router-view v-slot="{ Component }">
           <transition name="page-fade" mode="out-in">
-            <component :is="Component" :status="status" />
+            <component :is="Component" />
           </transition>
         </router-view>
       </el-main>
@@ -92,14 +92,15 @@
 
     <!-- 底部状态栏 -->
     <el-footer class="app-footer" v-if="status != null && status.isProcessing">
-      <StatusBar :status="status" :window-width="windowWidth" />
+      <StatusBar />
     </el-footer>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { ElMessageBox } from 'element-plus'
 import {
   Fold, Expand, HomeFilled, DocumentAdd, CirclePlus, VideoCamera,
@@ -109,6 +110,8 @@ import Cookies from 'js-cookie'
 import { getBasePath } from '@/config'
 import { jump, loadDirs } from '@/utils/navigation'
 import { TaskType } from '@/models/TaskType'
+import { useQueueStore } from '@/stores/queue'
+import { useUiStore } from '@/stores/ui'
 import * as net from './api'
 import StatusBar from './components/StatusBar.vue'
 
@@ -123,52 +126,23 @@ const menus = [
   ['/log', 'TakeawayBox', '日志']
 ]
 const types = TaskType.NavTypes
-const status = ref<any>(null)
-const netError = ref(false)
-// 最近一次"自动判定"的折叠结果：resizeMenu 只在跨越断点时才改写 menuCollapse，
-// 否则 getStatus 里每 3 秒一次的调用会把用户手动点的折叠/展开覆盖掉（如桌面点「折叠菜单」后 3 秒自己弹开）
-const autoCollapse = ref(window.innerWidth <= 680)
-// 初值与自动判定结果同源，避免首帧闪一下展开态
-const menuCollapse = ref(autoCollapse.value)
+// 队列状态（含"取状态失败"标记）与 UI 状态（主题、侧栏折叠、窗口宽度）都在 pinia 里：
+// 跨组件共享的状态只有一个持有者，任务页与底部状态栏不再各自轮询队列状态
+const queue = useQueueStore()
+const { status, netError } = storeToRefs(queue)
+const ui = useUiStore()
+const { themeMode, menuCollapse } = storeToRefs(ui)
+const setTheme = ui.setTheme
 // 菜单高亮项：进入 /add/* 且折叠(移动端)时映射到顶层 '/'，避免 Element Plus 因 active 项落在
 // "新建任务"子菜单内而自动弹出该弹层（点子项后菜单应消失且不再出现）；桌面端保留高亮展开
 const activeMenu = computed(() =>
   menuCollapse.value && route.path.startsWith('/add/') ? '/' : route.path
 )
-const windowWidth = ref(0)
 const logged = ref(false)
-const themeMode = ref(localStorage.getItem('theme') || 'auto')
 
-function applyTheme(mode: string) {
-  if (mode === 'dark') {
-    document.documentElement.classList.add('dark')
-  } else if (mode === 'light') {
-    document.documentElement.classList.remove('dark')
-  } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    document.documentElement.classList.toggle('dark', prefersDark)
-  }
-}
-
-function setTheme(mode: string) {
-  themeMode.value = mode
-  localStorage.setItem('theme', mode)
-  applyTheme(mode)
-}
-
-applyTheme(themeMode.value)
-
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (themeMode.value === 'auto') {
-    applyTheme('auto')
-  }
-})
-
+// 主题的读取/应用、以及"跟随系统"变化的监听都在 useUiStore 里（见该文件注释）
 onMounted(() => {
-  nextTick(() => {
-    resizeMenu()
-    setInterval(getStatus, 3000)
-  })
+  setInterval(() => queue.refreshStatus(), 3000)
 })
 
 net.getNeedToken().then((r) => {
@@ -187,21 +161,7 @@ net.getNeedToken().then((r) => {
   }
 })
 loadDirs()
-getStatus()
-window.addEventListener('resize', resizeMenu)
-
-function resizeMenu() {
-  windowWidth.value = window.innerWidth
-  // 用 <= 680 与各处手机端媒体查询/useIsMobile 语义一致（680 也算窄屏），避免正好 680px 时
-  // isMobile=true 但菜单未折叠导致 activeMenu 对 /add/* 走桌面分支
-  const shouldCollapse = window.innerWidth <= 680
-  // 只在跨越断点时自动改写，窗口宽度在断点同一侧变化时不打扰用户手动设置的折叠状态
-  if (shouldCollapse === autoCollapse.value) {
-    return
-  }
-  autoCollapse.value = shouldCollapse
-  menuCollapse.value = shouldCollapse
-}
+queue.refreshStatus()
 
 function logout() {
   ElMessageBox.confirm('是否注销？', '提示', {
@@ -214,16 +174,6 @@ function logout() {
     Cookies.remove('token', { path: '/' })
     location.reload()
   })
-}
-
-function getStatus() {
-  net.getQueueStatus()
-    .then((response) => {
-      netError.value = false
-      status.value = response.data
-      nextTick(resizeMenu)
-    })
-    .catch(() => (netError.value = true))
 }
 </script>
 

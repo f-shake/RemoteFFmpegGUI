@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
 import * as net from '@/api'
 
@@ -151,12 +151,22 @@ function loadDefaultProcessPriority() {
     .catch(() => showError('加载默认进程优先级失败'))
 }
 
+/** CPU 占用轮询的定时器句柄：离开本页必须清掉，否则反复进出会累积多个 5 秒轮询 */
+let cpuTimer: number | null = null
+
 onMounted(() => {
   showLoading()
   updateShutdownQueue()
   loadDefaultProcessPriority()
   loadCpuCoreUsage()
-  setInterval(loadCpuCoreUsage, 5000)
+  cpuTimer = setInterval(loadCpuCoreUsage, 5000)
+})
+
+onBeforeUnmount(() => {
+  if (cpuTimer !== null) {
+    clearInterval(cpuTimer)
+    cpuTimer = null
+  }
 })
 </script>
 
