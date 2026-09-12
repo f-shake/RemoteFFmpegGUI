@@ -102,10 +102,28 @@ namespace SimpleFFmpegGUI.WPF
         }
     }
 
-    public class RemoteHost
+    /// <summary>
+    /// 远程主机配置。继承 ObservableObject 是为了设置页：那里的「浏览」按钮由代码直接给
+    /// LocalInputDir 赋值，纯 POCO 时 DataGrid 单元格收不到变更通知、显示不会刷新
+    /// （手动输入走的是编辑态，本来就能正常显示）。
+    /// </summary>
+    public partial class RemoteHost : ObservableObject
     {
-        public string Address { get; set; }
-        public string Name { get; set; }
-        public string Token { get; set; }
+        [ObservableProperty]
+        private string address;
+
+        [ObservableProperty]
+        private string name;
+
+        [ObservableProperty]
+        private string token;
+
+        /// <summary>
+        /// 本机上对应远端输入目录（InputDir）的位置，例如远端是 \\NAS\共享\待处理、本机映射成 Z:\待处理。
+        /// 向该主机提交任务时，本地输入文件按此目录求相对路径（保留子目录）后发给远端。
+        /// 留空则退回"按远端上报的 InputDir 匹配，匹配不上只发文件名"的旧行为。
+        /// </summary>
+        [ObservableProperty]
+        private string localInputDir;
     }
 }

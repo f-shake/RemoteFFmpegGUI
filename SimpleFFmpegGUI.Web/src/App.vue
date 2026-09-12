@@ -125,7 +125,11 @@ const menus = [
 const types = TaskType.NavTypes
 const status = ref<any>(null)
 const netError = ref(false)
-const menuCollapse = ref(false)
+// 最近一次"自动判定"的折叠结果：resizeMenu 只在跨越断点时才改写 menuCollapse，
+// 否则 getStatus 里每 3 秒一次的调用会把用户手动点的折叠/展开覆盖掉（如桌面点「折叠菜单」后 3 秒自己弹开）
+const autoCollapse = ref(window.innerWidth <= 680)
+// 初值与自动判定结果同源，避免首帧闪一下展开态
+const menuCollapse = ref(autoCollapse.value)
 // 菜单高亮项：进入 /add/* 且折叠(移动端)时映射到顶层 '/'，避免 Element Plus 因 active 项落在
 // "新建任务"子菜单内而自动弹出该弹层（点子项后菜单应消失且不再出现）；桌面端保留高亮展开
 const activeMenu = computed(() =>
@@ -188,9 +192,15 @@ window.addEventListener('resize', resizeMenu)
 
 function resizeMenu() {
   windowWidth.value = window.innerWidth
-  // 用 <= 640 与各处手机端媒体查询/useIsMobile 语义一致（640 也算窄屏），避免正好 640px 时
+  // 用 <= 680 与各处手机端媒体查询/useIsMobile 语义一致（680 也算窄屏），避免正好 680px 时
   // isMobile=true 但菜单未折叠导致 activeMenu 对 /add/* 走桌面分支
-  menuCollapse.value = window.innerWidth <= 640
+  const shouldCollapse = window.innerWidth <= 680
+  // 只在跨越断点时自动改写，窗口宽度在断点同一侧变化时不打扰用户手动设置的折叠状态
+  if (shouldCollapse === autoCollapse.value) {
+    return
+  }
+  autoCollapse.value = shouldCollapse
+  menuCollapse.value = shouldCollapse
 }
 
 function logout() {

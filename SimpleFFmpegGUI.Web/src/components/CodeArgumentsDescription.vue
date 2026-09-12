@@ -181,7 +181,7 @@ const combineShortest = computed(() => {
   grid-template-columns: auto 1fr auto 1fr;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .c-card:not(.c-card--thin) .c-grid {
     grid-template-columns: auto 1fr;
   }

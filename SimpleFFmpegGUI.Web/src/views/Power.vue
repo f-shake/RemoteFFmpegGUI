@@ -231,7 +231,7 @@ onMounted(() => {
   padding: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .section-card {
     overflow: hidden;
   }

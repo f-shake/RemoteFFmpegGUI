@@ -102,7 +102,7 @@ defineProps<{ task: any }>()
 .task-detail :deep(.c-card--thin .c-grid) {
   grid-template-columns: auto 1fr;
 }
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .task-detail :deep(.c-card:not(.c-card--thin) .c-grid) {
     grid-template-columns: auto 1fr;
   }

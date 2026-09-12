@@ -102,6 +102,16 @@ namespace SimpleFFmpegGUI.Helpers
                 output = task.Inputs[0].FilePath;
             }
 
+            // 库里存的输出本应是绝对路径（TaskService 入库时已解析），但 v2 早期用相对配置写入的
+            // "output\x.mp4" 这类存量值仍是相对形态：TwoPass 会把 ffmpeg 子进程的工作目录设成 2pass
+            // 临时目录（FFmpegProcessService），相对路径会跟着落到那里——任务显示成功，输出却不在 OutputDir 里。
+            // 这里按当前工作目录绝对化一次（与该值当初的写入基准一致，也是非 2Pass 时子进程继承的目录），
+            // 之后就不再依赖运行目录了。
+            if (!Path.IsPathFullyQualified(output))
+            {
+                output = Path.GetFullPath(output);
+            }
+
             //删除非法字符
             string dir = Path.GetDirectoryName(output);
             string filename = Path.GetFileName(output);

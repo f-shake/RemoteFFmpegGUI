@@ -98,4 +98,36 @@ public class FilePathHelperTests
         var full = helper.GetFullPath(RootDirType.OutputDir, "out.mp4");
         full.Should().StartWith(Path.GetFullPath(output));
     }
+
+    /// <summary>
+    /// 配置写相对路径时（出厂示例值 "input"/"output"），对外暴露的目录也必须解析成绝对路径：
+    /// File/Dirs 返回它给前端做前缀匹配，砍掉前缀后任务列表才显示相对路径；返回配置原值的话
+    /// 前端永远匹配不上，只能显示完整绝对路径。原始配置值保持原样，供文件列表等按原形式拼接的调用方使用。
+    /// </summary>
+    [Fact]
+    public void DirFullPath_RelativeConfig_ShouldResolveToAbsolute()
+    {
+        var helper = new FilePathHelper(new FakeOptions<AppSettings>(CreateSettings("input", "output")));
+
+        Path.IsPathFullyQualified(helper.InputDirFullPath).Should().BeTrue();
+        Path.IsPathFullyQualified(helper.OutputDirFullPath).Should().BeTrue();
+        helper.InputDirFullPath.Should().Be(Path.GetFullPath("input"));
+        helper.OutputDirFullPath.Should().Be(Path.GetFullPath("output"));
+        helper.InputDir.Should().Be("input");
+        helper.OutputDir.Should().Be("output");
+    }
+
+    /// <summary>
+    /// 配置写绝对路径时（如部署在 NAS 的 C:\共享\待处理），解析结果原样保留
+    /// </summary>
+    [Fact]
+    public void DirFullPath_AbsoluteConfig_ShouldKeepAbsolute()
+    {
+        var input = TempDir();
+        var output = TempDir();
+        var helper = new FilePathHelper(new FakeOptions<AppSettings>(CreateSettings(input, output)));
+
+        helper.InputDirFullPath.Should().Be(Path.GetFullPath(input));
+        helper.OutputDirFullPath.Should().Be(Path.GetFullPath(output));
+    }
 }

@@ -168,7 +168,7 @@ onMounted(() => {
 .ops-btns .el-popconfirm { display: inline-flex; }
 .ops-btns .el-button { flex-shrink: 0; }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .presets-toolbar {
     flex-direction: column;
     align-items: stretch;

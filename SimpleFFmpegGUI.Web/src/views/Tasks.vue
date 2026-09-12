@@ -29,7 +29,7 @@
 
     <!-- 任务表格（桌面） -->
     <el-card v-if="!isMobile" shadow="never" class="table-card">
-      <el-table ref="table" :data="list" @selection-change="handleSelectionChange" size="small">
+      <el-table ref="table" :data="list" @selection-change="handleSelectionChange" @expand-change="handleExpandChange" size="small">
         <el-table-column type="expand">
           <template #default="props">
             <TaskDetail :task="props.row" />
@@ -66,15 +66,14 @@
           <template #default="scope">
             <div class="ops-btns">
               <el-button @click="remakeTask(scope.row)" text size="small" title="以本任务参数重新创建新任务">复制</el-button>
-              <el-button @click="resetTask(scope.row)" text size="small"
-                :disabled="scope.row.status === 1 || scope.row.status === 2">重置</el-button>
-              <el-popconfirm v-if="scope.row.status === 2" title="真的要取消任务吗？任务会终止"
+              <el-button v-if="scope.row.status !== 1 && scope.row.status !== 2" @click="resetTask(scope.row)"
+                text size="small">重置</el-button>
+              <el-popconfirm v-if="scope.row.status === 1 || scope.row.status === 2"
+                :title="scope.row.status === 2 ? '真的要取消任务吗？任务会终止' : '真的要取消任务吗？'"
                 @confirm="cancelTask(scope.row)">
-                <template #reference><el-button text size="small">取消</el-button></template>
+                <template #reference><el-button text type="warning" size="small">取消</el-button></template>
               </el-popconfirm>
-              <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(scope.row)">
-                <template #reference><el-button text size="small">删除</el-button></template>
-              </el-popconfirm>
+              <!-- 删除任务功能已停用（WebAPI 的 Task/{id}/Delete 接口仍然保留），如需恢复请找回此处的 el-popconfirm -->
             </div>
           </template>
         </el-table-column>
@@ -103,13 +102,12 @@
         </el-collapse-transition>
         <div class="task-card-ops">
           <el-button @click="remakeTask(row)" text size="small" title="以本任务参数重新创建新任务">复制</el-button>
-          <el-button @click="resetTask(row)" text size="small" :disabled="row.status === 1 || row.status === 2">重置</el-button>
-          <el-popconfirm v-if="row.status === 2" title="真的要取消任务吗？任务会终止" @confirm="cancelTask(row)">
-            <template #reference><el-button text size="small">取消</el-button></template>
+          <el-button v-if="row.status !== 1 && row.status !== 2" @click="resetTask(row)" text size="small">重置</el-button>
+          <el-popconfirm v-if="row.status === 1 || row.status === 2"
+            :title="row.status === 2 ? '真的要取消任务吗？任务会终止' : '真的要取消任务吗？'" @confirm="cancelTask(row)">
+            <template #reference><el-button text type="warning" size="small">取消</el-button></template>
           </el-popconfirm>
-          <el-popconfirm title="真的要删除任务吗？" @confirm="deleteTask(row)">
-            <template #reference><el-button text size="small">删除</el-button></template>
-          </el-popconfirm>
+          <!-- 删除任务功能已停用（WebAPI 的 Task/{id}/Delete 接口仍然保留），如需恢复请找回此处的 el-popconfirm -->
         </div>
       </div>
       <el-empty v-if="list.length === 0" description="暂无数据" />
@@ -158,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { showError, showSuccess, showLoading, closeLoading } from '@/utils/ui'
 import { getTaskTypeDescription } from '@/models/TaskType'
 import { displayPath, jumpByArgs } from '@/utils/navigation'
@@ -170,6 +168,8 @@ import { useIsMobile } from '@/composables/useIsMobile'
 
 const { isMobile } = useIsMobile()
 const list = ref<any[]>([])
+// el-table 实例（模板里的 ref="table"）：刷新后需要用它在代码里还原选中行
+const table = ref()
 const isProcessing = ref(false)
 const isPaused = ref(false)
 // 是否存在待执行（排队中）任务——用于控制"开始队列"按钮置灰
@@ -219,6 +219,16 @@ function statusMeta(status: number) {
 
 function handleSelectionChange(val: any[]) {
   selection.value = val
+}
+
+// 桌面表格里已展开的行（按 id 记录）：与"选中"同理，定时刷新整体替换 list 时
+// el-table 未配 row-key 会把展开状态一并清空，需要在数据替换后还原。
+// 只在用户操作时更新（el-table 内部自动清空时不会触发 expand-change），所以这里留存的就是用户意图。
+// 注：它不随数据清空，所以翻页离开再回来时展开态可能"复活"（选中不会——选中快照取自被 clearSelection
+// 清空的 selection）；但每次刷新都会把它收敛成"本页已还原的行"，所以跨页各有展开行时不在本页的会被剪掉
+const expandedIds = ref<Set<number>>(new Set())
+function handleExpandChange(_row: any, expandedRows: any[]) {
+  expandedIds.value = new Set(expandedRows.map((r: any) => r.id))
 }
 
 function getSelectionIds(): number[] {
@@ -328,15 +338,6 @@ function resetTasks() {
     .catch(showError)
 }
 
-function deleteTask(item: any) {
-  net.postDeleteTask(item.id)
-    .then(() => {
-      showSuccess('删除成功')
-      setTimeout(fillData, 500)
-    })
-    .catch(showError)
-}
-
 function cancelTask(item: any) {
   net.postCancelTask(item.id)
     .then(() => {
@@ -357,8 +358,11 @@ function cancelTasks() {
 
 function fillData() {
   const s = statusFilter.value === 0 ? null : statusFilter.value
+  // 定时刷新会用接口返回的新对象整体替换 list，el-table 未配 row-key/reserve-selection 时选中与展开都会随之被清空，
+  // 所以先快照已选 id，数据替换后按 id 还原。只还原仍在本页的行：任务消失或翻页时选中自然失效。
+  const selectedIds = new Set<number>(getSelectionIds())
   return net.getTaskList(s, page.value, countPerPage.value)
-    .then((response) => {
+    .then(async (response) => {
       totalCount.value = response.data.totalCount
       response.data.list.forEach((element: any) => {
         element.typeText = getTaskTypeDescription(element.type)
@@ -374,6 +378,23 @@ function fillData() {
         }))
       })
       list.value = response.data.list
+      // 展开状态必须在循环前快照：下面的 toggleRowExpansion 会同步触发 expand-change，
+      // 而 handler 是整体重建 expandedIds 的，边读边被改会让"还原第一行"把后面的行从集合里挤掉
+      // （多行同时展开时只还原第一行）。选中用的 selectedIds 本来就是快照，这里与它对齐。
+      const expandedSnapshot = new Set<number>(expandedIds.value)
+      if (selectedIds.size === 0 && expandedSnapshot.size === 0) {
+        return
+      }
+      // 等 el-table 拿到新数据后再还原，否则它认不出这些行
+      await nextTick()
+      list.value.forEach((row: any) => {
+        if (selectedIds.has(row.id)) {
+          table.value?.toggleRowSelection(row, true)
+        }
+        if (expandedSnapshot.has(row.id)) {
+          table.value?.toggleRowExpansion(row, true)
+        }
+      })
     })
     .catch(showError)
 }
@@ -487,7 +508,7 @@ onMounted(() => {
 .el-table .el-tag--plain:hover {
   background: transparent !important;
 }
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .tasks-toolbar {
     flex-direction: column;
     align-items: stretch;
@@ -545,7 +566,7 @@ onMounted(() => {
   }
 }
 
-/* 手机端任务卡片（<640px 时替代表格，每个任务独立渲染，无边框无圆角、左右顶到两侧） */
+/* 手机端任务卡片（<680px 时替代表格，每个任务独立渲染，无边框无圆角、左右顶到两侧） */
 .task-cards {
   display: flex;
   flex-direction: column;

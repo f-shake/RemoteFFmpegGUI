@@ -121,4 +121,37 @@ public class FileSystemHelperTests
         var path = FileSystemHelper.GenerateOutputPath(task);
         Path.GetFileNameWithoutExtension(path).Should().StartWith("in");
     }
+
+    /// <summary>
+    /// 存量的相对输出路径（v2 早期相对配置下写入的 "output\x.mp4"）必须绝对化：
+    /// TwoPass 会把 ffmpeg 子进程的工作目录设成 2pass 临时目录，相对路径会跟着落到那里，
+    /// 任务显示成功但输出不在 OutputDir 里
+    /// </summary>
+    [Fact]
+    public void GenerateOutputPath_RelativeOutput_ShouldResolveAgainstCurrentDirectory()
+    {
+        var relative = Path.Combine("rfg_rel_out", "x.mp4");
+        var task = new TaskEntity
+        {
+            Output = relative,
+            Parameters = new OutputParameters(),
+            Inputs = new List<InputParameters>(),
+        };
+
+        try
+        {
+            var path = FileSystemHelper.GenerateOutputPath(task);
+            Path.IsPathFullyQualified(path).Should().BeTrue();
+            path.Should().Be(Path.GetFullPath(relative));
+        }
+        finally
+        {
+            // GenerateOutputPath 会创建输出目录，清掉，别把测试输出目录搞脏
+            var dir = Path.GetDirectoryName(Path.GetFullPath(relative));
+            if (Directory.Exists(dir))
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+    }
 }

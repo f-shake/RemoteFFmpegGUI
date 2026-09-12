@@ -205,7 +205,9 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
             var input = request.Inputs[inputIndex];
             if (input?.FilePath != null)
             {
-                output = Path.Combine(filePathHelper.OutputDir, Path.GetFileName(input.FilePath));
+                // 同样解析成 OutputDir 下的绝对路径，与下方 else 分支保持同一形态：直接 Path.Combine
+                // 配置原值，在配置写成相对示例值（"output"）时会存出相对路径，同一列出现"相对/绝对"两种形态
+                output = filePathHelper.GetFullPath(RootDirType.OutputDir, Path.GetFileName(input.FilePath));
             }
         }
         else

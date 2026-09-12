@@ -23,9 +23,24 @@ public class FilePathHelper(IOptionsSnapshot<AppSettings> appSettings)
 
     public string OutputDir => outputDir;
 
+    /// <summary>
+    /// 解析后的输入目录绝对路径。配置里允许写相对路径（出厂示例就是 "input"），但对外暴露
+    /// （File/Dirs 接口）与写入任务的路径都必须是绝对路径：前端靠它给任务路径做前缀匹配、
+    /// 砍掉前缀只显示相对路径；否则前端永远匹配不上，只能显示完整绝对路径。
+    /// 注意：相对配置值是按<b>进程当前目录</b>解析的。WebAPI 启动时把工作目录设成 DLL 所在目录
+    /// （Program.cs 的 SetCurrentDirectory），文件枚举、FileInfoDto 的相对路径也都用同一基准，三者一致；
+    /// 若将来改掉/绕过那一步，相对配置下的这些相对路径会一起变脏。
+    /// </summary>
+    public string InputDirFullPath => Path.GetFullPath(inputDir);
+
+    /// <summary>
+    /// 解析后的输出目录绝对路径，理由同 <see cref="InputDirFullPath"/>。
+    /// </summary>
+    public string OutputDirFullPath => Path.GetFullPath(outputDir);
+
     public string GetFullPath(RootDirType type, string relPathOrFullPath, bool allowAbsolute = false)
     {
-        var rootDir = Path.GetFullPath(type == RootDirType.InputDir ? inputDir : outputDir);
+        var rootDir = type == RootDirType.InputDir ? InputDirFullPath : OutputDirFullPath;
         string fullPath;
         if (Path.IsPathFullyQualified(relPathOrFullPath))
         {

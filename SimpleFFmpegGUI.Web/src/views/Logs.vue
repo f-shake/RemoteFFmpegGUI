@@ -184,7 +184,7 @@ onMounted(() => {
   max-width: 280px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .logs-pagination {
     flex-direction: column;
     align-items: stretch;

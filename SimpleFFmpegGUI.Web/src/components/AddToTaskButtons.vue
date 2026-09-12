@@ -106,7 +106,7 @@ async function viewArgs() {
   max-height: 60vh;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .out {
     padding: 12px 12px;
   }

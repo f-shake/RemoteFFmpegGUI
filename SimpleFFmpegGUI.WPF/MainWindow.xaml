@@ -32,93 +32,104 @@
                 Width="2*"
                 MinWidth="300" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ui:CommandBar
+            Grid.Row="2"
+            Grid.ColumnSpan="3">
+            <ui:AppBarButton
+                Command="{Binding ShowSettingsCommand}"
+                Label="设置">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarSeparator />
+
+            <ui:AppBarButton
+                Command="{Binding ShowMediaInfoCommand}"
+                Label="查询元数据">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Zoom}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarButton
+                Command="{Binding ShowTasksCommand}"
+                Label="历史任务">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarButton
+                Command="{Binding ShowPresetsCommand}"
+                Label="预设">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+            <ui:AppBarButton
+                Command="{Binding ShowLogsCommand}"
+                Label="日志">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarButton
+                Command="{Binding ShowTestsCommand}"
+                Label="编码测试">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarButton
+                Command="{Binding ShowFFmpegOutputsCommand}"
+                Label="FFmpeg输出">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarSeparator />
+
+            <ui:AppBarButton
+                Command="{Binding StartQueueCommand}"
+                Label="开始队列"
+                Visibility="{Binding StartMainQueueButtonVisibility}">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Play}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+            <ui:AppBarButton
+                Command="{Binding StopQueueCommand}"
+                Label="终止队列"
+                Visibility="{Binding StopMainQueueButtonVisibility}">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stop}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+
+            <ui:AppBarButton
+                Command="{Binding ShowAddTaskCommand}"
+                Label="创建任务">
+                <ui:AppBarButton.Icon>
+                    <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Add}" />
+                </ui:AppBarButton.Icon>
+            </ui:AppBarButton>
+        </ui:CommandBar>
         <Grid
             x:Name="grdLeft"
             Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
             <ContentControl
                 x:Name="taskHost"
                 Margin="8,8,0,0" />
-            <ui:CommandBar Grid.Row="1">
-                <ui:AppBarButton
-                    Command="{Binding ShowMediaInfoCommand}"
-                    Label="查询媒体信息">
-                    <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Zoom}" />
-                    </ui:AppBarButton.Icon>
-                </ui:AppBarButton>
-                <ui:AppBarSeparator />
-                <ui:AppBarButton
-                    Command="{Binding StartQueueCommand}"
-                    Label="开始队列"
-                    Visibility="{Binding StartMainQueueButtonVisibility}">
-                    <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Play}" />
-                    </ui:AppBarButton.Icon>
-                </ui:AppBarButton>
-                <ui:AppBarButton
-                    Command="{Binding StopQueueCommand}"
-                    Label="终止队列"
-                    Visibility="{Binding StopMainQueueButtonVisibility}">
-                    <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stop}" />
-                    </ui:AppBarButton.Icon>
-                </ui:AppBarButton>
-                <ui:AppBarButton
-                    Command="{Binding ShowAddTaskCommand}"
-                    Label="创建任务">
-                    <ui:AppBarButton.Icon>
-                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Add}" />
-                    </ui:AppBarButton.Icon>
-                </ui:AppBarButton>
-                <ui:CommandBar.SecondaryCommands>
-                    <ui:AppBarButton
-                        Command="{Binding ShowSettingsCommand}"
-                        Label="设置">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Settings}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowTasksCommand}"
-                        Label="查看所有任务">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.List}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowPresetsCommand}"
-                        Label="查看预设">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Shop}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowLogsCommand}"
-                        Label="查看日志">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.History}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowTestsCommand}"
-                        Label="编码性能测试">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Stopwatch}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                    <ui:AppBarButton
-                        Command="{Binding ShowFFmpegOutputsCommand}"
-                        Label="FFmpeg输出命令行">
-                        <ui:AppBarButton.Icon>
-                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.CommandPrompt}" />
-                        </ui:AppBarButton.Icon>
-                    </ui:AppBarButton>
-                </ui:CommandBar.SecondaryCommands>
-            </ui:CommandBar>
         </Grid>
         <GridSplitter
             Grid.Column="1"

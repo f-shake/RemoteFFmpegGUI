@@ -174,7 +174,7 @@ function query() {
   white-space: nowrap;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .page-container {
     padding: 0;
   }

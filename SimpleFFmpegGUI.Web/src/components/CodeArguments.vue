@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { showError, showSuccess } from '@/utils/ui'
 import * as net from '@/api'
 
@@ -226,21 +226,27 @@ const code = reactive({
 const showFormats = computed(() => [0, 1, 2, 4].includes(props.type))
 const showVideosAndAudios = computed(() => [0].includes(props.type))
 
-const labelWidth = ref('100px')
-const labelPosition = ref<'top' | 'left' | 'right'>('right')
-onMounted(() => {
-  function updateWidth() {
-    if (window.innerWidth < 640) {
-      labelPosition.value = 'top'
-      labelWidth.value = '100%'
-    } else {
-      labelPosition.value = 'right'
-      labelWidth.value = '100px'
-    }
+// 初值就按当前宽度定，避免窄屏下首帧标签先按桌面排再跳一次
+const labelWidth = ref(window.innerWidth <= 680 ? '100%' : '100px')
+const labelPosition = ref<'top' | 'left' | 'right'>(window.innerWidth <= 680 ? 'top' : 'right')
+
+// 窄屏（<=680，与各处手机端媒体查询/useIsMobile 语义一致）时标签改为独占一行
+function updateLabelLayout() {
+  if (window.innerWidth <= 680) {
+    labelPosition.value = 'top'
+    labelWidth.value = '100%'
+  } else {
+    labelPosition.value = 'right'
+    labelWidth.value = '100px'
   }
-  updateWidth()
-  window.addEventListener('resize', updateWidth)
+}
+
+onMounted(() => {
+  updateLabelLayout()
+  window.addEventListener('resize', updateLabelLayout)
 })
+// 卸载时移除监听：否则反复进出"新建任务"各页面会让监听器逐次累积，回调一直持有已销毁组件的状态
+onBeforeUnmount(() => window.removeEventListener('resize', updateLabelLayout))
 
 function fillPresetsAnd(action: (id: number) => void) {
   net.getPresets(props.type)
@@ -428,7 +434,7 @@ div[role="slider"] { min-width: 200px; max-width: 400px; }
 </style>
 
 <style>
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .code-args-form .el-form-item__content > * { max-width: 100%; }
   .code-args-form .el-slider { width: 100% !important; min-width: 0 !important; }
   .code-args-form .el-input-number, .code-args-form .el-select { min-width: 0 !important; }

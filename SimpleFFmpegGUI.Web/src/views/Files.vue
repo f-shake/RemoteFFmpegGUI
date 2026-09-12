@@ -217,7 +217,7 @@ onMounted(() => {
   margin-top: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .ftp-item {
     flex-direction: column;
     align-items: stretch;

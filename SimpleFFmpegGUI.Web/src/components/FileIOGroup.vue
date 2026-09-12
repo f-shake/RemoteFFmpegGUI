@@ -186,7 +186,7 @@ defineExpose({ getArgs, outputFile })
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .output-row {
     flex-direction: column;
     align-items: stretch;

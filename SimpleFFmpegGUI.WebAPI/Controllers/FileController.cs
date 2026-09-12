@@ -63,10 +63,12 @@ public class FileController(
     [Route("Dirs")]
     public ActionResult<AppDirDto> GetDirs()
     {
+        // 返回解析后的绝对路径，而不是配置原值：前端拿这两个值给任务里的绝对路径做前缀匹配，
+        // 砍掉前缀后只显示相对路径。出厂示例值是相对的（"input"/"output"），直接返回会让前端永远匹配不上。
         return new AppDirDto
         {
-            InputDir = appSettings.Value.InputDir,
-            OutputDir = appSettings.Value.OutputDir
+            InputDir = filePathHelper.InputDirFullPath,
+            OutputDir = filePathHelper.OutputDirFullPath
         };
     }
 

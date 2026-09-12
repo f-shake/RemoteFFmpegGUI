@@ -2,7 +2,7 @@
   <div class="status-bar" :class="barClass" v-if="status != null && status.isProcessing">
     <template v-if="status.hasDetail">
       <!-- === 宽屏（桌面）=== -->
-      <div v-if="windowWidth > 768" class="bar-inner">
+      <div v-if="windowWidth > 680" class="bar-inner">
         <div class="bar-snapshot" v-show="snapshotSrc !== ''">
           <div class="snapshot-placeholder">
             <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
@@ -31,7 +31,7 @@
               <span class="stat-value">{{ formatDoubleTimeSpan(status.progress.lastTime) }}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">预计完成</span>
+              <span class="stat-label">预计</span>
               <span class="stat-value">{{ formatDateTime(finishTime(), true, true, false) }}</span>
             </div>
           </div>
@@ -64,12 +64,11 @@
               <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
             </div>
           </div>
-          <div class="bar-compact-body">
+          <!-- 点击此处（缩略图与取消按钮除外）弹出详细进度表单 -->
+          <div class="bar-compact-body" @click="detailVisible = true" title="点击查看详细进度">
             <div class="bar-compact-info">
               <span class="one-line bar-task-name"><b>{{ status.isPaused ? '暂停中' : '运行中' }}：</b>{{ status.progress.name }}</span>
-              <span class="bar-compact-stats">
-                {{ status.fps }}FPS<template v-if="windowWidth > 300"> / {{ formatDoubleTimeSpan(status.time, true) }}</template><template v-if="windowWidth > 360"> / {{ status.speed }}X</template><template v-if="windowWidth > 440"> / {{ status.bitrate }}</template>
-              </span>
+              <span class="bar-compact-stats"><template v-if="windowWidth >= 320"><span class="stat-key">已用</span> {{ formatDoubleTimeSpan(status.progress.duration) }} / </template><span class="stat-key">剩余</span> {{ formatDoubleTimeSpan(status.progress.lastTime) }}<template v-if="windowWidth >= 400"> / {{ status.fps }}FPS</template><template v-if="windowWidth > 500"> / {{ status.bitrate }}</template></span>
             </div>
             <div class="bar-compact-row2">
               <div class="bar-compact-progress">
@@ -82,7 +81,7 @@
               </div>
               <el-popconfirm title="真的要取消任务吗？" @confirm="cancel">
                 <template #reference>
-                  <el-button text class="bar-cancel-btn">取消</el-button>
+                  <el-button text class="bar-cancel-btn" @click.stop>取消</el-button>
                 </template>
               </el-popconfirm>
             </div>
@@ -103,16 +102,39 @@
         </el-popconfirm>
       </div>
     </div>
+
+    <!-- === 窄屏点击下方进度区域（缩略图与取消按钮除外）弹出的详细进度表单 ===
+         只在窄屏形态下挂载：它替代的是窄屏统计区域，桌面形态下没有入口；
+         同时避免拉宽后弹窗留在桌面布局上、以及关闭状态仍在后台跟着状态轮询重渲染 -->
+    <el-dialog v-if="status.hasDetail && windowWidth <= 680" v-model="detailVisible" title="详细进度" :width="detailWidth"
+      append-to-body>
+      <el-form label-width="88px" size="small" class="detail-form">
+        <el-form-item label="任务名称">{{ status.progress.name }}</el-form-item>
+        <el-form-item label="状态">{{ status.isPaused ? '已暂停' : '运行中' }}</el-form-item>
+        <el-form-item label="进度">{{ progressText }}</el-form-item>
+        <el-form-item label="已用时间">{{ formatDoubleTimeSpan(status.progress.duration) }}</el-form-item>
+        <el-form-item label="剩余时间">{{ formatDoubleTimeSpan(status.progress.lastTime) }}</el-form-item>
+        <el-form-item label="预计">{{ formatDateTime(finishTime(), true, true, false) }}</el-form-item>
+        <el-form-item label="编码速度">{{ status.fps }}FPS {{ status.speed }}X</el-form-item>
+        <el-form-item label="码率">{{ status.bitrate }}</el-form-item>
+        <el-form-item label="已编帧数">{{ status.frame }} 帧</el-form-item>
+        <el-form-item label="已编码时长">{{ formatDoubleTimeSpan(status.time, true) }}</el-form-item>
+        <el-form-item label="已写出大小">{{ status.size }}</el-form-item>
+        <el-form-item label="输出文件">{{ displayPath(status.task?.output) }}</el-form-item>
+      </el-form>
+      <div class="detail-raw">{{ status.lastOutput }}</div>
+    </el-dialog>
   </div>
 
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import * as net from '@/api'
 import { showError } from '@/utils/ui'
 import { formatDateTime, formatDoubleTimeSpan } from '@/utils/format'
+import { displayPath } from '@/utils/navigation'
 
 const barClass = computed(() => ({
   paused: props.status?.isPaused,
@@ -127,6 +149,23 @@ const props = defineProps<{
 const snapshotSrc = ref('')
 const lastSnapshotTime = ref(1e10)
 const lastSnapshotFile = ref('')
+// 窄屏点击进度区域弹出的详细进度表单
+const detailVisible = ref(false)
+// 拉宽到桌面形态时关掉这个窄屏专用弹窗：弹窗挂载条件里已带宽度判断（拉宽即卸载），
+// 这里把状态一并复位，否则缩回窄屏时它会自己又弹出来
+watch(() => props.windowWidth > 680, (isDesktop) => {
+  if (isDesktop) {
+    detailVisible.value = false
+  }
+})
+// 弹窗宽度跟随窗口并留出边距，最大 520px（windowWidth 初始为 0，故做下限兜底）
+const detailWidth = computed(() => `${Math.min(Math.max(props.windowWidth - 32, 280), 520)}px`)
+// 进度百分比文案：进度无法计算时显示"未知"，与桌面分支的占位文案一致
+const progressText = computed(() =>
+  props.status?.progress?.isIndeterminate
+    ? '未知'
+    : (props.status.progress.percent * 100).toFixed(1) + '%'
+)
 function finishTime(): Date {
   return new Date(props.status.progress.finishTime)
 }
@@ -139,7 +178,7 @@ function updateSnapshot() {
   if (props.status == null) return
 
   if (props.status?.hasDetail && props.status.task != null && props.status.task.inputs.length >= 1) {
-    const isDesktop = props.windowWidth > 768
+    const isDesktop = props.windowWidth > 680
     const needRefresh = isDesktop && !props.status.isPaused
     const needInitial = snapshotSrc.value === ''
 
@@ -313,6 +352,8 @@ html.dark .status-bar.paused {
   flex-direction: column;
   gap: 4px;
   justify-content: center;
+  /* 点击弹详细进度表单 */
+  cursor: pointer;
 }
 .bar-compact-info {
   display: flex;
@@ -321,6 +362,11 @@ html.dark .status-bar.paused {
 }
 .bar-compact-stats {
   color: var(--text-secondary);
+}
+/* "已用/剩余"标签：比数值小一号，与数值统一按基线对齐（标签后紧跟一个空格） */
+.stat-key {
+  font-size: 0.85em;
+  vertical-align: baseline;
 }
 .bar-compact-row2 {
   display: flex;
@@ -350,6 +396,27 @@ html.dark .status-bar.paused {
   flex: 1;
   color: var(--text-regular);
   font-size: 12px;
+}
+
+/* ---- 详细进度表单（窄屏点击弹出） ---- */
+.detail-form :deep(.el-form-item) {
+  margin-bottom: 6px;
+}
+.detail-form :deep(.el-form-item__label) {
+  color: var(--text-secondary);
+}
+.detail-form :deep(.el-form-item__content) {
+  word-break: break-all;
+}
+.detail-raw {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  word-break: break-all;
 }
 
 </style>

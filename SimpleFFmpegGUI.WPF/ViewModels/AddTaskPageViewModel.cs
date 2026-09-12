@@ -26,6 +26,7 @@ using System.Text;
 using Mapster;
 using SimpleFFmpegGUI.Services;
 using SimpleFFmpegGUI.Repositories;
+using SimpleFFmpegGUI.Helpers;
 
 namespace SimpleFFmpegGUI.WPF.ViewModels
 {
@@ -55,37 +56,68 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         public IEnumerable TaskTypes => Enum.GetValues(typeof(TaskType));
         private static readonly HttpClient httpClient = new HttpClient();
 
+        /// <summary>
+        /// 探测远端目录专用的 HttpClient：提交用的 httpClient 是 100 秒默认超时，主机不可达
+        /// （丢包/黑洞而非 refuse）时会让用户在窗口禁用状态下先白等一份完整超时，这里缩短
+        /// </summary>
+        private static readonly HttpClient probeHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+
         public static async Task PostAsync(RemoteHost host, string subUrl, object data)
         {
             string str = JsonConvert.SerializeObject(data);
             var content = new StringContent(str, Encoding.UTF8, "application/json");
-            string url = host.Address.TrimEnd('/') + "/" + subUrl.TrimStart('/');
-            using var request = new HttpRequestMessage(HttpMethod.Post, url)
+            using var request = new HttpRequestMessage(HttpMethod.Post, RemoteApiRequest.BuildUrl(host.Address, subUrl))
             {
                 Content = content
             };
-            if (!string.IsNullOrEmpty(host.Token))
+            RemoteApiRequest.AddAuthorization(request, host.Token);
+            using var response = await httpClient.SendAsync(request);
+            // 校验拿到的是接口响应而不是网页：地址写错时（如漏了 v2 的 /api 前缀）会打到前端 SPA
+            // 兜底页并拿到 200 + HTML，只看状态码会误判成提交成功
+            await RemoteApiResponse.ReadAndValidateAsync(response);
+        }
+
+        /// <summary>
+        /// 把本地输入文件映射成远端可用的路径（提交远程任务前调用）：
+        /// 本地文件若位于远端 InputDir 之内（同机运行，或共享目录挂载成相同路径），发【相对 InputDir 的路径】
+        /// 并保留子目录；否则退回只发文件名（旧约定：由用户保证远端 InputDir 根目录下有同名文件）。
+        /// 远端目录信息取不到时一律按文件名处理，不因为这次查询失败而阻断提交。
+        /// </summary>
+        public static async Task<List<InputParameters>> MapInputsForRemoteAsync(RemoteHost host, List<InputParameters> inputs)
+        {
+            // 优先用该主机配置的"源目录对应的本机位置"（本机对应远端 InputDir 的位置，可跨盘符或走共享映射）；
+            // 没配置时才去问远端要 InputDir（同机运行、或共享目录挂载成相同路径时能对上）。
+            // 两者都取不到就按文件名处理，不因为这次查询失败而阻断提交。
+            string localBaseDir = string.IsNullOrWhiteSpace(host.LocalInputDir)
+                ? await TryGetRemoteInputDirAsync(host)
+                : host.LocalInputDir;
+            foreach (var i in inputs)
             {
-                // v2 WebAPI 校验 "Bearer {token}" 格式；兼容 v1 已保存带 "Bearer " 前缀的 Token
-                var token = host.Token.Trim();
-                if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                {
-                    token = token["Bearer ".Length..];
-                }
-                request.Headers.Add("Authorization", $"Bearer {token}");
+                i.FilePath = RemotePathHelper.ToRemoteInputPath(i.FilePath, localBaseDir);
             }
-            var response = await httpClient.SendAsync(request);
-            var responseString = await response.Content.ReadAsStringAsync();
-            if (!response.IsSuccessStatusCode)
+            return inputs;
+        }
+
+        /// <summary>
+        /// 取远端 InputDir；失败（网络、地址不对、旧版本没有该接口等）返回 null，由调用方退回按文件名提交
+        /// </summary>
+        private static async Task<string> TryGetRemoteInputDirAsync(RemoteHost host)
+        {
+            try
             {
-                if (string.IsNullOrWhiteSpace(responseString))
-                {
-                    throw new HttpRequestException($"{response.StatusCode}");
-                }
-                else
-                {
-                    throw new HttpRequestException($"{response.StatusCode}：{responseString}");
-                }
+                string url = RemoteApiRequest.BuildUrl(host.Address, "File/Dirs");
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                RemoteApiRequest.AddAuthorization(request, host.Token);
+                using var response = await probeHttpClient.SendAsync(request);
+                string json = await RemoteApiResponse.ReadAndValidateAsync(response);
+                return JsonConvert.DeserializeObject<SimpleFFmpegGUI.Dto.AppDirDto>(json)?.InputDir;
+            }
+            catch (Exception ex)
+            {
+                // 拿不到就退回按文件名提交（旧约定）。这里记一条日志：否则"子目录映射被静默丢掉、
+                // 远端报输入文件不存在"这种情况无从排查。AppLog 在 OnStartup 里才赋值，故用 ?.
+                App.AppLog?.Info($"无法获取远程主机 {host.Name} 的输入目录，本次按文件名提交：{ex.Message}");
+                return null;
             }
         }
 
@@ -243,7 +275,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
             var items = Config.Instance.RemoteHosts.Select(p =>
             new SelectDialogItem(p.Name, p.Address));
-            var index = await CommonDialog.ShowSelectItemDialogAsync("请确保在远程主机的输入文件夹中有同名文件", items);
+            var index = await CommonDialog.ShowSelectItemDialogAsync(
+                "请选择远程主机：输入文件按“源目录对应的本机位置”映射为相对路径提交，子目录一并保留；未配置该位置时需远端输入文件夹根下有同名文件", items);
             if (index < 0)
             {
                 return;
@@ -253,11 +286,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 var host = Config.Instance.RemoteHosts[index];
                 List<InputParameters> inputs = FileIOViewModel.GetInputs().Adapt<List<InputParameters>>();
-                foreach (var i in inputs)
-                {
-                    // v2 相对路径约定：仅保留文件名，由远程主机按 InputDir 解析（不再使用 v1 的 ":" 前缀）
-                    i.FilePath = System.IO.Path.GetFileName(i.FilePath);
-                }
+                // 映射成远端 InputDir 下的路径：本地文件在远端 InputDir 内时保留子目录（发相对路径），
+                // 否则退回只发文件名（约定：远端 InputDir 根目录下有同名文件）
+                await MapInputsForRemoteAsync(host, inputs);
                 string output = FileIOViewModel.GetOutputFileName();
                 var data = new
                 {

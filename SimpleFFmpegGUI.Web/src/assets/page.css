@@ -29,7 +29,7 @@
   color: var(--el-color-primary);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .page-container, .page-container-wide {
     padding: 0;
   }

@@ -190,7 +190,7 @@ html, body {
 .width160 { width: 160px; }
 .width120 { width: 120px; }
 .width80 { width: 80px; }
-@media (max-width: 640px) {
+@media (max-width: 680px) {
   .width240 { width: 100%; max-width: 240px; }
   .width160 { width: 100%; max-width: 160px; }
   .width120 { width: 100%; max-width: 120px; }
