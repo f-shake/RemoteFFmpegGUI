@@ -305,6 +305,9 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 App.AppLog.Error($"获取视频{Inputs[0].FilePath}在{time}的快照失败", ex);
             }
             Snapshot.Source = path == null ? null : new Uri(path);
+            // 与 Source 一起记下这一帧的抓取时刻：点击预览时标题要用它，用点击瞬间的 ProcessStatus.Time
+            // 会差最多一个刷新周期（约 10 秒），标题描述的就是另一帧了
+            Snapshot.Time = time;
         }
 
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)

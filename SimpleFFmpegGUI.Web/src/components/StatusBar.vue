@@ -4,8 +4,8 @@
       <!-- === 宽屏（桌面）=== -->
       <div v-if="windowWidth > 680" class="bar-inner">
         <div class="bar-snapshot" v-show="snapshotSrc !== ''">
-          <div class="snapshot-placeholder">
-            <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
+          <div class="snapshot-placeholder" @mousedown="freezePreview">
+            <el-image :src="snapshotSrc" :preview-src-list="frozenPreview" preview-teleported :z-index="9999" fit="cover" class="snapshot-img" />
           </div>
         </div>
         <div class="bar-info">
@@ -60,8 +60,8 @@
       <div v-else class="bar-compact">
         <div class="bar-compact-inner">
           <div class="bar-snapshot bar-snapshot-mobile" v-show="snapshotSrc !== ''">
-            <div class="snapshot-placeholder">
-              <el-image :src="snapshotSrc" :preview-src-list="[snapshotSrc]" preview-z-index="9999" fit="cover" class="snapshot-img" />
+            <div class="snapshot-placeholder" @mousedown="freezePreview">
+              <el-image :src="snapshotSrc" :preview-src-list="frozenPreview" preview-teleported :z-index="9999" fit="cover" class="snapshot-img" />
             </div>
           </div>
           <!-- 点击此处（缩略图与取消按钮除外）弹出详细进度表单 -->
@@ -152,6 +152,25 @@ const barClass = computed(() => ({
 }))
 
 const snapshotSrc = ref('')
+/**
+ * 点击放大用的"冻结帧"：按下鼠标那一刻把当前这帧拷一份，预览层用它而不是直接用 snapshotSrc。
+ *
+ * 两个理由：
+ * ① 预览层是 preview-teleported 挂到 body 上的，不受缩略图容器隐藏（v-show）的影响。若直接绑 snapshotSrc，
+ *    快照请求一旦失败（catch 分支会把 snapshotSrc 置空）就只剩一层盖住整站、中间显示"加载失败"、点遮罩也关不掉的
+ *    浮层（el-image 只暴露 showPreview，没有关闭预览层的 API，且 hideOnClickModal 默认为 false）。
+ * ② 即便请求一直成功，10 秒一次的轮询也会把用户正放大细看的那一帧在脚下换成新帧（Element Plus 拿
+ *    urlList[activeIndex] 当 img 的 key，会整张重建）。WPF 端的预览窗口刻意冻结点击那一帧，两端语义保持一致。
+ *
+ * mousedown 早于 click，而 Vue 会在两者之间把这次赋值刷进组件，所以点击打开预览层时 el-image 拿到的已是冻结副本。
+ */
+const frozenPreview = ref<string[]>([])
+
+function freezePreview() {
+  if (snapshotSrc.value !== '') {
+    frozenPreview.value = [snapshotSrc.value]
+  }
+}
 const lastSnapshotTime = ref(1e10)
 const lastSnapshotFile = ref('')
 // 窄屏点击进度区域弹出的详细进度表单

@@ -175,6 +175,7 @@ namespace SimpleFFmpegGUI.WPF
             services.AddTransient<FileIOPanelViewModel>();
             services.AddTransient<PresetsPanelViewModel>();
             services.AddTransient<StatusPanelViewModel>();
+            services.AddTransient<ImagePreviewPanelViewModel>();
         }
 
         private void InitializeLogs()

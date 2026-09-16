@@ -49,12 +49,41 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
+                            <!--
+                                点击可放大查看这一帧（预览窗口的逻辑在 ImagePreviewPanel）。
+                                边框厚度恒为 2（平时是透明色）：这样悬停高亮不会引起布局跳动；
+                                还没生成出快照时（Snapshot.Source 为 null）走 DataTrigger，把光标与提示恢复成"不可点"，
+                                免得 UI 先撒谎、点了再道歉。
+                            -->
                             <Border
                                 Grid.RowSpan="99"
                                 Width="360"
                                 Height="256"
                                 Margin="8"
+                                MouseLeftButtonDown="Snapshot_MouseLeftButtonDown"
                                 Visibility="{Binding Snapshot.DisplayFrame, Converter={StaticResource Bool2VisibilityConverter}}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderThickness" Value="2" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Setter Property="Cursor" Value="Hand" />
+                                        <Setter Property="ToolTip" Value="点击查看大图" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush">
+                                                    <Setter.Value>
+                                                        <SolidColorBrush Color="{DynamicResource SystemAccentColor}" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding Snapshot.Source}" Value="{x:Null}">
+                                                <Setter Property="BorderBrush" Value="Transparent" />
+                                                <Setter Property="Cursor" Value="Arrow" />
+                                                <Setter Property="ToolTip" Value="{x:Null}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <Border.Background>
                                     <SolidColorBrush
                                         Opacity="0.5"

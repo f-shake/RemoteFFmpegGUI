@@ -50,6 +50,9 @@
     <Compile Update="Panels\StatusPanel.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Panels\ImagePreviewPanel.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -106,6 +109,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Panels\StatusPanel.xaml">
+      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Panels\ImagePreviewPanel.xaml">
       <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
       <SubType>Designer</SubType>
     </Page>
