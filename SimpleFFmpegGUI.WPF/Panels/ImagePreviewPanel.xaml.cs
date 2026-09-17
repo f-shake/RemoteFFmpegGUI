@@ -117,11 +117,24 @@ namespace SimpleFFmpegGUI.WPF.Panels
             }
             catch (Exception ex)
             {
-                // 开窗失败时 Show 不会触发 Closed，得手工把条目清掉：否则静态表里会长期留着一个窗口引用，
-                // 连带那张几 MB 的冻结位图。只清理"确实登记过的那一个"——构造函数就抛时压根还没登记
+                // 开窗失败时 Closed 不会触发，得在这里手工收拾。window 仍为 null 只有一种可能：构造函数就抛了
+                // ——那种情形这里连实例都拿不到（而加载环已在那之前的 ViewWindow 构造函数里登记过），管不了，认了
                 if (window != null)
                 {
+                    // 去重表里"确实登记过的那一个"
                     RemoveOpenedWindow(key, window);
+                    // 加载环登记在 ViewWindow 构造函数里（静态表），而摘除只挂在 Closed 上；窗口既然没显示成功，
+                    // 就永远不会走到 Closed。先摘条目，再关一次窗——Close 会走完整套收尾（退订、Dispose、摘条目），
+                    // 顺带把窗口从 Application.Windows 里去掉（只摘 rings 的话窗口仍被 Application.Windows 钉着）
+                    WindowBusyOverlay.Unregister(window);
+                    try
+                    {
+                        window.Close();
+                    }
+                    catch (Exception closeException)
+                    {
+                        App.AppLog?.Error($"收拾开窗失败的预览窗口时出错：{key}", closeException);
+                    }
                 }
                 ShowError(owner, $"打开快照预览失败：{key}", ex);
             }
@@ -283,6 +296,19 @@ namespace SimpleFFmpegGUI.WPF.Panels
             dragging = false;
             viewport.ReleaseMouseCapture();
             viewport.Cursor = Cursors.Hand;
+        }
+
+        /// <summary>
+        /// 捕获被别的东西抢走时（Alt+Tab、系统菜单、UAC 提示等）把拖动状态收干净。
+        /// <para>
+        /// 不收的话：窗口外的移动与那次松开都不会再送到视口（鼠标仍在窗口内时 MouseMove 倒还是会来，
+        /// 但那种情况本来就该结束拖动了），<c>dragging</c> 会一直停在 true、光标停在四向箭头，只能等鼠标
+        /// 再次移进视口时靠 <see cref="Viewport_MouseMove"/> 里的自愈分支清掉。
+        /// </para>
+        /// </summary>
+        private void Viewport_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            EndDrag();
         }
 
         private void Viewport_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

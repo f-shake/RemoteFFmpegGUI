@@ -24,34 +24,60 @@
             视口：整个面板唯一的坐标参照系，自身不加任何变换（所有鼠标坐标都相对它取）。
             Background 必须设（否则该区域不可命中，滚轮与拖动都收不到）；颜色固定近黑，
             不跟随主题——亮色主题下浅灰底会让缩小的图与背景糊在一起，看图场景一律深底。
+            MinHeight：套了 Canvas 之后视口的**期望**尺寸是 0（Canvas 不参与尺寸计算），
+            宿主若"按内容定尺寸"（StackPanel、Auto 行、SizeToContent 窗口）就会把视口压成 0 高、
+            预览一片空白。当前宿主 ViewWindow 给的是显式窗口尺寸 + 内容 Stretch（属主窗口最小也有 400 DIP 高），
+            本来不会出事；这里只兜住"高度"这一维——宽度仍得由宿主给，面板不是"塞进任何容器都好看"。
         -->
         <Border
             x:Name="viewport"
+            MinHeight="120"
             Background="#FF1F1F1F"
             ClipToBounds="True"
             Cursor="Hand"
+            LostMouseCapture="Viewport_LostMouseCapture"
             MouseLeftButtonDown="Viewport_MouseLeftButtonDown"
             MouseLeftButtonUp="Viewport_MouseLeftButtonUp"
             MouseMove="Viewport_MouseMove"
             PreviewMouseWheel="Viewport_PreviewMouseWheel"
             SizeChanged="Viewport_SizeChanged">
             <!--
-                左上对齐 + 显式宽高（加载时设为图片像素尺寸）+ RenderTransformOrigin="0,0"：
-                三者缺一不可——居中/拉伸会让"图像空间 → 视口空间"多出一段偏移，公式全要跟着改；
-                RenderTransformOrigin 默认是 (0.5,0.5)，不写就会绕元素中心缩放。
+                为什么图片外面还套一层 Canvas：WPF 会给"期望尺寸被父级槽位压小"的元素**自己**挂一层布局裁剪
+                （`DesiredSize` < `RenderSize` 时 `LayoutInformation.GetLayoutClip` 就返回父级给它的那个槽位矩形）。
+                本面板里就是这张 1920×1080 的图放进 1098×597 的视口：`DesiredSize` 被压成 1098×597、`RenderSize`
+                仍是 1920×1080，于是只画得出整帧**左上角那一块**（1080P 图约占 57%×55%），再被矩阵按整图尺寸
+                缩放一次，整帧就缩成一小块贴在左上角。两个容易踩错的点：
+                ① 这层裁剪**与父级的 `ClipToBounds` 无关**——实测把它关掉，裁剪几何与渲染结果一字不差，
+                   所以别去改 `ClipToBounds`/`Stretch`；用带标记的图量过，源图是 1:1 画的、没有变形，只是被裁；
+                ② 此时 `Width/Height`、`ActualWidth`/`RenderSize`、矩阵、百分比全都报"正确"，
+                   **只有逐像素量截图才看得出来**。
+                `Canvas` 用**无限尺寸**测量子元素，`Image` 的 `DesiredSize` 因此恢复成 1920×1080（= `RenderSize`）、
+                布局裁剪消失，矩阵（按图片像素尺寸算）与实际绘制才一致；视口之外的部分仍由外层 `Border` 的
+                `ClipToBounds` 裁掉（实测：把它关掉，内容就会画到视口外面去）。
+                （"套一层 Canvas"不是通用规则，它只是让子元素的期望尺寸不被压小。别照搬到 StatusPanel 的缩略图上：
+                  那个 Border 没有 ClipToBounds，缩略图 `UniformToFill` 的外溢（期望 455×256 > 槽位 360×256）
+                  正是靠**同一层布局裁剪**裁掉的，套上 Canvas 后裁剪消失，图会糊出卡片。）
             -->
-            <Image
-                x:Name="img"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                RenderOptions.BitmapScalingMode="HighQuality"
-                RenderTransformOrigin="0,0"
-                Source="{Binding Source}"
-                Stretch="Fill">
-                <Image.RenderTransform>
-                    <MatrixTransform x:Name="imgTransform" />
-                </Image.RenderTransform>
-            </Image>
+            <Canvas x:Name="imageHost" ClipToBounds="False">
+
+                <!--
+                    左上对齐（Canvas 里由 Canvas.Left/Top 缺省为 0 保证）+ 显式宽高（加载时设为图片像素尺寸）
+                    + RenderTransformOrigin="0,0"：缺一不可——居中/拉伸会让"图像空间 → 视口空间"多出一段偏移，
+                    公式全要跟着改；RenderTransformOrigin 默认是 (0.5,0.5)，不写就会绕元素中心缩放。
+                -->
+                <Image
+                    x:Name="img"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    RenderOptions.BitmapScalingMode="HighQuality"
+                    RenderTransformOrigin="0,0"
+                    Source="{Binding Source}"
+                    Stretch="Fill">
+                    <Image.RenderTransform>
+                        <MatrixTransform x:Name="imgTransform" />
+                    </Image.RenderTransform>
+                </Image>
+            </Canvas>
         </Border>
 
         <Border
@@ -73,10 +99,18 @@
                     VerticalAlignment="Center"
                     Text="{Binding ZoomText}" />
                 <StackPanel Orientation="Horizontal">
+                    <!--
+                        按钮背景设成透明：默认（WinUI 风格）按钮在常态下带一层底色（浅色主题下很淡、
+                        暗色主题下能看出一块块方块）。透明后常态只剩一个图标，悬停/按下/禁用态的反馈
+                        仍由主题样式给出。要写具名的 Transparent 而不是 {x:Null}——null 会让按钮的
+                        空白处不参与命中测试，只有图标那几笔能点。
+                    -->
                     <Button
                         MinWidth="40"
                         Height="32"
                         Margin="0,0,4,0"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
                         Click="ZoomOut_Click"
                         ToolTip="缩小">
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.ZoomOut}" />
@@ -85,6 +119,8 @@
                         MinWidth="40"
                         Height="32"
                         Margin="0,0,4,0"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
                         Click="ActuallySize_Click"
                         Content="1:1"
                         ToolTip="原始像素大小" />
@@ -92,6 +128,8 @@
                         MinWidth="40"
                         Height="32"
                         Margin="0,0,4,0"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
                         Click="Fit_Click"
                         ToolTip="适应窗口">
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.FitPage}" />
@@ -99,6 +137,8 @@
                     <Button
                         MinWidth="40"
                         Height="32"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
                         Click="ZoomIn_Click"
                         ToolTip="放大">
                         <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.ZoomIn}" />
