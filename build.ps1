@@ -75,8 +75,14 @@ try {
         Copy-Item SimpleFFmpegGUI.WebAPI/CreateWindowsService.bat Generation/Publish/WebPackage
         Copy-Item SimpleFFmpegGUI.WebAPI/DeleteWindowsService.bat Generation/Publish/WebPackage
 
-        Write-Output "正在复制二进制库"
-        Copy-Item bin/* Generation/Publish/WebPackage -Force -Recurse
+        Write-Output "正在复制二进制库（不含只有 WPF 用得到的 ffmpeg_FFME 与 test.mp4）"
+        # ffmpeg_FFME 仅供 WPF 的 FFME 裁剪预览（WPF/App.xaml.cs 里赋给 Library.FFmpegDirectory），
+        # test.mp4 仅供 WPF 的编码性能测试（TestWindowViewModel），Web 端没有这两个功能，
+        # 带上只会让包白白大 255 MB。
+        # vmaf*.json 必须留着：质量对比任务靠"程序目录下有没有它"决定要不要输出 VMAF 评分（FFmpegTaskService）。
+        Get-ChildItem bin |
+            Where-Object { $_.Name -notin @('ffmpeg_FFME', 'test.mp4') } |
+            Copy-Item -Destination Generation/Publish/WebPackage -Force -Recurse
 
         Write-Output "正在复制前端到WebAPI（wwwroot，供后端托管）"
         New-Item -ItemType Directory -Force Generation/Publish/WebPackage/wwwroot | Out-Null
