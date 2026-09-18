@@ -58,9 +58,18 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         /// <summary>
         /// 是否可用视频分割
-        /// </summary>     
+        /// </summary>
         [ObservableProperty]
         private bool showTimeClip;
+
+        /// <summary>
+        /// 是否显示「更多」面板（图像帧序列 / 输入帧率 / 其他参数）。
+        /// 只有会把这些输入参数拼进命令行的类型才显示：转码、混流、质量测试（<c>ArgumentsGenerator.GetInputArguments</c>
+        /// 会读 <c>Framerate</c>/<c>Extra</c>）。拼接的执行器自己造输入、只取 <c>FilePath</c>
+        /// （<c>FFmpegTaskService.RunConcatProcessAsync</c>），显示出来用户填了也不生效；自定义任务没有输入行。
+        /// </summary>
+        [ObservableProperty]
+        private bool showMoreOptions;
 
         /// <summary>
         /// 任务类型
@@ -287,6 +296,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 TaskType.Transcode => true,
                 _ => false
             };
+            ShowMoreOptions = type is TaskType.Transcode or TaskType.Mux or TaskType.QualityCheck;
         }
 
         [RelayCommand]
@@ -328,6 +338,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private async Task ClipAsync(InputArgumentsViewModel input)
         {
+            // 忙碌状态"发出去"和"收回来"必须配对：下面的 finally 是无条件收的，而两个提前 return 都在
+            // 发送之前——直接用 finally 收，就会在"输入框还空着就点裁剪"这类情况下多发一条"不忙碌"，
+            // 把别的窗口正在转的环收掉（那个窗口提前变回可点）
+            bool busySent = false;
             try
             {
                 Debug.Assert(input != null);
@@ -341,8 +355,8 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                     QueueErrorMessage($"找不到文件{input.FilePath}");
                     return;
                 }
-                SendMessage(new WindowEnableMessage(false));
-                (TimeSpan From, TimeSpan To)? result = null;
+                busySent = true;
+                SendMessage(new WindowEnableMessage(false, "正在裁剪"));
 
                 var handle = WeakReferenceMessenger.Default.Send(new WindowHandleMessage()).Handle;
 
@@ -360,24 +374,18 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 p.StartInfo.ArgumentList.Add(input.From.HasValue ? input.From.Value.ToString() : "-");
                 p.StartInfo.ArgumentList.Add(input.To.HasValue ? input.To.Value.ToString() : "-");
                 p.Start();
-                var output = await p.StandardOutput.ReadToEndAsync();
-                string[] outputs = output.Split(',');
-                if (outputs.Length == 2)
+                string output = await p.StandardOutput.ReadToEndAsync();
+                // 接不回来时必须说出来：以前是静默什么都不做，用户只看到"点了完成但时间没变"，无从判断是哪一环断了
+                if (TryParseCutResult(output, out TimeSpan from, out TimeSpan to))
                 {
-                    if (TimeSpan.TryParse(outputs[0], out TimeSpan from))
-                    {
-                        if (TimeSpan.TryParse(outputs[1], out TimeSpan to))
-                        {
-                            result = (from, to);
-                        }
-                    }
-                }
-                if (result.HasValue)
-                {
-                    var time = result.Value;
-                    input.From = time.From;
-                    input.To = time.To;
+                    input.From = from;
+                    input.To = to;
                     input.Duration = null;
+                }
+                else
+                {
+                    App.AppLog?.Warn($"裁剪窗口没有返回可用时间（退出码 {(p.HasExited ? p.ExitCode : -1)}，原始输出 \"{output}\"）");
+                    QueueErrorMessage("裁剪窗口没有返回时间，请重试");
                 }
             }
             catch (Exception ex)
@@ -386,8 +394,38 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
             finally
             {
-                SendMessage(new WindowEnableMessage(true));
+                // 只收自己发出去的那次（上面两个提前 return 没发过，就不该收）
+                if (busySent)
+                {
+                    SendMessage(new WindowEnableMessage(true));
+                }
             }
+        }
+
+        /// <summary>
+        /// 从裁剪窗口的标准输出里取出"{开始},{结束}"（协议见 <c>CutWindowViewModel.Apply</c>）。
+        /// <para>
+        /// 按**行**找，而不是把整段按逗号切开：子进程退出时保存配置还会往标准输出再写一句
+        /// （Core 的 <c>ConfigService.SaveAsync</c> 里那句"尝试保存配置"），只要它自成一行就不影响解析，
+        /// 逐行找还能容忍它出现在结果之前。找不到时返回 false，由调用方记日志并提示用户。
+        /// </para>
+        /// </summary>
+        private static bool TryParseCutResult(string output, out TimeSpan from, out TimeSpan to)
+        {
+            foreach (string line in output.Split('\n'))
+            {
+                string[] parts = line.Trim().Split(',');
+                if (parts.Length == 2
+                    && TimeSpan.TryParse(parts[0], out from)
+                    && TimeSpan.TryParse(parts[1], out to))
+                {
+                    return true;
+                }
+            }
+
+            from = default;
+            to = default;
+            return false;
         }
 
         private void Inputs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

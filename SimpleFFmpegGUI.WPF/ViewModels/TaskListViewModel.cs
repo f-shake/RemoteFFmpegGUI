@@ -79,7 +79,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
             try
             {
-                SendMessage(new WindowEnableMessage(false));
+                SendMessage(new WindowEnableMessage(false, "正在取消任务"));
                 foreach (var task in tasks)
                 {
                     await taskManager.UpdateStatusAsync([task.Id], TaskStatus.Cancel);

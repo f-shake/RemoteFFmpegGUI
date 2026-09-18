@@ -73,7 +73,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             }
             try
             {
-                SendMessage(new WindowEnableMessage(false));
+                SendMessage(new WindowEnableMessage(false, "正在终止队列"));
                 await queue.CancelAsync();
             }
             catch (Exception ex)

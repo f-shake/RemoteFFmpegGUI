@@ -60,10 +60,11 @@
                                     <RowDefinition Height="4" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="8" />
+                                    <!--  下面是「更多」面板（跟着上面那行的按钮走，收起时高 0），再下面是时间行  -->
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="8" />
+                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
-                                    <!--  如果是Auto会抖动  -->
+                                    <!--  末尾的 * 留着：如果是Auto会抖动  -->
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Text="{Binding Index, StringFormat=输入文件 {0}}" />
@@ -90,22 +91,66 @@
                                             <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.OpenFile}" />
                                         </Button>
                                         <Button
-                                            Command="{Binding DataContext.ClipCommand, Source={x:Reference root}}"
-                                            CommandParameter="{Binding .}"
-                                            Visibility="{Binding ElementName=root, Path=DataContext.ShowTimeClip, Converter={StaticResource Bool2VisibilityConverter}}">
-                                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Cut}" />
-                                        </Button>
-                                        <Button
                                             Command="{Binding DataContext.RemoveFileCommand, Source={x:Reference root}}"
                                             CommandParameter="{Binding .}"
                                             IsEnabled="{Binding CanDelete}"
                                             Visibility="{Binding ElementName=root, Path=DataContext.CanChangeInputsCount, Converter={StaticResource Bool2VisibilityConverter}}">
                                             <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Delete}" />
                                         </Button>
+                                        <!--
+                                            只在"会把这些输入参数拼进命令行"的任务类型里显示（ShowMoreOptions：转码/混流/质量测试）。
+                                            拼接的执行器自己造输入、只取文件路径，显示出来填了也不生效；自定义任务没有输入行。
+                                        -->
+                                        <ToggleButton
+                                            Height="32"
+                                            Visibility="{Binding ElementName=root, Path=DataContext.ShowMoreOptions, Converter={StaticResource Bool2VisibilityConverter}}">
+                                            <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.More}" />
+                                            <ToggleButton.Triggers>
+                                                <EventTrigger RoutedEvent="ToggleButton.Unchecked">
+                                                    <BeginStoryboard>
+                                                        <Storyboard x:Name="HideStackPanel">
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetName="grdMore"
+                                                                Storyboard.TargetProperty="LayoutTransform.ScaleY"
+                                                                To="0"
+                                                                Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <!--<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Content">
+                                                                <DiscreteObjectKeyFrame
+                                                                    KeyTime="0:0:0"
+                                                                    Value="More" />
+                                                            </ObjectAnimationUsingKeyFrames>-->
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                                <EventTrigger RoutedEvent="ToggleButton.Checked">
+                                                    <BeginStoryboard>
+                                                        <Storyboard x:Name="ShowStackPanel">
+                                                            <DoubleAnimation
+                                                                Storyboard.TargetName="grdMore"
+                                                                Storyboard.TargetProperty="LayoutTransform.ScaleY"
+                                                                To="1"
+                                                                Duration="0:0:0.3">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut" />
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <!--<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Content">
+                                                                <DiscreteObjectKeyFrame
+                                                                    KeyTime="0:0:0" Value=""/>
+                                                            </ObjectAnimationUsingKeyFrames>-->
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </ToggleButton.Triggers>
+                                        </ToggleButton>
                                     </ikw:SimpleStackPanel>
                                 </Grid>
                                 <Grid
-                                    Grid.Row="4"
+                                    Grid.Row="5"
                                     Visibility="{Binding ElementName=root, Path=DataContext.ShowTimeClip, Converter={StaticResource Bool2VisibilityConverter}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="60" />
@@ -142,54 +187,21 @@
                                         Text="{Binding To, Converter={StaticResource TimeSpanMMConverter}}"
                                         ToolTip="{StaticResource tooltip}" />
 
-                                    <ToggleButton Grid.Column="8">
-                                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.More}" />
-                                        <ToggleButton.Triggers>
-                                            <EventTrigger RoutedEvent="ToggleButton.Unchecked">
-                                                <BeginStoryboard>
-                                                    <Storyboard x:Name="HideStackPanel">
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetName="grdMore"
-                                                            Storyboard.TargetProperty="LayoutTransform.ScaleY"
-                                                            To="0"
-                                                            Duration="0:0:0.3">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <CubicEase EasingMode="EaseInOut" />
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
-                                                        <!--<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Content">
-                                                            <DiscreteObjectKeyFrame
-                                                                KeyTime="0:0:0"
-                                                                Value="More" />
-                                                        </ObjectAnimationUsingKeyFrames>-->
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                            <EventTrigger RoutedEvent="ToggleButton.Checked">
-                                                <BeginStoryboard>
-                                                    <Storyboard x:Name="ShowStackPanel">
-                                                        <DoubleAnimation
-                                                            Storyboard.TargetName="grdMore"
-                                                            Storyboard.TargetProperty="LayoutTransform.ScaleY"
-                                                            To="1"
-                                                            Duration="0:0:0.3">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <CubicEase EasingMode="EaseInOut" />
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
-                                                        <!--<ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Content">
-                                                            <DiscreteObjectKeyFrame
-                                                                KeyTime="0:0:0" Value=""/>
-                                                        </ObjectAnimationUsingKeyFrames>-->
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                        </ToggleButton.Triggers>
-                                    </ToggleButton>
+                                    <!--
+                                        裁剪按钮放在时间这一行：它就是对旁边这两个时间框的操作，挨着放才看得出关系。
+                                        不用再写 Visibility——整行已经按 ShowTimeClip 折叠了（上面那个 Grid 的绑定）。
+                                    -->
+                                    <Button
+                                        Grid.Column="8"
+                                        Command="{Binding DataContext.ClipCommand, Source={x:Reference root}}"
+                                        CommandParameter="{Binding .}">
+                                        <ui:FontIcon Icon="{x:Static ui:SegoeFluentIcons.Cut}" />
+                                    </Button>
                                 </Grid>
                                 <Grid
                                     x:Name="grdMore"
-                                    Grid.Row="99">
+                                    Grid.Row="4"
+                                    Visibility="{Binding ElementName=root, Path=DataContext.ShowMoreOptions, Converter={StaticResource Bool2VisibilityConverter}}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="8" />
@@ -201,6 +213,9 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="8" />
                                         <RowDefinition Height="Auto" />
+                                        <!--  末尾的间隔补在面板**内部**：展开时与下面的时间行留出 8 DIP，
+                                              收起时整块被 ScaleY=0 压成 0 高，所以不会在文件行与时间行之间变成双倍空档  -->
+                                        <RowDefinition Height="8" />
                                     </Grid.RowDefinitions>
                                     <Grid.LayoutTransform>
                                         <ScaleTransform ScaleY="0" />

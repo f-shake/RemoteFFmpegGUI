@@ -177,7 +177,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 return;
             }
 
-            SendMessage(new WindowEnableMessage(false));
+            SendMessage(new WindowEnableMessage(false, "正在加入队列"));
             try
             {
                 List<InputParameters> inputs = FileIOViewModel.GetInputs();
@@ -281,7 +281,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
             {
                 return;
             }
-            SendMessage(new WindowEnableMessage(false));
+            SendMessage(new WindowEnableMessage(false, "正在提交到远程主机"));
             try
             {
                 var host = Config.Instance.RemoteHosts[index];

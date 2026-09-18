@@ -63,7 +63,13 @@ namespace iNKORE.Extension
             grd.IsHitTestVisible = false;
             ani.Completed += (p1, p2) =>
             {
-                grd.Visibility = Visibility.Collapsed;
+                // 淡出的这 500ms 里又 Show() 了（两个忙碌操作挨着来）时，这条已经作废的动画不该把环收掉：
+                // 只有"最后一次调用确实是 Hide"（showing 仍为 false）才折叠，否则环会在忙碌中途凭空消失、
+                // 窗口提前变回可点
+                if (!showing)
+                {
+                    grd.Visibility = Visibility.Collapsed;
+                }
             };
             grd.BeginAnimation(OpacityProperty, ani);
         }

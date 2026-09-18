@@ -17,6 +17,12 @@ namespace SimpleFFmpegGUI.WPF
         private static readonly Dictionary<Window, ProgressRingOverlay> rings = new();
         private static Window busyWindow;
 
+        /// <summary>
+        /// 同时在进行的"忙碌"操作数。环只有一个，但 <see cref="SetBusy"/> / <see cref="SetNotBusy"/> 是按
+        /// **操作**配对发的（7 处调用点各一对），所以要靠计数决定"还有没有人在忙"：减到 0 才收环。
+        /// </summary>
+        private static int busyCount;
+
         public static void Register(Window window, ProgressRingOverlay ring) => rings[window] = ring;
 
         public static void Unregister(Window window)
@@ -28,27 +34,58 @@ namespace SimpleFFmpegGUI.WPF
             }
         }
 
-        public static void SetBusy(bool busy)
+        /// <summary>
+        /// 标记"这次操作开始忙碌"（与 <see cref="SetNotBusy"/> 按操作配对）。环显示在哪个窗口由
+        /// <see cref="FindForegroundWindow"/> 决定——谁在前台就显示在谁身上；<paramref name="message"/>
+        /// 是这次操作在做什么，显示在卡片里。
+        /// <para>
+        /// 已经在忙时**不挪窗口**：环挪到新窗口就等于把原来那个窗口提前解锁（它那边的操作还在跑）。
+        /// 只有新操作也落在同一个窗口上时，才把文案换成最新的这一次。
+        /// </para>
+        /// </summary>
+        public static void SetBusy(string message)
         {
-            if (busy)
-            {
-                var target = FindForegroundWindow();
-                if (target == null)
-                {
-                    return;
-                }
+            // 计数先加：它的语义是"已经开始的忙碌操作数"，必须与调用方的 SetBusy/SetNotBusy 一一对应
+            // （7 处调用点各一对）。若放在下面 target == null 的提前 return 之后，那一次 SetBusy 不计数、
+            // 而配对的 SetNotBusy 照样会减一次，就会把别的操作的环提前收掉
+            busyCount++;
 
+            var target = FindForegroundWindow();
+            if (target == null)
+            {
+                return;
+            }
+
+            if (busyWindow == null)
+            {
                 busyWindow = target;
+                rings[target].Message = message ?? string.Empty;
                 rings[target].Show();
             }
-            else
+            else if (busyWindow == target)
             {
-                if (busyWindow != null)
-                {
-                    rings[busyWindow].Hide();
-                    busyWindow = null;
-                }
+                rings[target].Message = message ?? string.Empty;
             }
+        }
+
+        /// <summary>
+        /// 标记"这次操作的忙碌结束"。计数没减到 0（还有别的操作在忙）就不收环——否则先结束的那个会把
+        /// 还在跑的那个的环关掉，那个窗口提前变回可点。计数只减不增，调用方漏发过 <see cref="SetBusy"/>
+        /// 也只会变成 0，不会变成负数。
+        /// </summary>
+        public static void SetNotBusy()
+        {
+            if (busyCount > 0)
+            {
+                busyCount--;
+            }
+            if (busyCount > 0 || busyWindow == null)
+            {
+                return;
+            }
+
+            rings[busyWindow].Hide();
+            busyWindow = null;
         }
 
         /// <summary>

@@ -115,7 +115,10 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private void Apply()
         {
-            Console.Write("{0},{1}", From, To);
+            // 结果必须**单独占一行**：主进程是逐行解析的，而本进程退出时保存配置还会往标准输出再写一句
+            // （Core 的 ConfigService.SaveAsync 里那句"尝试保存配置"），不带换行就会和结果粘在一起、解析失败
+            Console.WriteLine("{0},{1}", From, To);
+            Console.Out.Flush();
             Application.Current.Shutdown();
         }
 

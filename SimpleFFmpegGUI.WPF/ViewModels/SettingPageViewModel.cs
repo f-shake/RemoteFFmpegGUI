@@ -70,7 +70,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
         [RelayCommand]
         private async Task TestRemoteHostAsync(RemoteHost host)
         {
-            SendMessage(new WindowEnableMessage(false));
+            SendMessage(new WindowEnableMessage(false, "正在测试连接"));
             try
             {
                 string baseUrl = (host.Address ?? "").TrimEnd('/');

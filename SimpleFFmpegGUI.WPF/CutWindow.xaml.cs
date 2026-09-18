@@ -226,7 +226,8 @@ namespace SimpleFFmpegGUI.WPF
                     return;
                 }
             }
-            if (args[1] != "-")
+            if (args[2] != "-") // 注意判的是 args[2]（结束时间）；这里原来是复制粘贴漏改的 args[1]：
+                                // 输入行里"只填了开始时间"时，args[2] 是 "-"，会被当成解析失败而报错退出
             {
                 if (TimeSpan.TryParse(args[2], out TimeSpan toValue))
                 {

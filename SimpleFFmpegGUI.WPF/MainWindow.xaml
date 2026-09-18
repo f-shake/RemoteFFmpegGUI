@@ -174,13 +174,17 @@
                 <panels:TaskDetailPanel DataContext="{Binding Content.DataContext, ElementName=taskHost}" />
             </Border>
         </Grid>
+
         <ixt:ProgressRingOverlay
             x:Name="ring"
-            Grid.ColumnSpan="99"
-            Margin="-8" />
-        <!--  有任意任务正在执行时：主窗口显示闪烁的边框（5 秒周期）；全部暂停则橙色稳定（不闪）。
-              RowSpan/ColumnSpan 只保证它覆盖内容区的所有行（含底部命令栏）；四条边要贴到窗口
-              可见区域的边缘（含标题栏那一条），靠 MainWindow.xaml.cs 的 UpdateRunStatusBorderMargin  -->
+            Grid.RowSpan="99"
+            Grid.ColumnSpan="99" />
+
+        <!--
+            有任意任务正在执行时：主窗口显示闪烁的边框（5 秒周期）；全部暂停则橙色稳定（不闪）。
+            RowSpan/ColumnSpan 只保证它覆盖内容区的所有行（含底部命令栏）；四条边要贴到窗口
+            可见区域的边缘（含标题栏那一条），靠 MainWindow.xaml.cs 的 UpdateRunStatusBorderMargin
+        -->
         <Border
             x:Name="RunStatusBorder"
             Grid.RowSpan="99"

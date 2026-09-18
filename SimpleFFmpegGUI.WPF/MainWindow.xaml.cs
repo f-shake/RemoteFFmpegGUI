@@ -294,7 +294,15 @@ namespace SimpleFFmpegGUI.WPF
             {
                 // 不再只切换主窗口的加载环，而是把“忙碌”状态交给 WindowBusyOverlay，
                 // 由它决定显示在哪个窗口（当前正在操作的那个窗口）上。
-                WindowBusyOverlay.SetBusy(!m.IsEnabled);
+                // m.Message 是这次操作在做什么（各调用方在发 false 时给出），显示在加载环卡片里
+                if (m.IsEnabled)
+                {
+                    WindowBusyOverlay.SetNotBusy();
+                }
+                else
+                {
+                    WindowBusyOverlay.SetBusy(m.Message);
+                }
             });
 
 

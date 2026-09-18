@@ -39,7 +39,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         private async Task ShowInfoAsync()
         {
-            SendMessage(new WindowEnableMessage(false));
+            SendMessage(new WindowEnableMessage(false, "正在读取媒体信息"));
             try
             {
                 MediaInfo = await App.ServiceProvider.GetRequiredService<MediaInfoService>().GetMediaInfoAsync(FilePath);
