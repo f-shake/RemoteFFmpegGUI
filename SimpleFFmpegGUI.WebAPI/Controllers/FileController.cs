@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using FzLib.IO;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +27,11 @@ public class FileController(
 {
     public const string InputFtpKey = "input";
     public const string OutputFtpKey = "output";
+
+    /// <summary>
+    /// 上传时因同名文件而重新解析文件名的最大次数（兜住并发上传同名文件的窗口）
+    /// </summary>
+    private const int MaxUploadAttempts = 10;
 
     [HttpPost]
     [Route("Ftp/Input/Off")]
@@ -141,15 +145,65 @@ public class FileController(
         }
         if (file.Length > 0)
         {
-            string name = filePathHelper.GetFullPath(RootDirType.InputDir, file.FileName);
-            name = FileNameHelper.GenerateUniquePath(name, new HashSet<string>());
+            string desiredPath = filePathHelper.GetFullPath(RootDirType.InputDir, file.FileName);
             // 输入目录可能尚未创建（列表端点对目录不存在返回空列表是正常状态），上传时先确保目录存在
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(name));
-            await using var stream = System.IO.File.Create(name);
-            await file.CopyToAsync(stream);
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(desiredPath));
+
+            // 同名文件不覆盖：自动改名（与任务输出路径同一套规则）。
+            // CreateNew 兜住"两个请求同时上传同名文件"的并发窗口——查完不存在到写盘之间仍可能被别人抢先
+            string name = null;
+            FileStream stream = null;
+            for (int attempt = 0; attempt < MaxUploadAttempts && stream == null; attempt++)
+            {
+                string candidate = FileSystemHelper.GetNonDuplicatePath(desiredPath);
+                try
+                {
+                    stream = new FileStream(candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                    name = candidate;
+                }
+                catch (IOException) when (System.IO.File.Exists(candidate))
+                {
+                    // 与并发的同名上传撞车：重新解析文件名后重试
+                }
+            }
+
+            if (stream == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "无法创建上传文件：同名文件数量过多");
+            }
+
+            await using (stream)
+            {
+                try
+                {
+                    await file.CopyToAsync(stream);
+                }
+                catch
+                {
+                    // 上传中断（客户端断连等）时删除半截文件：否则它会长期占住这个名字，
+                    // 使后续同名上传只能一直往后递增
+                    TryDeleteUploadedFile(name);
+                    throw;
+                }
+            }
             return Ok(name);
         }
 
         return BadRequest("文件大小为0");
+    }
+
+    /// <summary>
+    /// 尽力删除上传失败留下的文件，删除失败不改变要向上抛出的原始异常
+    /// </summary>
+    private static void TryDeleteUploadedFile(string path)
+    {
+        try
+        {
+            System.IO.File.Delete(path);
+        }
+        catch
+        {
+            // 忽略：原始异常更重要
+        }
     }
 }

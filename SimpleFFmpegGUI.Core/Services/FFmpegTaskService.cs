@@ -1,4 +1,4 @@
-﻿using FFMpegCore;
+using FFMpegCore;
 using FzLib.Application;
 using FzLib.IO;
 using FzLib.Programming;
@@ -473,6 +473,19 @@ public class FFmpegTaskService(TaskEntity task,
     }
 
     /// <summary>
+    /// 生成实际输出路径。若输出路径与输入文件或已存在的文件冲突而被自动改名，记录一条日志——
+    /// ffmpeg 带 -y 的覆盖是静默的，必须让用户知道输出落到了哪个文件名上
+    /// </summary>
+    private void EnsureOutputPath()
+    {
+        GenerateOutputPath(task, out bool renamed);
+        if (renamed)
+        {
+            logger.Info(task, $"输出路径与输入文件或已存在文件冲突，输出改为{Path.GetFileName(task.RealOutput)}");
+        }
+    }
+
+    /// <summary>
     /// 执行编码任务
     /// </summary>
     /// <param name="tempDir"></param>
@@ -498,7 +511,7 @@ public class FFmpegTaskService(TaskEntity task,
                 task.Inputs[0].FilePath = seq;
             }
         }
-        GenerateOutputPath(task);
+        EnsureOutputPath();
         string message;
         if (task.Parameters.Video == null || !task.Parameters.Video.TwoPass)
         {
@@ -554,7 +567,7 @@ public class FFmpegTaskService(TaskEntity task,
         }
 
         Progress = GetProgress(true);
-        GenerateOutputPath(task);
+        EnsureOutputPath();
 
         // 合并音视频：视频/音频一律复制，流映射按输入是否含对应流决定；
         // 使用完整 OutputParameters 链路生成，使「裁剪到最短媒体」(-shortest) 等参数生效
@@ -678,7 +691,7 @@ public class FFmpegTaskService(TaskEntity task,
             }
         }
         Progress = GetProgress();
-        GenerateOutputPath(task);
+        EnsureOutputPath();
         var input = new InputParameters()
         {
             FilePath = tempPath,

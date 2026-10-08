@@ -98,21 +98,59 @@ public class FileApiTests(SimpleFFmpegWebApplicationFactory factory) : SimpleFFm
     [Fact]
     public async Task TestUploadAsync()
     {
-        // 上传一个测试文件
+        // 上传一个测试文件。用随机文件名：本次改动后同名文件不再被覆盖，
+        // 若沿用固定名字，每跑一次测试就会在输入目录里多留一个 "test_upload (n).txt"
+        string fileName = $"test_upload_{Guid.NewGuid():N}.txt";
         var content = "test file content for upload";
-        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(content));
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
-        var form = new MultipartFormDataContent
-        {
-            { fileContent, "file", "test_upload.txt" }
-        };
-        var response = await PostMultipartAsync("/api/File/Upload", form);
-        var uploadedPath = await response.Content.ReadAsStringAsync();
-        uploadedPath.Should().NotBeNullOrEmpty();
+
+        var uploadedPath = await UploadTextFileAsync(fileName, content);
+
         uploadedPath.Should().Contain("test_upload");
         File.Exists(uploadedPath).Should().BeTrue();
-        var savedContent = await File.ReadAllTextAsync(uploadedPath);
-        savedContent.Should().Be(content);
+        (await File.ReadAllTextAsync(uploadedPath)).Should().Be(content);
+
+        File.Delete(uploadedPath);
+    }
+
+    /// <summary>
+    /// 上传同名文件不得覆盖已存在的文件：第二次应自动改名为"xxx (2).ext"并返回该路径
+    /// （回归：v2 曾给 FileNameHelper.GenerateUniquePath 传空集合，等于完全不防重）
+    /// </summary>
+    [Fact]
+    public async Task TestUploadSameNameShouldNotOverwriteAsync()
+    {
+        string fileName = $"dup_upload_{Guid.NewGuid():N}.txt";
+        string firstContent = "第一次上传的内容";
+        string secondContent = "第二次上传的内容";
+
+        string firstPath = await UploadTextFileAsync(fileName, firstContent);
+        string secondPath = await UploadTextFileAsync(fileName, secondContent);
+
+        secondPath.Should().NotBe(firstPath);
+        // 改名格式必须与既有 " ({n})" 一致（单元测试覆盖了 helper，这里守住端到端返回给前端的名字）
+        secondPath.Should().Be(Path.Combine(Path.GetDirectoryName(firstPath)!,
+            $"{Path.GetFileNameWithoutExtension(fileName)} (2){Path.GetExtension(fileName)}"));
+        File.Exists(firstPath).Should().BeTrue("第一次上传的文件必须还在");
+        File.Exists(secondPath).Should().BeTrue();
+        (await File.ReadAllTextAsync(firstPath)).Should().Be(firstContent);
+        (await File.ReadAllTextAsync(secondPath)).Should().Be(secondContent);
+
+        File.Delete(firstPath);
+        File.Delete(secondPath);
+    }
+
+    /// <summary>
+    /// 上传一个文本文件，返回服务端实际落盘路径
+    /// </summary>
+    private async Task<string> UploadTextFileAsync(string fileName, string content)
+    {
+        var fileContent = new ByteArrayContent(Encoding.UTF8.GetBytes(content));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+        var form = new MultipartFormDataContent { { fileContent, "file", fileName } };
+        var response = await PostMultipartAsync("/api/File/Upload", form);
+        var path = await response.Content.ReadAsStringAsync();
+        path.Should().NotBeNullOrEmpty();
+        return path;
     }
 
     /// <summary>

@@ -1,5 +1,4 @@
-﻿using FzLib.IO;
-using SimpleFFmpegGUI.FFmpegLib;
+﻿using SimpleFFmpegGUI.FFmpegLib;
 using SimpleFFmpegGUI.Models;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,11 @@ namespace SimpleFFmpegGUI.Helpers
     public static class FileSystemHelper
     {
         private const string TempDirKey = "TempDir";
+
+        /// <summary>
+        /// 自动改名时尝试的最大次数，超过则抛异常（避免病态目录下无限循环）
+        /// </summary>
+        private const int MaxDuplicateAttempts = 10000;
 
         /// <summary>
         /// 不合法的文件名字符集合
@@ -91,6 +95,18 @@ namespace SimpleFFmpegGUI.Helpers
         /// <exception cref="Exception"></exception>
         public static string GenerateOutputPath(TaskEntity task)
         {
+            return GenerateOutputPath(task, out _);
+        }
+
+        /// <summary>
+        /// 生成输出路径
+        /// </summary>
+        /// <param name="task"></param>
+        /// <param name="renamed">输出是否因与输入文件或已存在的文件冲突而被自动改名</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static string GenerateOutputPath(TaskEntity task, out bool renamed)
+        {
             string output = task.Output.Trim();
             var a = task.Parameters;
             if (string.IsNullOrEmpty(output))
@@ -137,10 +153,11 @@ namespace SimpleFFmpegGUI.Helpers
                 }
             }
 
-            //获取非重复文件名，确保输出不和任何输入文件冲突
+            //获取非重复文件名：既不能和任何输入文件冲突，也不能覆盖磁盘上已经存在的文件
             //使用 OrdinalIgnoreCase 防止 Windows 大小写不敏感导致同名覆盖
             var usedPaths = new HashSet<string>(task.Inputs?.Select(p => p.FilePath) ?? [], StringComparer.OrdinalIgnoreCase);
-            task.RealOutput = FileNameHelper.GenerateUniquePath(output, usedPaths);
+            task.RealOutput = GetNonDuplicatePath(output, usedPaths);
+            renamed = !string.Equals(task.RealOutput, output, StringComparison.OrdinalIgnoreCase);
 
             //创建目录
             if (!new FileInfo(task.RealOutput).Directory.Exists)
@@ -148,6 +165,47 @@ namespace SimpleFFmpegGUI.Helpers
                 new FileInfo(task.RealOutput).Directory.Create();
             }
             return task.RealOutput;
+        }
+
+        /// <summary>
+        /// 获取一个既不在 <paramref name="usedPaths"/> 中、磁盘上也不存在的文件路径。
+        /// 冲突时按"名称 (2).扩展名"递增（与 v1 的 FileSystem.GetNoDuplicateFile 命名格式一致）。
+        /// 注意：FzLib 3.x 的 FileNameHelper.GenerateUniquePath 只比对传入集合、不检查磁盘，
+        /// 因此这里自行实现，避免 v2 曾出现的"目标文件已存在却被 ffmpeg -y 静默覆盖"。
+        /// </summary>
+        /// <param name="desiredPath">期望的路径</param>
+        /// <param name="usedPaths">视为已占用的路径集合，可为null</param>
+        /// <returns></returns>
+        /// <exception cref="IOException">连续冲突次数超过上限</exception>
+        public static string GetNonDuplicatePath(string desiredPath, IEnumerable<string> usedPaths = null)
+        {
+            var used = new HashSet<string>(usedPaths ?? [], StringComparer.OrdinalIgnoreCase);
+            if (!IsOccupied(desiredPath, used))
+            {
+                return desiredPath;
+            }
+
+            string dir = Path.GetDirectoryName(desiredPath) ?? string.Empty;
+            string name = Path.GetFileNameWithoutExtension(desiredPath);
+            string ext = Path.GetExtension(desiredPath);
+            for (int i = 2; i < MaxDuplicateAttempts + 2; i++)
+            {
+                string candidate = Path.Combine(dir, $"{name} ({i}){ext}");
+                if (!IsOccupied(candidate, used))
+                {
+                    return candidate;
+                }
+            }
+
+            throw new IOException($"无法生成不重复的文件名：{desiredPath}");
+        }
+
+        /// <summary>
+        /// 路径是否已被占用：在 <paramref name="usedPaths"/> 中，或磁盘上已存在
+        /// </summary>
+        private static bool IsOccupied(string path, HashSet<string> usedPaths)
+        {
+            return usedPaths.Contains(path) || File.Exists(path);
         }
     }
 }
