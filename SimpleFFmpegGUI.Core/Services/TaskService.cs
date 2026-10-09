@@ -20,7 +20,7 @@ using TaskStatus = SimpleFFmpegGUI.Enums.TaskStatus;
 namespace SimpleFFmpegGUI.Services;
 
 public class TaskService(TaskRepository taskRepository, QueueService queue, FilePathHelper filePathHelper,
-    ITaskChangeNotifier notifier)
+    ITaskChangeNotifier notifier, DbLoggerService logger)
 {
     public async Task<ServiceResult<List<int>>> AddTasks(string type, TaskDto request)
     {
@@ -32,7 +32,16 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         {
             case nameof(TaskType.Transcode):
                 ValidateInputs(request, min: 1);
-                // Code 类型是循环创建多个任务
+                // Code 类型是循环创建多个任务。
+                // 多输入时请求里的输出文件名不参与命名：每个输入各建一个任务，若共用同一个目标，
+                // 多个任务就会写同一个文件（Web 端多输入时输出框被禁用、但框里的旧值仍会被提交上来，
+                // 2026-10-09 那批 1007-4-1/2/3 → 1007-3-2.mp4 就是这么撞上的），改为各按自己的输入文件名命名
+                bool ignoreExplicitOutput = inputCount > 1;
+
+                // 批次内去重：同一个输入被提交多次、或不同目录下的同名输入，会算出同一个目标名，库里看着像要撞车
+                // （执行时虽会被自动改名，但那时才看得出来），提交时就把它们区分开
+                var usedOutputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                bool warnedIgnoredOutput = false;
                 for (int i = 0; i < inputCount; i++)
                 {
                     var file = inputs[i];
@@ -43,9 +52,16 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
                     }
 
                     var task = await taskRepository.AddTaskAsync(TaskType.Transcode, [file],
-                        GetOutputByInput(request, i),
+                        GetOutputByInput(request, i, ignoreExplicitOutput, usedOutputs),
                         request.Parameter);
                     ids.Add(task.Id);
+
+                    // 真的建出了任务才留痕：若前面的输入就不存在、一个任务都没建，日志不该说"已忽略并改名"
+                    if (!warnedIgnoredOutput && ignoreExplicitOutput && !string.IsNullOrWhiteSpace(request.Output))
+                    {
+                        warnedIgnoredOutput = true;
+                        logger.Warn($"多输入提交（{inputCount} 个），已忽略指定的输出文件名「{request.Output}」，各任务按自己的输入文件名命名");
+                    }
                 }
 
                 break;
@@ -211,10 +227,22 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
     }
 
 
-    private string GetOutputByInput(TaskDto request, int inputIndex)
+    /// <summary>
+    /// 取某个输入对应的输出路径
+    /// </summary>
+    /// <param name="request">请求</param>
+    /// <param name="inputIndex">输入序号</param>
+    /// <param name="ignoreExplicitOutput">
+    /// 是否忽略请求里填的输出文件名。一次提交多个输入、且每个输入各建一个任务（Transcode 多输入）时为 true：
+    /// 那种场景下共用同一个目标名会让多个任务写同一个文件，必须各按自己的输入文件名命名
+    /// </param>
+    /// <param name="usedOutputs">本批次已用过的输出路径，用于把重名目标区分开；可为 null</param>
+    private string GetOutputByInput(TaskDto request, int inputIndex, bool ignoreExplicitOutput = false,
+        ISet<string> usedOutputs = null)
     {
         Debug.Assert(inputIndex >= 0 && inputIndex < request.Inputs.Count);
-        string output = request.Output;
+        //忽略统一的输出名时置空，落到下面"按输入文件名"的分支
+        string output = ignoreExplicitOutput ? null : request.Output;
 
         if (string.IsNullOrWhiteSpace(output))
         {
@@ -236,6 +264,11 @@ public class TaskService(TaskRepository taskRepository, QueueService queue, File
         {
             // 相对路径补充为 OutputDir 下的完整路径（含文件名）；绝对路径由 GetFullPath 拒绝（P3-1 路径安全）
             output = filePathHelper.GetFullPath(RootDirType.OutputDir, output);
+        }
+
+        if (usedOutputs != null && output != null)
+        {
+            output = FileSystemHelper.GetUniquePathInBatch(output, usedOutputs);
         }
 
         return output;

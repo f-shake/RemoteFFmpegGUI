@@ -80,18 +80,27 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         public FileIOPanelViewModel()
         {
+            // 必须先挂集合事件、再建首批输入行：Inputs_CollectionChanged 里会给每个新行订阅 PropertyChanged，
+            // 否则构造期创建的这些行（界面上最先看到的那一行）的 FilePath 变化不会触发
+            // CanSetOutputFileName 的重新通知——表现为多输入时输出框一直禁用、或单输入时又一直可用
+            Inputs.CollectionChanged += Inputs_CollectionChanged;
             for (int i = 0; i < MinInputsCount; i++)
             {
                 Inputs.Add(new InputArgumentsViewModel() { Index = i + 1, });
             }
-            Inputs.CollectionChanged += Inputs_CollectionChanged;
             Config.Instance.PropertyChanged += (s, e) => this.Notify(nameof(OutputDirPlaceholder));
         }
 
         /// <summary>
-        /// 是否可以设置输出文件名
+        /// 是否可以设置输出文件名：多输入转码时每个输入各建一个任务、各按自己的文件名命名，这里的名字无效。
+        /// 判据用"已填写的输入数"而不是输入行数——多出来的空行不该让一个单文件任务失去命名能力
         /// </summary>
-        public bool CanSetOutputFileName => !(Type == TaskType.Transcode && Inputs.Count > 1);
+        public bool CanSetOutputFileName => !(Type == TaskType.Transcode && GetFilledInputCount() > 1);
+
+        /// <summary>
+        /// 已填写（选了文件）的输入行数
+        /// </summary>
+        private int GetFilledInputCount() => Inputs.Count(p => !string.IsNullOrWhiteSpace(p.FilePath));
 
         public ObservableCollection<InputArgumentsViewModel> Inputs { get; } = new ObservableCollection<InputArgumentsViewModel>();
 
@@ -264,7 +273,16 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 Inputs.Add(new InputArgumentsViewModel());
             }
             OutputDir = Path.GetDirectoryName(output);
-            OutputFileName = Path.GetFileName(output);
+            // 克隆多输入转码任务时，库里存的是批次改名后的名字（如 "x (2).mp4"）：
+            // 这种名字在多输入场景下无效，不能回填到"已禁用 + 提示此处无效"的框里
+            if (CanSetOutputFileName)
+            {
+                OutputFileName = Path.GetFileName(output);
+            }
+            else
+            {
+                ClearOutputFileNameIfNotSettable();
+            }
             if (inputs.Count > MaxInputsCount)
             {
                 QueueErrorMessage("输入文件超过该类型最大数量");
@@ -297,6 +315,7 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 _ => false
             };
             ShowMoreOptions = type is TaskType.Transcode or TaskType.Mux or TaskType.QualityCheck;
+            ClearOutputFileNameIfNotSettable();
         }
 
         [RelayCommand]
@@ -430,12 +449,50 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
 
         private void Inputs_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            // 输入行的文件选择会改变"已填写输入数"，进而影响 CanSetOutputFileName：逐行订阅
+            if (e.OldItems != null)
+            {
+                foreach (InputArgumentsViewModel old in e.OldItems)
+                {
+                    old.PropertyChanged -= Input_PropertyChanged;
+                }
+            }
+            if (e.NewItems != null)
+            {
+                foreach (InputArgumentsViewModel item in e.NewItems)
+                {
+                    item.PropertyChanged += Input_PropertyChanged;
+                }
+            }
+
             for (int i = 0; i < Inputs.Count; i++)
             {
                 Inputs[i].Index = i + 1;
                 Inputs[i].CanDelete = Inputs.Count > MinInputsCount;
             }
             this.Notify(nameof(CanSetOutputFileName));
+            ClearOutputFileNameIfNotSettable();
+        }
+
+        private void Input_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(InputArgumentsViewModel.FilePath))
+            {
+                this.Notify(nameof(CanSetOutputFileName));
+                ClearOutputFileNameIfNotSettable();
+            }
+        }
+
+        /// <summary>
+        /// 多输入转码时输出文件名不参与命名（每个输入各建一个任务、各按自己的文件名生成）：
+        /// 把框里的旧值清掉，避免界面上"填了却没用上"
+        /// </summary>
+        private void ClearOutputFileNameIfNotSettable()
+        {
+            if (!CanSetOutputFileName)
+            {
+                OutputFileName = null;
+            }
         }
 
         partial void OnMaxInputsCountChanged(int value)

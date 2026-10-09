@@ -44,10 +44,10 @@
       <label class="output-label">输出文件名</label>
       <div class="output-control">
         <el-input placeholder="留空则自动生成" v-model="outputFile"
-          :disabled="inputFiles.length > 1 && !singleOutput"
+          :disabled="isMultiInputWithoutSingleOutput"
           @change="(value: string) => emit('update:output', value)" class="output-input" />
-        <div v-if="inputFiles.length > 1 && !singleOutput" class="gray top12">
-          输入多个文件时，输出文件名为首个不重复的原文件名
+        <div v-if="isMultiInputWithoutSingleOutput" class="gray top12">
+          输入多个文件时会为每个文件各建一个任务，输出名按各自的文件名自动生成（此处填写将被忽略）
         </div>
       </div>
     </div>
@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Plus, Close } from '@element-plus/icons-vue'
 import { showError } from '@/utils/ui'
 import FileSelect from './FileSelect.vue'
@@ -108,7 +108,27 @@ for (let i = 1; i < props.min; i++) {
   activeInput.value.push(i)
 }
 
-watch(() => props.output, (val) => { outputFile.value = val })
+// 多输入（且不是"多输入合成一个文件"的类型）时输出名不参与命名：服务端会按各自的输入文件名生成。
+// 判据用"已填写的输入数"而不是输入行数——多出来的空行不该让一个单文件任务失去命名能力，
+// 也要与提交时的判据（Transcode.vue 里按已填写输入数判断）保持一致
+const isMultiInputWithoutSingleOutput = computed(() =>
+  !props.singleOutput && inputFiles.value.filter((p: any) => p.name !== '').length > 1
+)
+
+watch(() => props.output, (val) => {
+  if (isMultiInputWithoutSingleOutput.value) {
+    outputFile.value = ''
+    return
+  }
+  outputFile.value = val
+})
+
+// 变成多输入时清掉框里的旧值：输入框此时也被禁用，留着会让人以为输出会用这个名字
+watch(isMultiInputWithoutSingleOutput, (multi) => {
+  if (multi && outputFile.value !== '') {
+    outputFile.value = ''
+  }
+})
 
 function addFile() {
   inputFiles.value.push(getNewFile())

@@ -186,9 +186,14 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 switch (Type)
                 {
                     case TaskType.Transcode://需要将输入文件单独加入任务
+                        // 同一批里同一个输入被重复提交（或不同目录下的同名输入）会算出同一个目标名：
+                        // 用共享的批次去重把第二个起改成 " (2)"、" (3)"…，与 Web 端（TaskService）保持一致
+                        HashSet<string> usedOutputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                         foreach (var input in inputs)
                         {
-                            TaskEntity task = await taskManager.AddTaskAsync(TaskType.Transcode, new List<InputParameters>() { input }, FileIOViewModel.GetOutput(input), args);
+                            string output = SimpleFFmpegGUI.Helpers.FileSystemHelper.GetUniquePathInBatch(
+                                FileIOViewModel.GetOutput(input), usedOutputs);
+                            TaskEntity task = await taskManager.AddTaskAsync(TaskType.Transcode, new List<InputParameters>() { input }, output, args);
                             tasks.Tasks.Insert(0, TaskInfoViewModel.FromTask(task));
                             createdTasks.Add(task);
                         }
@@ -289,7 +294,12 @@ namespace SimpleFFmpegGUI.WPF.ViewModels
                 // 映射成远端 InputDir 下的路径：本地文件在远端 InputDir 内时保留子目录（发相对路径），
                 // 否则退回只发文件名（约定：远端 InputDir 根目录下有同名文件）
                 await MapInputsForRemoteAsync(host, inputs);
-                string output = FileIOViewModel.GetOutputFileName();
+                // 多输入转码时远端会为每个输入各建一个任务，统一的输出名会被忽略（服务端同样按此处理）：
+                // 这里索性不发，避免界面上填的名字与实际落盘名字不一致。
+                // 单输入、以及拼接/混流这类"多输入合成一个文件"的类型仍照常发送
+                string output = Type == TaskType.Transcode && inputs.Count > 1
+                    ? null
+                    : FileIOViewModel.GetOutputFileName();
                 var data = new
                 {
                     Inputs = inputs,

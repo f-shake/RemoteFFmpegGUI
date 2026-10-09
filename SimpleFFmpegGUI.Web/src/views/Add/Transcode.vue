@@ -52,7 +52,8 @@ function addTask(start: boolean) {
   const ioResult = io.value
   files.value = ioResult.getArgs()
   output.value = ioResult.outputFile
-  if (files.value.filter((p: any) => p.filePath !== '').length === 0) {
+  const effectiveInputs = files.value.filter((p: any) => p.filePath !== '')
+  if (effectiveInputs.length === 0) {
     showError('请选择至少一个输入文件')
     return
   }
@@ -60,7 +61,9 @@ function addTask(start: boolean) {
   if (taskArgs == null) return
   submitTask(start, {
     inputs: files.value,
-    output: output.value,
+    // 多输入时服务端会为每个输入各建一个任务、按各自的文件名命名，统一的输出名会被忽略：
+    // 这里也不发送，避免"界面上填了名字却没生效"的误解
+    output: effectiveInputs.length > 1 ? '' : output.value,
     parameter: taskArgs
   })
 }

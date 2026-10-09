@@ -185,12 +185,8 @@ namespace SimpleFFmpegGUI.Helpers
                 return desiredPath;
             }
 
-            string dir = Path.GetDirectoryName(desiredPath) ?? string.Empty;
-            string name = Path.GetFileNameWithoutExtension(desiredPath);
-            string ext = Path.GetExtension(desiredPath);
-            for (int i = 2; i < MaxDuplicateAttempts + 2; i++)
+            foreach (string candidate in EnumerateCounterCandidates(desiredPath))
             {
-                string candidate = Path.Combine(dir, $"{name} ({i}){ext}");
                 if (!IsOccupied(candidate, used))
                 {
                     return candidate;
@@ -198,6 +194,49 @@ namespace SimpleFFmpegGUI.Helpers
             }
 
             throw new IOException($"无法生成不重复的文件名：{desiredPath}");
+        }
+
+        /// <summary>
+        /// 批次内去重：一次提交里若同一个目标已经被用过（同一个输入被提交多次、或不同目录下的同名输入），
+        /// 追加 " (2)"、" (3)"…（格式与上限同 <see cref="GetNonDuplicatePath"/>，两处共用
+        /// <see cref="EnumerateCounterCandidates"/>，避免命名规则漂移）。
+        /// 与 <see cref="GetNonDuplicatePath"/> 的区别：这里只比对本批次、**不查磁盘**——
+        /// 提交时的磁盘状态与任务真正执行时并不一致，磁盘冲突留到执行阶段判断。
+        /// </summary>
+        /// <param name="desiredPath">期望的路径</param>
+        /// <param name="usedPaths">本批次已用过的路径集合，会被就地更新</param>
+        /// <returns></returns>
+        /// <exception cref="IOException">本批次内无法生成不重复的文件名</exception>
+        public static string GetUniquePathInBatch(string desiredPath, ISet<string> usedPaths)
+        {
+            if (usedPaths.Add(desiredPath))
+            {
+                return desiredPath;
+            }
+
+            foreach (string candidate in EnumerateCounterCandidates(desiredPath))
+            {
+                if (usedPaths.Add(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            throw new IOException($"无法为本次提交生成不重复的文件名：{desiredPath}");
+        }
+
+        /// <summary>
+        /// 依次给出"名称 (2).扩展名"、"名称 (3).扩展名"…（最多 <see cref="MaxDuplicateAttempts"/> 个）
+        /// </summary>
+        private static IEnumerable<string> EnumerateCounterCandidates(string path)
+        {
+            string dir = Path.GetDirectoryName(path) ?? string.Empty;
+            string name = Path.GetFileNameWithoutExtension(path);
+            string ext = Path.GetExtension(path);
+            for (int i = 2; i < MaxDuplicateAttempts + 2; i++)
+            {
+                yield return Path.Combine(dir, $"{name} ({i}){ext}");
+            }
         }
 
         /// <summary>

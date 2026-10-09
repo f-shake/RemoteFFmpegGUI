@@ -176,6 +176,8 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         muxTask.Type.Should().Be(TaskType.Mux);
         // 「裁剪到最短媒体」参数应完整保存（P1-7 回归）
         muxTask.Parameters.Mux.Shortest.Should().BeTrue();
+        // Mux 属于"多输入合成一个文件"：请求里的输出名仍然有效，不能被多输入的忽略规则误伤
+        muxTask.Output.Should().EndWith("mux_test_output.mp4");
 
         var qcIds = await PostObjectFromJsonAsync<List<int>>("/api/Task/QualityCheck", new TaskDto
         {
@@ -238,6 +240,139 @@ public class TaskAndQueueApiTests(SimpleFFmpegWebApplicationFactory factory) : S
         t.Output.Should().NotBeNullOrWhiteSpace();
         t.Output.Should().StartWith(Path.GetFullPath(appSettings.OutputDir));
         t.Output.Should().EndWith(Path.GetFileName(appTestSettings.TestVideo10s));
+    }
+
+    /// <summary>
+    /// 单输入时，请求里填的输出文件名仍然有效（修多输入时不能把正常路径一起改坏）
+    /// </summary>
+    [Fact]
+    public async Task TestSingleInputKeepsExplicitOutputAsync()
+    {
+        var task = GetCodeTask(1);
+        string explicitName = $"single_output_{Guid.NewGuid():N}.mp4";
+        task.Output = explicitName;
+
+        var ids = await AddCodecTaskAsync(task);
+
+        ids.Count.Should().Be(1);
+        var saved = await GetTaskAsync(ids[0]);
+        saved.Output.Should().EndWith(explicitName);
+    }
+
+    /// <summary>
+    /// 一次提交多个（内容不同的）输入时，请求里填的输出文件名必须被忽略：每个任务各按自己的输入文件名命名。
+    /// 回归：多输入共用一个输出名会让多个任务写同一个文件
+    /// （2026-10-09 生产上那批 1007-4-1/2/3 → 1007-3-2.mp4 就是这样把先跑完的成品逐个覆盖掉的）
+    /// </summary>
+    [Fact]
+    public async Task TestMultiInputIgnoresExplicitOutputAsync()
+    {
+        string inputDir = Path.GetFullPath(appSettings.InputDir);
+        string firstName = $"multi_input_{Guid.NewGuid():N}_a.mp4";
+        string secondName = $"multi_input_{Guid.NewGuid():N}_b.mp4";
+        string firstPath = Path.Combine(inputDir, firstName);
+        string secondPath = Path.Combine(inputDir, secondName);
+        File.Copy(appTestSettings.TestVideo10s, firstPath);
+        File.Copy(appTestSettings.TestVideo10s, secondPath);
+
+        try
+        {
+            var task = GetCodeTask(1);
+            task.Inputs = new List<InputParameters>
+            {
+                new() { FilePath = firstName },
+                new() { FilePath = secondName },
+            };
+            // 这个统一的输出名必须被忽略
+            string ignoredName = $"should_be_ignored_{Guid.NewGuid():N}.mp4";
+            task.Output = ignoredName;
+
+            var ids = await AddCodecTaskAsync(task);
+
+            ids.Count.Should().Be(2);
+            var tasks = await GetTasksAsync();
+            var outputs = tasks.List.Select(p => p.Output).ToList();
+            outputs.Should().HaveCount(2);
+            outputs.Should().NotContain(p => p.EndsWith(ignoredName));
+            outputs.Should().Contain(p => p.EndsWith(firstName));
+            outputs.Should().Contain(p => p.EndsWith(secondName));
+
+            // 忽略用户填的名字必须在日志里留痕（Log 接口会先把 DbLoggerService 的缓冲落库再查）
+            var logs = await GetObjectFromJsonAsync<PagedListResponse<LogEntity>>("/api/Log?Type=W&Page=1&PageSize=100");
+            logs.List.Should().Contain(p => p.Message.Contains(ignoredName));
+        }
+        finally
+        {
+            File.Delete(firstPath);
+            File.Delete(secondPath);
+        }
+    }
+
+    /// <summary>
+    /// 同一个输入在一次提交里出现多次时，提交阶段就要把目标名区分开（第二份起带 " (2)"、" (3)"），
+    /// 否则库里多条任务显示同一个目标，要等执行时才被自动改名
+    /// </summary>
+    [Fact]
+    public async Task TestDuplicateInputInBatchGetsDistinctOutputAsync()
+    {
+        var task = GetCodeTask(3); // 同一个测试视频提交三次
+        task.Output = $"should_be_ignored_{Guid.NewGuid():N}.mp4";
+
+        var ids = await AddCodecTaskAsync(task);
+
+        ids.Count.Should().Be(3);
+        var tasks = await GetTasksAsync();
+        var outputs = tasks.List.Select(p => p.Output).ToList();
+        outputs.Should().OnlyHaveUniqueItems();
+        string inputName = Path.GetFileName(appTestSettings.TestVideo10s);
+        string ext = Path.GetExtension(inputName);
+        outputs.Should().Contain(p => p.EndsWith(inputName));
+        outputs.Should().Contain(p => p.EndsWith($" (2){ext}"));
+        outputs.Should().Contain(p => p.EndsWith($" (3){ext}"));
+    }
+
+    /// <summary>
+    /// 不同目录下的同名输入：按各自的输入文件名算出的目标完全相同，第二个起必须自动加 " (2)"。
+    /// 这一类"不同素材 → 同一个目标"正是 2026-10-09 生产事故的形态
+    /// </summary>
+    [Fact]
+    public async Task TestSameFileNameInDifferentDirectoriesGetsDistinctOutputAsync()
+    {
+        string inputDir = Path.GetFullPath(appSettings.InputDir);
+        string subDirName = $"sub_{Guid.NewGuid():N}";
+        string subDir = Path.Combine(inputDir, subDirName);
+        Directory.CreateDirectory(subDir);
+        string fileName = $"same_name_{Guid.NewGuid():N}.mp4";
+        string firstPath = Path.Combine(inputDir, fileName);
+        string secondPath = Path.Combine(subDir, fileName);
+        File.Copy(appTestSettings.TestVideo10s, firstPath);
+        File.Copy(appTestSettings.TestVideo10s, secondPath);
+
+        try
+        {
+            var task = GetCodeTask(1);
+            task.Inputs = new List<InputParameters>
+            {
+                new() { FilePath = fileName },                              // 相对 InputDir 根目录
+                new() { FilePath = Path.Combine(subDirName, fileName) },    // 相对 InputDir 的子目录
+            };
+            task.Output = $"should_be_ignored_{Guid.NewGuid():N}.mp4";
+
+            var ids = await AddCodecTaskAsync(task);
+
+            ids.Count.Should().Be(2);
+            var tasks = await GetTasksAsync();
+            var outputs = tasks.List.Select(p => p.Output).ToList();
+            outputs.Should().OnlyHaveUniqueItems();
+            outputs.Should().Contain(p => p.EndsWith(fileName));
+            outputs.Should().Contain(p => p.EndsWith($" (2){Path.GetExtension(fileName)}"));
+        }
+        finally
+        {
+            File.Delete(firstPath);
+            File.Delete(secondPath);
+            Directory.Delete(subDir, true);
+        }
     }
 
     /// <summary>
