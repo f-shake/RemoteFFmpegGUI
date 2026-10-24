@@ -160,7 +160,7 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
             return outputPath;
         }
 
-        var argument = $"-i \"{testVideo}\" -t 10 -c copy \"{outputPath}\"";
+        var argument = $"-y -i \"{testVideo}\" -t 10 -c copy \"{outputPath}\"";
         var process = new Process()
         {
             StartInfo = new ProcessStartInfo()
@@ -178,11 +178,30 @@ public class SimpleFFmpegWebApplicationFactory : WebApplicationFactory<Program>
             EnableRaisingEvents = true,
         };
         process.Start();
-        process.WaitForExit();
 
+        // 必须与 WaitForExit 并发读取重定向的 stdout/stderr：不读的话，ffmpeg 的输出一旦写满
+        // 管道就会永久阻塞在写操作上，进程永不退出，测试夹具卡死。冷启动（%TEMP% 里还没有
+        // 10 秒测试视频、确实要跑一次 ffmpeg）时必现；热启动命中下面的 File.Exists 缓存所以看不出。
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(30_000))
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // 进程可能恰好在此刻退出，忽略
+            }
+
+            throw new Exception("裁剪测试视频超时（30 秒）");
+        }
+
+        _ = stdoutTask.Result;
         if (process.ExitCode != 0)
         {
-            throw new Exception($"裁剪测试视频失败：{process.ExitCode}");
+            throw new Exception($"裁剪测试视频失败：{process.ExitCode}{Environment.NewLine}{stderrTask.Result}");
         }
 
         return outputPath;
